@@ -1,0 +1,25 @@
+# Node.js
+node_modules/
+package-lock.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+.env
+
+# Data Files (CSV, DuckDB)
+*.csv
+*.duckdb
+*.xlsb
+
+# Temporary/Diagnostic Scripts
+check_xlsb_date.py
+check_duckdb_date.py
+check_pg_date.py
+
+# OS Files
+.DS_Store
+Thumbs.db
