@@ -1,7 +1,7 @@
 const { Pool } = require('pg');
+const Logger = require('./logger');
 
-// Use environment variables for security. 
-// On Vercel, you will set these in the Project Settings > Environment Variables.
+// Database connection configuration using environment variables
 const pool = new Pool({
     host: process.env.PG_HOST,
     port: process.env.PG_PORT || 5432,
@@ -12,7 +12,9 @@ const pool = new Pool({
 });
 
 module.exports = async (req, res) => {
-    // Enable CORS
+    const startTime = Date.now();
+
+    // CORS Headers
     res.setHeader('Access-Control-Allow-Credentials', true);
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -27,10 +29,29 @@ module.exports = async (req, res) => {
     }
 
     try {
+        Logger.info('database_query_initiated', { 
+            endpoint: '/api/revenue',
+            method: req.method,
+            ip: req.headers['x-forwarded-for'] || req.socket.remoteAddress
+        });
+
         const result = await pool.query('SELECT * FROM public.revenue');
+        const dbLatency = Date.now() - startTime;
+
+        Logger.info('database_query_completed', {
+            endpoint: '/api/revenue',
+            records_count: result.rows.length,
+            db_latency_ms: dbLatency
+        });
+
         res.status(200).json(result.rows);
     } catch (err) {
-        console.error("Database Error:", err);
+        const errorLatency = Date.now() - startTime;
+        Logger.error('database_query_failed', err, {
+            endpoint: '/api/revenue',
+            latency_ms: errorLatency
+        });
+
         res.status(500).json({ error: 'Failed to fetch revenue data', details: err.message });
     }
 };

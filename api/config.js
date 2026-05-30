@@ -1,3 +1,5 @@
+const Logger = require('./logger');
+
 module.exports = async (req, res) => {
     // Enable CORS
     res.setHeader('Access-Control-Allow-Credentials', true);
@@ -12,6 +14,12 @@ module.exports = async (req, res) => {
         res.status(200).end();
         return;
     }
+
+    Logger.info('config_fetch_initiated', {
+        endpoint: '/api/config',
+        method: req.method,
+        ip: req.headers['x-forwarded-for'] || req.socket.remoteAddress
+    });
 
     res.status(200).json({
         SUPABASE_URL: process.env.SUPABASE_URL,
