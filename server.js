@@ -3,16 +3,49 @@ const express = require('express');
 const { Pool } = require('pg');
 const cors = require('cors');
 const path = require('path');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const Logger = require('./api/logger');
 const Metrics = require('./api/metrics');
 const summaryHandler = require('./api/revenue/summary');
 
 const app = express();
 
-// Enable CORS
+// 1. Security Headers Injection (Helmet)
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "https://browser.sentry-cdn.com", "https://cdn.tailwindcss.com", "https://unpkg.com", "https://cdn.jsdelivr.net"],
+            styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdn.jsdelivr.net"],
+            imgSrc: ["'self'", "data:", "https:"],
+            connectSrc: ["'self'", "https://*.sentry.io", "https://*.clarity.ms", "https://*.supabase.co"]
+        }
+    }
+}));
+
+// 2. Global CORS setup
 app.use(cors());
 
-// Database connection configuration using environment variables
+// 3. API Rate Limiting to prevent Denial of Service (DoS)
+const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 200, // Limit each IP to 200 requests per window
+    standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+    legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+    handler: (req, res) => {
+        Logger.warn('rate_limit_exceeded', {
+            ip: req.ip,
+            url: req.originalUrl
+        });
+        res.status(429).json({ error: 'Too many requests. Please try again later.' });
+    }
+});
+
+// Apply rate limiter specifically to API endpoints
+app.use('/api/', apiLimiter);
+
+// Database connection pool
 const pool = new Pool({
     host: process.env.PG_HOST,
     port: process.env.PG_PORT || 5432,
@@ -22,17 +55,17 @@ const pool = new Pool({
     ssl: process.env.PG_SSL === 'true' ? { rejectUnauthorized: false } : false
 });
 
-// 1. Prometheus Scraper Metrics Endpoint
+// Prometheus metrics endpoint (no rate limit to allow internal scraper polls)
 app.get('/metrics', async (req, res) => {
     await Metrics(req, res);
 });
 
-// 2. High-Performance SQL Aggregation Endpoint
+// SQL Aggregation Endpoint
 app.get('/api/revenue/summary', async (req, res) => {
     await summaryHandler(req, res);
 });
 
-// 3. Config endpoint for frontend to get Supabase secrets
+// Config secrets endpoint
 app.get('/api/config', (req, res) => {
     const startTime = Date.now();
     Logger.info('config_fetch_initiated', {
@@ -50,7 +83,7 @@ app.get('/api/config', (req, res) => {
     Metrics.httpRequestsTotal.inc({ method: req.method, route: '/api/config', status: 200 });
 });
 
-// 4. Backward-Compatible Raw Records Endpoint
+// Raw fallback records endpoint
 app.get('/api/revenue', async (req, res) => {
     const startTime = Date.now();
     try {
@@ -89,17 +122,17 @@ app.get('/api/revenue', async (req, res) => {
     }
 });
 
-// Serve static files
+// Serve static assets
 app.use(express.static(__dirname));
 
-// SPA Routing
+// Single Page Application route mapping
 app.use((req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Start the server
+// Start the Express server
 const PORT = process.env.PORT || 8000;
-app.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
     Logger.info('express_server_started', {
         port: PORT,
         host: '0.0.0.0',
@@ -107,3 +140,37 @@ app.listen(PORT, '0.0.0.0', () => {
         callback_url: `http://127.0.0.1:${PORT}/auth/callback`
     });
 });
+
+// ==========================================
+// GRACEFUL SHUTDOWN Lifecyle Protocol
+// ==========================================
+const shutdownGracefully = (signal) => {
+    Logger.info('shutdown_lifecycle_initiated', { signal });
+    
+    // Stop accepting new HTTP requests
+    server.close(async () => {
+        Logger.info('express_server_terminated_requests');
+        
+        try {
+            // Close database connection pool cleanly
+            await pool.end();
+            Logger.info('database_pool_drained_successfully');
+            
+            Logger.info('shutdown_lifecycle_completed');
+            process.exit(0);
+        } catch (err) {
+            Logger.error('database_pool_drain_failed', err);
+            process.exit(1);
+        }
+    });
+
+    // Enforce instant kill timeout if graceful shutdown takes too long (e.g. Kubernetes drain deadline)
+    setTimeout(() => {
+        Logger.error('shutdown_lifecycle_deadline_exceeded', new Error('Graceful shutdown timed out'));
+        process.exit(1);
+    }, 10000);
+};
+
+// Catch process termination signals from the orchestrator
+process.on('SIGTERM', () => shutdownGracefully('SIGTERM'));
+process.on('SIGINT', () => shutdownGracefully('SIGINT'));
