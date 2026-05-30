@@ -11,21 +11,22 @@ from socketserver import ThreadingTCPServer
 # EXECUTIVE DEPLOYMENT SETTINGS
 # -----------------------------------------------------------------------------------------
 DEBUG = False
-TARGET_PORT = 45678  # Primary port. Critical for Supabase localStorage persistence.
+TARGET_PORT = 8000  # Primary port. Critical for Supabase localStorage persistence.
 
-def get_available_port(start_port=45678, max_attempts=20):
+def get_available_port(start_port=8000, max_attempts=20):
     """
     Enterprise-grade port negotiation.
     Attempts to bind to the primary port to preserve localStorage auth tokens.
     Only falls back to dynamic routing if the port is hard-locked by another service.
     """
     for port in range(start_port, start_port + max_attempts):
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            # connect_ex returns 0 if the port is OPEN (in use). != 0 means it's FREE.
-            if s.connect_ex(("127.0.0.1", port)) != 0:
-                if port != start_port and DEBUG:
-                    print(f"WARNING: Port {start_port} blocked. Shifted to {port}. Auth state may reset.")
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                s.bind(("127.0.0.1", port))
                 return port
+        except OSError:
+            continue
     raise RuntimeError("CRITICAL: Local network stack exhausted. No free ports available.")
 
 def get_resource_path(relative_path):
@@ -37,12 +38,19 @@ def get_resource_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 class SecureQuietHandler(SimpleHTTPRequestHandler):
-    """A highly optimized, silent HTTP handler. Terminal IO logging causes severe bottlenecks."""
+    """A highly optimized, silent HTTP handler with SPA routing support."""
     def __init__(self, *args, **kwargs):
         # Explicitly resolve the directory containing index.html to prevent root-path mapping failures
         target_directory = os.path.dirname(get_resource_path("index.html"))
         super().__init__(*args, directory=target_directory, **kwargs)
-    
+
+    def do_GET(self):
+        # SPA Routing: If the path is not a file, serve index.html
+        path = self.translate_path(self.path)
+        if not os.path.exists(path) and not path.endswith('/'):
+            self.path = '/index.html'
+        return super().do_GET()
+
     def log_message(self, format, *args):
         if DEBUG:
             super().log_message(format, *args)

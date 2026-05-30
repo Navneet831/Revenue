@@ -40,6 +40,7 @@
     <link rel="icon" type="image/x-icon" href="/Logo.ico">
     <link rel="shortcut icon" href="/Logo.ico">
 
+    <script src="data-logic.js"></script>
     <script>
         (function() {
             const manifest = {
@@ -911,9 +912,7 @@
 
     <!-- MAIN APP SCRIPT -->
     <script>
-        const SUPABASE_URL = 'https://zqbciwvyxgjoprsetbgw.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpxYmNpd3Z5eGdqb3Byc2V0Ymd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA0MjkzMzUsImV4cCI6MjA4NjAwNTMzNX0.d3CjohQaSpf58DdRyI2zwMr2MuCEHXpN9diy5q6RztY';
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        let supabaseClient;
 
         // --- VISUAL ENGINE (Auth Matrix) ---
         function startVisuals() {
@@ -979,6 +978,15 @@
                     if (typeof supabase === 'undefined') {
                         throw new Error("Supabase library failed to load. Please check your internet connection.");
                     }
+
+                    // Fetch Supabase configuration from backend
+                    const configRes = await fetch('/api/config');
+                    if (!configRes.ok) throw new Error("Security handshake failed.");
+                    const { SUPABASE_URL, SUPABASE_ANON_KEY } = await configRes.json();
+                    
+                    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) throw new Error("Security credentials missing.");
+                    
+                    supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
                     // Proactive session retrieval with timeout
                     const sessionPromise = supabaseClient.auth.getSession();
@@ -1124,7 +1132,7 @@
 
                     const { error } = await supabaseClient.auth.signInWithOtp({
                         email,
-                        options: { emailRedirectTo: 'http://127.0.0.1:8000/auth/callback' }
+                        options: { emailRedirectTo: window.location.origin + '/auth/callback' }
                     });
 
                     if (error) throw error;
@@ -1208,7 +1216,7 @@
                 const { error } = await supabaseClient.auth.signInWithOAuth({
                     provider: 'google',
                     options: {
-                        redirectTo: 'http://127.0.0.1:8000/auth/callback',
+                        redirectTo: window.location.origin + '/auth/callback',
                         queryParams: { prompt: 'select_account' }
                     }
                 });
@@ -1285,15 +1293,7 @@
         function raf(time) { lenis.raf(time); requestAnimationFrame(raf); }
         requestAnimationFrame(raf);
 
-        const CONFIG = {
-            SHEET_ID: null,
-            SHEET_NAME: "revenue",
-            CURRENCY_DIVIDER: 10000000, 
-            FISCAL_MONTHS: ["Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar"],
-            CALENDAR_MONTHS: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-            FULL_MONTHS: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
-        };
-
+        // CONFIG is embedded for reliability
         const CARD_CONFIG = {
             master: {
                 tabularId: 'matrix-container',
@@ -1332,6 +1332,7 @@
             activeKpiDetail: null, // Track which KPI detail is shown
             govStats: { total: 0, valid: 0, rejected: 0 },
             allYears: [], allSegments: [], allSKUs: [], allCustomers: [],
+            keyMap: null,
             ui: { segDropOpen: false, velDropOpen: false, insightsOpen: false },
             hiddenKPIs: new Set(),
             filters: {
@@ -1382,24 +1383,7 @@
             return MAPREDUCE_CACHE.daysInMonth[key];
         };
 
-        const Format = {
-            dynamic: (val, type, forceRaw = false) => {
-                const num = Number(val) || 0;
-                if (num === 0) return type === 'Amount' ? "0.00 Cr" : (type === 'MW' ? "0.00 MW" : "0 Qty");
-                const formatted = num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                if (type === 'Amount') return `₹ ${formatted} Cr`;
-                if (type === 'MW') return `${formatted} MW`;
-                return `${Math.round(num).toLocaleString('en-IN')} Qty`;
-            },
-            chartTooltip: (val, type) => {
-                if (STATE.privacyMode) return "••••••";
-                const num = Number(val) || 0;
-                const formatted = num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                if (type === 'Amount') return `₹ ${formatted} Cr`;
-                if (type === 'MW') return `${formatted} MW`;
-                return `${Math.round(num).toLocaleString('en-IN')} Qty`;
-            }
-        };
+        // Format is embedded for reliability
 
         // --- THE COGNITIVE COLOR ENGINE (APPLE/PALANTIR STANDARD) ---
         // Pre-defined exact distinctive hex mappings for unique aesthetic balance
@@ -1662,71 +1646,7 @@
             }
         };
 
-        const DataLogic = {
-            parseFY: (monthIdx, year) => monthIdx >= 3 ? `${year}-${(year + 1).toString().slice(-2)}` : `${year - 1}-${year.toString().slice(-2)}`,
-            getFYStart: (dateStr) => {
-                const d = new Date(dateStr);
-                const m = d.getMonth();
-                const y = d.getFullYear();
-                return m >= 3 ? `${y}-04-01` : `${y-1}-04-01`;
-            },
-            formatDate: (d) => {
-                try {
-                    if (!d || isNaN(d.getTime())) return "";
-                    const tzOffset = d.getTimezoneOffset() * 60000;
-                    return new Date(d - tzOffset).toISOString().split('T')[0];
-                } catch(e) { return ""; }
-            },
-            keyMap: null,
-            buildKeyMap: (row) => {
-                const keys = Object.keys(row);
-                const find = (t) => keys.find(k => k.toLowerCase().replace(/[^a-z0-9]/g, '') === t.toLowerCase().replace(/[^a-z0-9]/g, ''));
-                DataLogic.keyMap = {
-                    segment: find("segment") || "Segment",
-                    invoicedate: find("invoicedate") || "Invoice date",
-                    revenue: find("revenue") || "Revenue",
-                    saleshead: find("saleshead") || find("sales head") || find("manager"),
-                    values: find("values") || find("value") || find("amount") || "Values",
-                    qty: find("salesqty") || find("qty") || "SalesQty",
-                    mw: find("mw") || "MW",
-                    unitprice: find("unitprice") || "UnitPrice",
-                    custname: find("custname") || "Cust_name",
-                    wp: find("wp") || "WP"
-                };
-            },
-            sanitize: (row) => {
-                try {
-                    const km = DataLogic.keyMap;
-                    const dateVal = row[km.invoicedate];
-                    const invDate = dateVal instanceof Date ? dateVal : new Date(dateVal);
-                    if (!invDate || isNaN(invDate)) return null;
-
-                    const revenueRaw = String(row[km.revenue] || "").trim().toLowerCase();
-                    const isPending = revenueRaw.includes("pending"); 
-                    const day = invDate.getDate();
-                    const monthIdx = invDate.getMonth();
-                    const year = invDate.getFullYear();
-                    
-                    const salesHeadRaw = String(row[km.saleshead] || "Direct/Unmapped").trim();
-                    const monthKey = `${year}-${monthIdx < 10 ? '0' + monthIdx : monthIdx}`;
-
-                    return {
-                        date: invDate, monthIdx, year, monthKey,
-                        day, week: Math.min(Math.ceil(day / 7), 5),
-                        val: Number(row[km.values]) || 0,
-                        qty: Number(row[km.qty]) || 0,
-                        mw: Number(row[km.mw]) || 0,
-                        unitPrice: Number(row[km.unitprice]) || 0,
-                        segment: String(row[km.segment] || "Unknown").trim(),
-                        salesHead: salesHeadRaw,
-                        customer: String(row[km.custname] || "Unidentified"),
-                        wp: String(row[km.wp] || "Generic"),
-                        revenueStatus: revenueRaw,
-                        isPending
-                    };
-                } catch (e) { return null; }
-            }
-        };
+        // DataLogic is embedded for reliability
 
         const updateLoader = (pct, msg) => {
             const lp = document.getElementById('loader-percentage');
@@ -1785,7 +1705,7 @@
                 let newRejected = 0;
                 
                 if (raw.length > 0) {
-                    DataLogic.buildKeyMap(raw[0]);
+                    STATE.keyMap = DataLogic.buildKeyMap(raw[0]);
                 }
 
                 // Process in chunks to keep UI responsive
@@ -1793,7 +1713,7 @@
                 for (let i = 0; i < raw.length; i += CHUNK_SIZE) {
                     const chunk = raw.slice(i, i + CHUNK_SIZE);
                     chunk.forEach(row => {
-                        const p = DataLogic.sanitize(row);
+                        const p = DataLogic.sanitize(row, STATE.keyMap);
                         p ? newValid.push(p) : newRejected++;
                     });
                     if (!cacheLoaded) {
@@ -1924,11 +1844,6 @@
             const yyyy = STATE.latestDate.getFullYear();
             const updateEl = document.getElementById('last-updated-date');
             if (updateEl) updateEl.innerText = `Last updated on ${dd}-${mm}-${yyyy}`;
-
-            if (!STATE.filters.matrixMonth) {
-                STATE.filters.matrixMonth = CONFIG.CALENDAR_MONTHS[STATE.latestDate.getMonth()];
-                STATE.filters.velocityMode = 'Weekly';
-            }
         }
 
         function finishBoot(startTime) {
@@ -1957,406 +1872,18 @@
 
         function computeStats() {
             if (!STATE.data.length) return null;
-            const f = STATE.filters;
+            
+            const results = DataLogic.computeEngine(STATE.data, STATE.filters, STATE.latestDate, CONFIG);
+            if (!results) return null;
 
-            let buckets = { chart: { monthly: {}, weekly: {}, daily: {} } };
-
-            CONFIG.FISCAL_MONTHS.forEach(m => {
-                buckets.chart.monthly[m] = {};
-                buckets.chart.weekly[m] = {1:{}, 2:{}, 3:{}, 4:{}, 5:{}};
-                buckets.chart.daily[m] = Array(31).fill(0).map(()=>({}));
-            });
-            buckets.chart.quarterly = { 0: {}, 1: {}, 2: {}, 3: {} };
-            const qtrMap = { 3:0, 4:0, 5:0, 6:1, 7:1, 8:1, 9:2, 10:2, 11:2, 0:3, 1:3, 2:3 };
-
-            let tVal=0, tMW=0, tQty=0;
-            let kpiVal=0, kpiMW=0, kpiQty=0;
-            let last7DaysSales = 0;
-            let activeSegments = new Set();
-            let activePlotKeys = new Set();
-            let rawFiltered = [];
-
-            let kpi = {
-                periodSales: 0, periodBreakdown: {}, periodActiveKeys: new Set(),
-                mtd: 0, mtdBreakdown: {},
-                qtd: 0, qtdBreakdown: {},
-                ytd: 0, ytdBreakdown: {},
-                prevMtd: 0, prevQtd: 0, prevYtd: 0,
-                pending: 0, pendingBreakdown: {}
-            };
-
-            const sDateTime = f.startDate ? new Date(f.startDate).setHours(0,0,0,0) : 0;
-            const eDateTime = f.endDate ? new Date(f.endDate).setHours(23,59,59,999) : Infinity;
-
-            // 1. PRE-CALCULATE TIME BOUNDS FOR GLOBAL FILTERING
-            let filterStartTime = sDateTime;
-            let filterEndTime = eDateTime;
-
-            const curFY = DataLogic.parseFY(STATE.latestDate.getMonth(), STATE.latestDate.getFullYear());
-            const curFYStartYear = parseInt(curFY.split('-')[0]);
-
-            if (f.matrixMonth) {
-                const fmIdx = CONFIG.FISCAL_MONTHS.indexOf(f.matrixMonth);
-                const colMonth = (fmIdx + 3) % 12;
-                const colYear = fmIdx < 9 ? curFYStartYear : curFYStartYear + 1;
-                filterStartTime = new Date(colYear, colMonth, 1).getTime();
-                filterEndTime = new Date(colYear, colMonth + 1, 0, 23, 59, 59, 999).getTime();
-
-                if (f.selectedWeek) {
-                    const startDay = (f.selectedWeek - 1) * 7 + 1;
-                    const endDay = Math.min(getDaysInMonth(colYear, colMonth), f.selectedWeek * 7);
-                    filterStartTime = new Date(colYear, colMonth, startDay).getTime();
-                    filterEndTime = new Date(colYear, colMonth, endDay, 23, 59, 59, 999).getTime();
-                } else if (f.selectedDay) {
-                    filterStartTime = new Date(colYear, colMonth, f.selectedDay).setHours(0,0,0,0);
-                    filterEndTime = new Date(colYear, colMonth, f.selectedDay, 23, 59, 59, 999).getTime();
-                }
-            } else if (f.selectedQuarter !== null) {
-                const quarters = [[3,4,5], [6,7,8], [9,10,11], [0,1,2]]; 
-                const qMonths = quarters[f.selectedQuarter];
-                const startM = qMonths[0];
-                const endM = qMonths[2];
-                const sYear = startM >= 3 ? curFYStartYear : curFYStartYear + 1;
-                const eYear = endM >= 3 ? curFYStartYear : curFYStartYear + 1;
-                filterStartTime = new Date(sYear, startM, 1).getTime();
-                filterEndTime = new Date(eYear, endM + 1, 0, 23, 59, 59, 999).getTime();
-            }
-
-            // 2. SET DYNAMIC KPI ANCHOR DATE
-            // Use filterEndTime (end of selected period) but cap at latest data date
-            let kpiAnchorDate = new Date(filterEndTime);
-            if (kpiAnchorDate > STATE.latestDate) {
-                kpiAnchorDate = new Date(STATE.latestDate);
-            }
-            kpiAnchorDate.setHours(23, 59, 59, 999);
-
-            // Sync the UI Date Picker display to the actual Anchor Date being used
-            const syncDateStr = DataLogic.formatDate(kpiAnchorDate);
-            if (f.endDate !== syncDateStr) {
-                f.endDate = syncDateStr;
+            // Sync the UI Date Picker display to the actual Anchor Date being used by the engine
+            const syncDateStr = DataLogic.formatDate(results.kpiAnchorDate);
+            if (STATE.filters.endDate !== syncDateStr) {
+                STATE.filters.endDate = syncDateStr;
                 if (STATE.fpEnd) STATE.fpEnd.setDate(syncDateStr, false);
             }
 
-            const kpiAnchorTime = kpiAnchorDate.getTime();            const dayMs = 24 * 60 * 60 * 1000;
-            const anchorDay = kpiAnchorDate.getDate();
-            const curMonth = kpiAnchorDate.getMonth();
-            const curYear = kpiAnchorDate.getFullYear();
-            const curDate = kpiAnchorDate.getDate();
-
-            const metric = f.metric;
-            const customStart = f.customStartDate ? new Date(f.customStartDate) : null;
-            if (customStart) customStart.setHours(0,0,0,0);
-            const customStartTime = customStart ? customStart.getTime() : 0;
-
-            const isOnlySolar = f.segment.length === 1 && f.segment[0].toLowerCase().includes('solar');
-            let global_full = {};
-            let global_paced = {};
-            
-            let shObj = {}, custObj = {}, wpObj = {};
-            const segmentFilterSet = new Set(f.segment);
-            const shFilterSet = new Set(f.salesHead);
-            const custFilterSet = new Set(f.customer);
-            const skuFilterSet = new Set(f.selectedSku);
-
-            for (let i = 0; i < STATE.data.length; i++) {
-                const r = STATE.data[i];
-                if (segmentFilterSet.size > 0 && !segmentFilterSet.has(r.segment)) continue;
-                
-                const rTime = r.date.getTime();
-                const rMonth = r.monthIdx;
-                const rYear = r.year;
-                const key = r.monthKey;
-                
-                const isPaced = (rMonth !== curMonth) || (r.day <= anchorDay);
-
-                const metricVal = metric === 'Amount' ? r.val : (metric === 'MW' ? r.mw : r.qty);
-                const plotKey = isOnlySolar ? r.wp : r.segment;
-                
-                activePlotKeys.add(plotKey);
-                const isExcluded = f.excludedSeries.has(plotKey);
-
-                if (!isExcluded) {
-                    const matchesDrilldown = (shFilterSet.size === 0 || shFilterSet.has(r.salesHead)) &&
-                                           (custFilterSet.size === 0 || custFilterSet.has(r.customer)) &&
-                                           (skuFilterSet.size === 0 || skuFilterSet.has(r.wp));
-
-                    if (matchesDrilldown) {
-                        if (r.isPending) {
-                            if (rTime >= filterStartTime && rTime <= filterEndTime) {
-                                kpi.pending += metricVal;
-                                kpi.pendingBreakdown[plotKey] = (kpi.pendingBreakdown[plotKey] || 0) + metricVal;
-                            }
-                        } else {
-                            if (STATE.isCustomPeriodActive && customStart) {
-                                if (rTime >= customStartTime && rTime <= eDateTime) {
-                                    kpi.periodSales += metricVal;
-                                    kpi.periodBreakdown[plotKey] = (kpi.periodBreakdown[plotKey] || 0) + metricVal;
-                                    kpi.periodActiveKeys.add(plotKey);
-                                }
-                            } else {
-                                if (rYear === curYear && rMonth === curMonth && r.day === curDate) {
-                                    kpi.periodSales += metricVal;
-                                    kpi.periodBreakdown[plotKey] = (kpi.periodBreakdown[plotKey] || 0) + metricVal;
-                                    kpi.periodActiveKeys.add(plotKey);
-                                }
-                            }
-
-                            if (rTime > kpiAnchorTime - 7 * dayMs && rTime <= kpiAnchorTime) {
-                                last7DaysSales += metricVal;
-                            }
-                        }
-
-                        const isTargetStateForMatrix = f.pendingOnly ? r.isPending : !r.isPending;
-                        if (isTargetStateForMatrix) {
-                            if (!global_full[key]) global_full[key] = { val: 0, mw: 0, qty: 0, metricVal: 0, plotKeys: {}, hasData: false };
-                            global_full[key].val += r.val;
-                            global_full[key].mw += r.mw;
-                            global_full[key].qty += r.qty;
-                            global_full[key].metricVal += metricVal;
-                            global_full[key].plotKeys[plotKey] = (global_full[key].plotKeys[plotKey] || 0) + metricVal;
-                            global_full[key].hasData = true;
-
-                            if (isPaced) {
-                                if (!global_paced[key]) global_paced[key] = { val: 0, mw: 0, qty: 0, metricVal: 0, plotKeys: {}, hasData: false };
-                                global_paced[key].val += r.val;
-                                global_paced[key].mw += r.mw;
-                                global_paced[key].qty += r.qty;
-                                global_paced[key].metricVal += metricVal;
-                                global_paced[key].plotKeys[plotKey] = (global_paced[key].plotKeys[plotKey] || 0) + metricVal;
-                                global_paced[key].hasData = true;
-                            }
-                        }
-                    }
-                }
-
-                const isTargetState = f.pendingOnly ? r.isPending : !r.isPending;
-                if (!isTargetState) continue;
-
-                if (rTime < filterStartTime || rTime > filterEndTime) continue;
-                if (shFilterSet.size > 0 && !shFilterSet.has(r.salesHead)) continue;
-                if (custFilterSet.size > 0 && !custFilterSet.has(r.customer)) continue;
-                if (skuFilterSet.size > 0 && !skuFilterSet.has(r.wp)) continue;
-
-                if (!isExcluded) {
-                    if (!shObj[r.salesHead]) shObj[r.salesHead] = { val:0, mw:0, qty:0, comps: new Set(), plotKeys: {} };
-                    shObj[r.salesHead].val += r.val; shObj[r.salesHead].mw += r.mw; shObj[r.salesHead].qty += r.qty;
-                    shObj[r.salesHead].plotKeys[plotKey] = (shObj[r.salesHead].plotKeys[plotKey] || 0) + metricVal;
-                    if (r.customer) shObj[r.salesHead].comps.add(r.customer);
-
-                    if (!custObj[r.customer]) custObj[r.customer] = { val:0, mw:0, qty:0, plotKeys: {} };
-                    custObj[r.customer].val += r.val; custObj[r.customer].mw += r.mw; custObj[r.customer].qty += r.qty;
-                    custObj[r.customer].plotKeys[plotKey] = (custObj[r.customer].plotKeys[plotKey] || 0) + metricVal;
-
-                    if (!wpObj[r.wp]) wpObj[r.wp] = { val:0, mw:0, qty:0, plotKeys: {} };
-                    wpObj[r.wp].val += r.val; wpObj[r.wp].mw += r.mw; wpObj[r.wp].qty += r.qty;
-                    wpObj[r.wp].plotKeys[plotKey] = (wpObj[r.wp].plotKeys[plotKey] || 0) + metricVal;
-
-                    kpiVal += r.val; kpiMW += r.mw; kpiQty += r.qty;
-                    rawFiltered.push(r);
-                    activeSegments.add(r.segment);
-                    
-                    tVal += r.val; tMW += r.mw; tQty += r.qty;
-                }
-                
-                const fmIdx = rMonth >= 3 ? rMonth - 3 : rMonth + 9;
-                const mName = CONFIG.FISCAL_MONTHS[fmIdx];
-                
-                buckets.chart.monthly[mName][plotKey] = (buckets.chart.monthly[mName][plotKey] || 0) + metricVal;
-                if(r.week <= 5) buckets.chart.weekly[mName][r.week][plotKey] = (buckets.chart.weekly[mName][r.week][plotKey] || 0) + metricVal;
-                if(r.day <= 31) buckets.chart.daily[mName][r.day-1][plotKey] = (buckets.chart.daily[mName][r.day-1][plotKey] || 0) + metricVal;
-                
-                const qIdx = qtrMap[r.monthIdx];
-                buckets.chart.quarterly[qIdx][plotKey] = (buckets.chart.quarterly[qIdx][plotKey] || 0) + metricVal;
-            }
-
-            // EXACT PACED LOGIC CALCULATION FOR MICRO KPIs
-            const curKey = `${curYear}-${String(curMonth).padStart(2, '0')}`;
-            const prevMonthDate = new Date(curYear, curMonth - 1, 1);
-            const prevMKey = `${prevMonthDate.getFullYear()}-${String(prevMonthDate.getMonth()).padStart(2, '0')}`;
-            const prevYearSameMonthDate = new Date(curYear - 1, curMonth, 1);
-            const prevYKey = `${prevYearSameMonthDate.getFullYear()}-${String(prevYearSameMonthDate.getMonth()).padStart(2, '0')}`;
-
-            kpi.mtd = global_paced[curKey]?.hasData ? global_paced[curKey].metricVal : 0;
-            kpi.mtdBreakdown = global_paced[curKey]?.hasData ? global_paced[curKey].plotKeys : {};
-            
-            kpi.prevMtd = global_paced[prevMKey]?.hasData ? global_paced[prevMKey].metricVal : 0;
-            const prevYearMtd = global_paced[prevYKey]?.hasData ? global_paced[prevYKey].metricVal : 0;
-
-            // QTD summing dynamically paced values from start of current quarter
-            const getQTD = (year, endMonth) => {
-                let sum = 0;
-                let breakdown = {};
-                const qStart = Math.floor(endMonth / 3) * 3;
-                for (let m = qStart; m <= endMonth; m++) {
-                    const k = `${year}-${String(m).padStart(2, '0')}`;
-                    if (global_paced[k]?.hasData) {
-                        sum += global_paced[k].metricVal;
-                        Object.entries(global_paced[k].plotKeys).forEach(([pk, pv]) => {
-                            breakdown[pk] = (breakdown[pk] || 0) + pv;
-                        });
-                    }
-                }
-                return { sum, breakdown };
-            };
-
-            const qRes = getQTD(curYear, curMonth);
-            kpi.qtd = qRes.sum;
-            kpi.qtdBreakdown = qRes.breakdown;
-            kpi.prevQtd = getQTD(curYear - 1, curMonth).sum;
-
-            // YTD summing dynamically paced values from April exactly as requested (SUM(Apr->current))
-            const getYTD = (year, endMonth) => {
-                let sum = 0;
-                let breakdown = {};
-                const startYear = endMonth < 3 ? year - 1 : year; // FY starts in April (Month 3)
-                let currentM = 3; 
-                let currentY = startYear;
-                while (true) {
-                    const k = `${currentY}-${String(currentM).padStart(2, '0')}`;
-                    if (global_paced[k]?.hasData) {
-                        sum += global_paced[k].metricVal;
-                        Object.entries(global_paced[k].plotKeys).forEach(([pk, pv]) => {
-                            breakdown[pk] = (breakdown[pk] || 0) + pv;
-                        });
-                    }
-                    if (currentY === year && currentM === endMonth) break;
-                    currentM++;
-                    if (currentM > 11) { currentM = 0; currentY++; }
-                    if (currentY > year + 1) break; // Infinite loop failsafe
-                }
-                return { sum, breakdown };
-            };
-
-            const yRes = getYTD(curYear, curMonth);
-            kpi.ytd = yRes.sum;
-            kpi.ytdBreakdown = yRes.breakdown;
-            kpi.prevYtd = getYTD(curYear - 1, curMonth).sum;
-
-            const today = new Date();
-            const isCurrentFY = curFY === DataLogic.parseFY(today.getMonth(), today.getFullYear());
-            const activeFmIdx = curMonth >= 3 ? curMonth - 3 : curMonth + 9;
-
-            const calcPct = (cur, prev) => {
-                if (cur === null || prev === null) return null;
-                if (prev === 0) return cur > 0 ? 100 : 0;
-                return ((cur - prev) / prev) * 100;
-            };
-
-            let matrixArr = CONFIG.FISCAL_MONTHS.map((mName, i) => {
-                const colMonth = (i + 3) % 12; 
-                const colYear = i < 9 ? curFYStartYear : curFYStartYear + 1;
-                
-                if (isCurrentFY && i > activeFmIdx) {
-                    return { month: mName, valCr: null, mw: null, qty: null, mom: null, yoy: null, qoq: null };
-                }
-
-                const keyCur = `${colYear}-${String(colMonth).padStart(2, '0')}`;
-                const pMD = new Date(colYear, colMonth - 1, 1);
-                const keyPrevM = `${pMD.getFullYear()}-${String(pMD.getMonth()).padStart(2, '0')}`;
-                const keyPrevY = `${colYear - 1}-${String(colMonth).padStart(2, '0')}`;
-
-                const curPaced = global_paced[keyCur]?.metricVal || 0;
-                const prevMPaced = global_paced[keyPrevM]?.metricVal || 0;
-                const prevYPaced = global_paced[keyPrevY]?.metricVal || 0;
-
-                const curQTD = getQTD(colYear, colMonth).sum;
-                const prevYQTD = getQTD(colYear - 1, colMonth).sum;
-
-                const mom = calcPct(curPaced, prevMPaced);
-                const yoy = calcPct(curPaced, prevYPaced);
-                const qoq = calcPct(curQTD, prevYQTD);
-
-                const fullCur = global_full[keyCur] || {val: 0, mw: 0, qty: 0, hasData: false};
-
-                return { 
-                    month: mName, 
-                    valCr: fullCur.hasData ? fullCur.val / CONFIG.CURRENCY_DIVIDER : (fullCur.val > 0 ? fullCur.val / CONFIG.CURRENCY_DIVIDER : null), 
-                    mw: fullCur.hasData ? fullCur.mw : (fullCur.mw > 0 ? fullCur.mw : null), 
-                    qty: fullCur.hasData ? fullCur.qty : (fullCur.qty > 0 ? fullCur.qty : null),
-                    mom, yoy, qoq
-                };
-            });
-
-            const totals = matrixArr.reduce((acc, curr) => {
-                if (curr.valCr !== null) acc.valCr += curr.valCr;
-                if (curr.mw !== null) acc.mw += curr.mw;
-                if (curr.qty !== null) acc.qty += curr.qty;
-                return acc;
-            }, { valCr: null, mw: null, qty: null });
-
-            matrixArr.push({
-                month: 'Total',
-                valCr: totals.valCr,
-                mw: totals.mw,
-                qty: totals.qty,
-                mom: null, yoy: null, qoq: null
-            });
-
-            const mDiv = f.metric==='Amount'?CONFIG.CURRENCY_DIVIDER:1;
-
-            const mapObjToArray = (obj) => Object.entries(obj).map(([k,v]) => ({
-                n:k, v: f.metric==='Amount'?v.val/CONFIG.CURRENCY_DIVIDER:f.metric==='MW'?v.mw:v.qty, raw: v, plotKeys: v.plotKeys || {}, comps: v.comps
-            }));
-
-            let shArr = mapObjToArray(shObj);
-            let custArr = mapObjToArray(custObj);
-            let wpArr = mapObjToArray(wpObj); 
-
-            let insights = [];
-            
-            const curMonthDays = new Date(curYear, curMonth + 1, 0).getDate();
-            const weekAvg = last7DaysSales / 7; 
-            const projWeek = weekAvg * curMonthDays; 
-            const isAccel = kpi.mtd !== null && projWeek > kpi.mtd;
-            
-            const formatInsightVal = v => {
-                if(f.metric === 'Amount') return `₹ ${(v/CONFIG.CURRENCY_DIVIDER).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Cr`;
-                if(f.metric === 'MW') return `${v.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})} MW`;
-                return `${Math.round(v).toLocaleString('en-IN')} Qty`;
-            };
-
-            insights.push({
-                t: isAccel ? 'success' : 'risk',
-                l: 'MOMENTUM (7-DAY AVG)',
-                txt: `Recent trailing velocity projects ${formatInsightVal(projWeek)} for the current period.`
-            });
-
-            const unfiltCust = custArr.sort((a,b) => b.v - a.v);
-            const sumCust = unfiltCust.reduce((a,c)=>a+c.v, 0);
-            let hhi = 0;
-            if (sumCust > 0) hhi = unfiltCust.reduce((sum, c) => sum + Math.pow((c.v / sumCust) * 100, 2), 0);
-            const top5 = unfiltCust.slice(0,5);
-            const top5Share = sumCust>0 ? (top5.reduce((a,c)=>a+c.v,0)/sumCust)*100 : 0;
-            let concText = hhi < 1500 ? 'Diversified' : (hhi < 2500 ? 'Moderate' : 'Highly Concentrated');
-            let concType = hhi < 1500 ? 'success' : (hhi < 2500 ? 'strategic' : 'risk');
-            insights.push({
-                t: concType, l: 'CUSTOMER CONCENTRATION', txt: `Top 5 hold ${top5Share.toFixed(1)}%. HHI Score: ${hhi.toFixed(0)} (${concText}).`
-            });
-
-            const unfiltWp = wpArr.sort((a,b) => b.v - a.v);
-            const sumWP = unfiltWp.reduce((a,c)=>a+c.v, 0);
-            let prodHhi = 0;
-            if (sumWP > 0) prodHhi = unfiltWp.reduce((sum, c) => sum + Math.pow((c.v / sumWP) * 100, 2), 0);
-            const top3Prod = unfiltWp.slice(0,3);
-            const top3ProdShare = sumWP>0 ? (top3Prod.reduce((a,c)=>a+c.v,0)/sumWP)*100 : 0;
-            insights.push({
-                t: 'strategic', l: 'PRODUCT CONCENTRATION', txt: `Top 3 SKUs hold ${top3ProdShare.toFixed(1)}%. HHI Score: ${prodHhi.toFixed(0)}.`
-            });
-
-            if(tMW>0) insights.push({t:'strategic', l:'YIELD', txt:`Net Realization: ₹ ${((tVal/CONFIG.CURRENCY_DIVIDER)/tMW).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})} / MW.`});
-
-            STATE.stats = {
-                kpi, prevYearMtd,
-                totalCr: tVal/CONFIG.CURRENCY_DIVIDER, totalMW: tMW, totalQty: tQty,
-                kpiCr: kpiVal/CONFIG.CURRENCY_DIVIDER, kpiMW: kpiMW, kpiQty: kpiQty,
-                realization: tMW>0 ? (tVal/CONFIG.CURRENCY_DIVIDER)/tMW : 0,
-                activeSegments: Array.from(activeSegments).sort(),
-                activePlotKeys: Array.from(activePlotKeys).sort(),
-                isOnlySolar,
-                sh: shArr, cust: custArr, wp: wpArr, 
-                matrix: matrixArr, insights, buckets, mDiv,
-                rawFiltered, kpiAnchorDate
-            };
+            STATE.stats = results;
         }
 
         function computeAndRender() { computeStats(); UI.renderAll(); }
@@ -2748,31 +2275,26 @@
                 const startYear = parseInt(fy.split('-')[0]);
                 const endYear = startYear + 1;
                 const fyEnd = `${endYear}-03-31`;
-                
+
                 const maxD = new Date(STATE.globalMaxDate);
                 const tgtD = new Date(fyEnd);
                 const finalEndDate = tgtD > maxD ? STATE.globalMaxDate : fyEnd;
 
                 const fyStart = `${startYear}-04-01`;
                 STATE.filters.startDate = fyStart;
-                STATE.filters.customStartDate = fyStart; 
-                STATE.isCustomPeriodActive = false; 
+                STATE.filters.customStartDate = fyStart;
+                STATE.isCustomPeriodActive = false;
                 STATE.filters.endDate = finalEndDate;
-                
-                // If this is the current FY, restore matrix month focus to latest month to match default state
-                const currentFY = DataLogic.parseFY(maxD.getMonth(), maxD.getFullYear());
-                if (fy === currentFY) {
-                    STATE.filters.matrixMonth = CONFIG.CALENDAR_MONTHS[maxD.getMonth()];
-                    STATE.filters.velocityMode = 'Weekly';
-                } else {
-                    STATE.filters.matrixMonth = null;
-                    STATE.filters.velocityMode = 'Monthly'; 
-                }
-                
-                if(STATE.fpStart) STATE.fpStart.setDate(fyStart, false); 
+
+                // User Requirement: "Dont auto change the selected period."
+                // Switching FY now strictly changes the YEAR bounds. 
+                // It does NOT reset or change the matrixMonth.
+
+                if(STATE.fpStart) STATE.fpStart.setDate(fyStart, false);
                 if(STATE.fpEnd) STATE.fpEnd.setDate(STATE.filters.endDate);
                 computeAndRender();
             },
+
             resetDateRange: () => {
                 if (!STATE.data.length) return;
                 STATE.filters.endDate = STATE.globalMaxDate;
@@ -2791,11 +2313,23 @@
             updateFilter: (key, val) => {
                 UI.logActivity('update_filter', { filter: key, value: val });
                 STATE.filters[key] = val;
+                
+                // If the user switches to Daily mode, it requires a month context.
+                // We only auto-select the current month if nothing is selected AND it's the current FY.
                 if (key === 'velocityMode' && val === 'Daily' && !STATE.filters.matrixMonth) {
-                    STATE.filters.matrixMonth = CONFIG.CALENDAR_MONTHS[STATE.latestDate.getMonth()];
+                    const maxD = new Date(STATE.globalMaxDate);
+                    const currentFY = DataLogic.parseFY(maxD.getMonth(), maxD.getFullYear());
+                    const selectedFYStart = new Date(STATE.filters.startDate);
+                    const selectedFY = DataLogic.parseFY(selectedFYStart.getMonth(), selectedFYStart.getFullYear());
+                    
+                    if (currentFY === selectedFY) {
+                        STATE.filters.matrixMonth = CONFIG.CALENDAR_MONTHS[STATE.latestDate.getMonth()];
+                    }
+                    // For other FYs, we leave it null and let the user pick the month to drill into.
                 }
-                computeAndRender(); 
+                computeAndRender();
             },
+
             toggleMatrixMonth: (m) => {
                 if (m === 'Total') return;
                 
@@ -2964,6 +2498,7 @@
                 });
                 html += `</div></div>`;
                 c.innerHTML = html;
+                if (window.lucide) lucide.createIcons();
 
                 // Sync Health Sections
                 const hH = document.getElementById('health-header');
@@ -3279,6 +2814,7 @@
                     let ic = i.t==='risk'?'alert-triangle':i.t==='strategic'?'briefcase':'shield-check';
                     return `<div class="p-3 border-l-4 flex gap-3 items-start card-3d ${c} mb-3 rounded-xl" tabindex="0"><i data-lucide="${ic}" class="w-3.5 h-3.5 mt-0.5"></i><div><span class="text-[9px] font-bold uppercase tracking-tighter block mb-1 text-white">${i.l}</span><p class="text-[11px] font-medium leading-tight tracking-wide text-slate-400">${i.txt}</p></div></div>`;
                 }).join('');
+                if (window.lucide) lucide.createIcons();
             },
             
             renderLists: () => {
@@ -4186,15 +3722,17 @@
                 if (window.shChartInstance) { window.shChartInstance.resize(); window.shChartInstance.update('none'); }
                 
                 // Silent session check to prevent flickering or blanking while open
-                supabaseClient.auth.getSession().then(({data, error}) => {
-                    if (error) return; 
-                    const isAuthHidden = document.getElementById('auth-layer').classList.contains('hidden') || 
-                                       document.getElementById('auth-layer').classList.contains('fade-out-matrix');
-                    
-                    if (!data.session && isAuthHidden) {
-                        AuthEngine.showUI();
-                    }
-                });
+                if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+                    supabaseClient.auth.getSession().then(({data, error}) => {
+                        if (error) return; 
+                        const isAuthHidden = document.getElementById('auth-layer').classList.contains('hidden') || 
+                                           document.getElementById('auth-layer').classList.contains('fade-out-matrix');
+                        
+                        if (!data.session && isAuthHidden) {
+                            AuthEngine.showUI();
+                        }
+                    }).catch(() => {});
+                }
             }
         });
 
@@ -4205,7 +3743,9 @@
                 const now = Date.now();
                 if (now - lastActivity > 60000) { // Every 1 minute of activity
                     lastActivity = now;
-                    supabaseClient.auth.getSession(); // Triggers internal refresh if needed
+                    if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+                        supabaseClient.auth.getSession(); // Triggers internal refresh if needed
+                    }
                 }
             }, { passive: true });
         });

@@ -1,25 +1,87 @@
-# Node.js
+# Dependency directories
 node_modules/
 package-lock.json
+
+# Vercel
+.vercel
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
 # Python
 __pycache__/
 *.py[cod]
 *$py.class
+*.so
+.Python
+env/
 venv/
 .venv/
-.env
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
 
-# Data Files (CSV, DuckDB)
+# Data Files & Databases
 *.csv
 *.duckdb
 *.xlsb
-
-# Temporary/Diagnostic Scripts
-check_xlsb_date.py
-check_duckdb_date.py
-check_pg_date.py
+*.xlsx
+*.sqlite
+*.db
 
 # OS Files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Project specific maintenance
+other/
+migrate_duckdb_export.py
+migrate_excel_to_pg.py
+reload_revenue.py
+update_duckdb.py
+check_xlsb_date.py
+check_duckdb_date.py
+check_pg_date.py

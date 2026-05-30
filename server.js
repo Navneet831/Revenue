@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const { Pool } = require('pg');
 const cors = require('cors');
@@ -5,22 +6,30 @@ const path = require('path');
 
 const app = express();
 
-// Enable CORS so your frontend dashboard can fetch data from this API
+// Enable CORS
 app.use(cors());
 
-// Database connection configuration
+// Database connection configuration using environment variables
 const pool = new Pool({
-    host: '192.168.80.67',
-    port: 5432,
-    user: 'navneet',
-    password: 'Navn@98765',
-    database: 'Grewdb',
+    host: process.env.PG_HOST,
+    port: process.env.PG_PORT || 5432,
+    user: process.env.PG_USER,
+    password: process.env.PG_PASSWORD,
+    database: process.env.PG_DATABASE,
+    ssl: process.env.PG_SSL === 'true' ? { rejectUnauthorized: false } : false
 });
 
-// The main endpoint the dashboard will call
+// Config endpoint for frontend to get Supabase secrets
+app.get('/api/config', (req, res) => {
+    res.json({
+        SUPABASE_URL: process.env.SUPABASE_URL,
+        SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY
+    });
+});
+
+// API endpoint
 app.get('/api/revenue', async (req, res) => {
     try {
-        // Querying the 'revenue' table
         const result = await pool.query('SELECT * FROM public.revenue');
         res.json(result.rows);
     } catch (err) {
@@ -29,17 +38,17 @@ app.get('/api/revenue', async (req, res) => {
     }
 });
 
-// Serve static files (like Logo.ico or other assets)
+// Serve static files
 app.use(express.static(__dirname));
 
-// SPA Routing: For any other request (like /auth/callback), serve index.html
+// SPA Routing
 app.use((req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Start the server on port 8000
-const PORT = 8000;
+// Start the server
+const PORT = process.env.PORT || 8000;
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Grew Analytics consolidated app running at http://127.0.0.1:${PORT}`);
-    console.log(`Auth Callback Path: http://127.0.0.1:${PORT}/auth/callback`);
+    console.log(`Grew Analytics app running at http://localhost:${PORT}`);
+    console.log(`Auth Callback: http://127.0.0.1:${PORT}/auth/callback`);
 });
