@@ -1290,13 +1290,7 @@ export const App: React.FC = () => {
                                             </div>
 
                                             <div className="flex-1 w-full relative bg-transparent overflow-hidden flex flex-col min-h-[300px]">
-                                                <div className="flex-1 transition-opacity duration-300 flex flex-col" style={{ zIndex: cardViews.master === 'tabular' ? 20 : 10, opacity: cardViews.master === 'tabular' ? 1 : 0, pointerEvents: cardViews.master === 'tabular' ? 'auto' : 'none' }}>
-                                                    <RevenueMatrix />
-                                                </div>
-                                                <div className="absolute inset-0 bg-[#0b101e] transition-opacity duration-300 flex flex-col pt-4 pb-6 px-2 overflow-y-auto overflow-x-hidden" style={{ zIndex: cardViews.master === 'visual' ? 20 : 10, opacity: cardViews.master === 'visual' ? 1 : 0, pointerEvents: cardViews.master === 'visual' ? 'auto' : 'none', top: '36px' }}>
-                                                    <div className="chart-noise-layer" />
-                                                    <VelocityChart />
-                                                </div>
+                                                <RevenueMatrix />
                                             </div>
                                         </div>
 
