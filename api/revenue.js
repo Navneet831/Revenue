@@ -29,7 +29,7 @@ module.exports = async (req, res) => {
     }
 
     try {
-        Logger.info('database_query_initiated', { 
+        Logger.info('database_query_initiated', {
             endpoint: '/api/revenue',
             method: req.method,
             ip: req.headers['x-forwarded-for'] || req.socket.remoteAddress

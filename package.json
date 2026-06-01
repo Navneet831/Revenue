@@ -1,35 +1,72 @@
 {
-  "name": "migration",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "build": "tsc data-logic.ts --target ES2015 --lib es2017,dom --module commonjs --ignoreConfig",
-    "test": "jest"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "dependencies": {
-    "cors": "^2.8.6",
-    "dotenv": "^17.4.2",
-    "express": "^5.2.1",
-    "express-rate-limit": "^8.5.2",
-    "helmet": "^8.2.0",
-    "pg": "^8.21.0",
-    "prom-client": "^15.1.3"
-  },
-  "devDependencies": {
-    "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.6",
-    "@types/jest": "^30.0.0",
-    "@types/node": "^25.9.1",
-    "@types/pg": "^8.20.0",
-    "@types/supertest": "^7.2.0",
-    "jest": "^30.4.2",
-    "supertest": "^7.2.2",
-    "ts-jest": "^29.4.11",
-    "typescript": "^6.0.3"
-  }
+    "name": "migration",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "start": "node server.js",
+        "dev": "vite",
+        "build": "tsc data-logic.ts --target ES2015 --lib es2017,dom --module commonjs --ignoreConfig",
+        "build-fe": "vite build",
+        "test": "jest",
+        "lint": "eslint . --ext .js,.ts --ignore-pattern node_modules/ --ignore-pattern drizzle/",
+        "format": "prettier --write \"**/*.{js,ts,html,css,json}\" --ignore-path .gitignore"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "type": "commonjs",
+    "dependencies": {
+        "@supabase/supabase-js": "^2.106.2",
+        "chart.js": "^4.5.1",
+        "chartjs-plugin-zoom": "^2.2.0",
+        "cors": "^2.8.6",
+        "dotenv": "^17.4.2",
+        "drizzle-orm": "^0.45.2",
+        "express": "^5.2.1",
+        "express-rate-limit": "^8.5.2",
+        "flatpickr": "^4.6.13",
+        "hammerjs": "^2.0.8",
+        "helmet": "^8.2.0",
+        "lucide-react": "^0.468.0",
+        "pg": "^8.21.0",
+        "prom-client": "^15.1.3",
+        "react": "^18.3.1",
+        "react-chartjs-2": "^5.3.1",
+        "react-dom": "^18.3.1",
+        "react-flatpickr": "^3.10.13",
+        "redis": "^6.0.0",
+        "zustand": "^5.0.3"
+    },
+    "devDependencies": {
+        "@eslint/js": "^10.0.1",
+        "@playwright/test": "^1.60.0",
+        "@types/cors": "^2.8.19",
+        "@types/express": "^5.0.6",
+        "@types/jest": "^30.0.0",
+        "@types/node": "^25.9.1",
+        "@types/pg": "^8.20.0",
+        "@types/react": "^18.3.12",
+        "@types/react-dom": "^18.3.1",
+        "@types/supertest": "^7.2.0",
+        "@vitejs/plugin-react": "^4.3.4",
+        "autoprefixer": "^10.5.0",
+        "drizzle-kit": "^0.31.10",
+        "eslint": "^10.4.1",
+        "eslint-config-prettier": "^10.1.8",
+        "jest": "^30.4.2",
+        "postcss": "^8.5.15",
+        "prettier": "^3.8.3",
+        "supertest": "^7.2.2",
+        "tailwindcss": "^3.4.19",
+        "ts-jest": "^29.4.11",
+        "typescript": "^6.0.3",
+        "vite": "^5.4.11"
+    },
+    "jest": {
+        "testPathIgnorePatterns": [
+            "/node_modules/",
+            "tests/e2e.spec.js"
+        ]
+    }
 }

@@ -1,0 +1,218 @@
+{
+    "id": "991bb049-8a7c-435e-80e4-79667f9933de",
+    "prevId": "00000000-0000-0000-0000-000000000000",
+    "version": "7",
+    "dialect": "postgresql",
+    "tables": {
+        "public.revenue": {
+            "name": "revenue",
+            "schema": "",
+            "columns": {
+                "Invoice date": {
+                    "name": "Invoice date",
+                    "type": "date",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "Invoice Type": {
+                    "name": "Invoice Type",
+                    "type": "varchar(255)",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "Invoice No": {
+                    "name": "Invoice No",
+                    "type": "varchar(255)",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "Cust_code": {
+                    "name": "Cust_code",
+                    "type": "varchar(255)",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "Cust_name": {
+                    "name": "Cust_name",
+                    "type": "varchar(255)",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "WP": {
+                    "name": "WP",
+                    "type": "varchar(255)",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "Brand Code": {
+                    "name": "Brand Code",
+                    "type": "varchar(255)",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "Mat Desc": {
+                    "name": "Mat Desc",
+                    "type": "varchar(255)",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "SalesQty": {
+                    "name": "SalesQty",
+                    "type": "bigint",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "UnitPrice ₹": {
+                    "name": "UnitPrice ₹",
+                    "type": "bigint",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "Value": {
+                    "name": "Value",
+                    "type": "bigint",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "Invoice value": {
+                    "name": "Invoice value",
+                    "type": "bigint",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "UOM": {
+                    "name": "UOM",
+                    "type": "varchar(255)",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "Plant": {
+                    "name": "Plant",
+                    "type": "varchar(255)",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "Storage Location": {
+                    "name": "Storage Location",
+                    "type": "varchar(255)",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "Vehicle No.": {
+                    "name": "Vehicle No.",
+                    "type": "varchar(255)",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "S.O.Number": {
+                    "name": "S.O.Number",
+                    "type": "varchar(255)",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "Incoterms": {
+                    "name": "Incoterms",
+                    "type": "varchar(255)",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "Invoice Status": {
+                    "name": "Invoice Status",
+                    "type": "varchar(255)",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "Segment": {
+                    "name": "Segment",
+                    "type": "varchar(255)",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "MW": {
+                    "name": "MW",
+                    "type": "varchar(255)",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "Month": {
+                    "name": "Month",
+                    "type": "varchar(255)",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "Year": {
+                    "name": "Year",
+                    "type": "varchar(255)",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "Week": {
+                    "name": "Week",
+                    "type": "varchar(255)",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "Time Index": {
+                    "name": "Time Index",
+                    "type": "varchar(255)",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "Month2": {
+                    "name": "Month2",
+                    "type": "varchar(255)",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "tag": {
+                    "name": "tag",
+                    "type": "varchar(255)",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "Revenue": {
+                    "name": "Revenue",
+                    "type": "varchar(255)",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "Sales Head": {
+                    "name": "Sales Head",
+                    "type": "varchar(255)",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "EWAY BILL DATE.": {
+                    "name": "EWAY BILL DATE.",
+                    "type": "varchar(255)",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "EWAY Expiry": {
+                    "name": "EWAY Expiry",
+                    "type": "varchar(255)",
+                    "primaryKey": false,
+                    "notNull": false
+                }
+            },
+            "indexes": {},
+            "foreignKeys": {},
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {},
+            "policies": {},
+            "checkConstraints": {},
+            "isRLSEnabled": false
+        }
+    },
+    "enums": {},
+    "schemas": {},
+    "sequences": {},
+    "roles": {},
+    "policies": {},
+    "views": {},
+    "_meta": {
+        "columns": {},
+        "schemas": {},
+        "tables": {}
+    }
+}

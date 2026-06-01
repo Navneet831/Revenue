@@ -1,6 +1,7 @@
 const { Pool } = require('pg');
 const Logger = require('../logger');
 const Metrics = require('../metrics');
+const Cache = require('../cache');
 
 const pool = new Pool({
     host: process.env.PG_HOST,
@@ -29,18 +30,59 @@ module.exports = async (req, res) => {
     }
 
     try {
-        Logger.info('database_aggregation_initiated', { 
-            endpoint: '/api/revenue/summary',
-            query: req.query
-        });
-
         // 1. Extract and sanitize filters
         const startDate = req.query.startDate || '2024-04-01';
         const endDate = req.query.endDate || '2025-03-31';
-        
-        let segments = req.query.segment ? (Array.isArray(req.query.segment) ? req.query.segment : [req.query.segment]) : [];
-        let salesHeads = req.query.salesHead ? (Array.isArray(req.query.salesHead) ? req.query.salesHead : [req.query.salesHead]) : [];
-        let customers = req.query.customer ? (Array.isArray(req.query.customer) ? req.query.customer : [req.query.customer]) : [];
+
+        let segments = req.query.segment
+            ? Array.isArray(req.query.segment)
+                ? req.query.segment
+                : [req.query.segment]
+            : [];
+        let salesHeads = req.query.salesHead
+            ? Array.isArray(req.query.salesHead)
+                ? req.query.salesHead
+                : [req.query.salesHead]
+            : [];
+        let customers = req.query.customer
+            ? Array.isArray(req.query.customer)
+                ? req.query.customer
+                : [req.query.customer]
+            : [];
+
+        // 2. Generate a highly specific Cache Key representing these exact filters
+        const cacheKey =
+            `grew_rev_summary_${startDate}_${endDate}_` +
+            `seg_${segments.sort().join('-') || 'all'}_` +
+            `sh_${salesHeads.sort().join('-') || 'all'}_` +
+            `cust_${customers.sort().join('-') || 'all'}`;
+
+        // 3. Attempt Cache Check
+        const cachedPayload = await Cache.get(cacheKey);
+        if (cachedPayload) {
+            const hitLatency = Date.now() - startTime;
+
+            Metrics.httpRequestDuration.observe(
+                { method: req.method, route: '/api/revenue/summary', status: 200 },
+                hitLatency / 1000
+            );
+            Metrics.httpRequestsTotal.inc({ method: req.method, route: '/api/revenue/summary', status: 200 });
+
+            Logger.info('database_aggregation_cache_hit', {
+                endpoint: '/api/revenue/summary',
+                cache_key: cacheKey,
+                latency_ms: hitLatency
+            });
+
+            res.status(200).json(cachedPayload);
+            return;
+        }
+
+        // Cache Miss: Perform Database Aggregations
+        Logger.info('database_aggregation_cache_miss', {
+            endpoint: '/api/revenue/summary',
+            cache_key: cacheKey
+        });
 
         // Build dynamic SQL where conditions to protect against injection
         let queryParams = [startDate, endDate];
@@ -55,7 +97,6 @@ module.exports = async (req, res) => {
 
         if (salesHeads.length > 0) {
             const placeholders = salesHeads.map(() => `$${paramIndex++}`).join(', ');
-            // Handle different naming formats for Sales Head in DB
             whereClauses.push(`(saleshead IN (${placeholders}) OR saleshead IS NULL)`);
             queryParams.push(...salesHeads);
         }
@@ -68,12 +109,13 @@ module.exports = async (req, res) => {
 
         const whereSql = whereClauses.join(' AND ');
 
-        // 2. Run Parallel Aggregation SQL Queries
+        // Run Parallel Aggregation SQL Queries
         const dbStart = Date.now();
 
         const [kpiResult, segmentResult, salesHeadResult, customerResult, wpResult, monthlyResult] = await Promise.all([
             // Query 1: Total KPIs
-            pool.query(`
+            pool.query(
+                `
                 SELECT 
                     COALESCE(SUM(values), 0) as total_val,
                     COALESCE(SUM(mw), 0) as total_mw,
@@ -81,10 +123,13 @@ module.exports = async (req, res) => {
                     COALESCE(SUM(CASE WHEN LOWER(revenue) LIKE '%pending%' THEN values ELSE 0 END), 0) as pending_val
                 FROM public.revenue 
                 WHERE ${whereSql}
-            `, queryParams),
+            `,
+                queryParams
+            ),
 
             // Query 2: Segment Breakdown
-            pool.query(`
+            pool.query(
+                `
                 SELECT 
                     segment as name,
                     COALESCE(SUM(values), 0) as val,
@@ -94,10 +139,13 @@ module.exports = async (req, res) => {
                 WHERE ${whereSql}
                 GROUP BY segment
                 ORDER BY val DESC
-            `, queryParams),
+            `,
+                queryParams
+            ),
 
             // Query 3: Sales Head Breakdown
-            pool.query(`
+            pool.query(
+                `
                 SELECT 
                     COALESCE(saleshead, 'Direct/Unmapped') as name,
                     COALESCE(SUM(values), 0) as val,
@@ -107,10 +155,13 @@ module.exports = async (req, res) => {
                 WHERE ${whereSql}
                 GROUP BY saleshead
                 ORDER BY val DESC
-            `, queryParams),
+            `,
+                queryParams
+            ),
 
             // Query 4: Top Customers (Concentration analysis)
-            pool.query(`
+            pool.query(
+                `
                 SELECT 
                     COALESCE(custname, 'Unidentified') as name,
                     COALESCE(SUM(values), 0) as val,
@@ -121,10 +172,13 @@ module.exports = async (req, res) => {
                 GROUP BY custname
                 ORDER BY val DESC
                 LIMIT 20
-            `, queryParams),
+            `,
+                queryParams
+            ),
 
             // Query 5: Product SKU (WP) Breakdown
-            pool.query(`
+            pool.query(
+                `
                 SELECT 
                     COALESCE(wp, 'Generic') as name,
                     COALESCE(SUM(values), 0) as val,
@@ -134,10 +188,13 @@ module.exports = async (req, res) => {
                 WHERE ${whereSql}
                 GROUP BY wp
                 ORDER BY val DESC
-            `, queryParams),
+            `,
+                queryParams
+            ),
 
             // Query 6: Monthly Slices for Matrix/Timeline Charting
-            pool.query(`
+            pool.query(
+                `
                 SELECT 
                     TO_CHAR(invoicedate, 'Mon') as month_name,
                     EXTRACT(MONTH FROM invoicedate) as month_idx,
@@ -148,13 +205,15 @@ module.exports = async (req, res) => {
                 WHERE ${whereSql} AND LOWER(revenue) NOT LIKE '%pending%'
                 GROUP BY month_name, month_idx
                 ORDER BY month_idx
-            `, queryParams)
+            `,
+                queryParams
+            )
         ]);
 
         const dbLatency = Date.now() - dbStart;
-        Metrics.dbQueryDuration.observe({ operation: 'revenue_aggregation' }, dbLatency / 1000);
+        Metrics.dbQueryDuration.observe({ operation: 'revenue_summary_query' }, dbLatency / 1000);
 
-        // 3. Structured aggregated payload mapping
+        // Structured aggregated payload mapping
         const totals = kpiResult.rows[0];
         const payload = {
             totals: {
@@ -164,12 +223,32 @@ module.exports = async (req, res) => {
                 pendingValue: parseFloat(totals.pending_val)
             },
             breakdowns: {
-                segment: segmentResult.rows.map(r => ({ name: r.name, val: parseFloat(r.val), mw: parseFloat(r.mw), qty: parseFloat(r.qty) })),
-                salesHead: salesHeadResult.rows.map(r => ({ name: r.name, val: parseFloat(r.val), mw: parseFloat(r.mw), qty: parseFloat(r.qty) })),
-                customer: customerResult.rows.map(r => ({ name: r.name, val: parseFloat(r.val), mw: parseFloat(r.mw), qty: parseFloat(r.qty) })),
-                wp: wpResult.rows.map(r => ({ name: r.name, val: parseFloat(r.val), mw: parseFloat(r.mw), qty: parseFloat(r.qty) }))
+                segment: segmentResult.rows.map((r) => ({
+                    name: r.name,
+                    val: parseFloat(r.val),
+                    mw: parseFloat(r.mw),
+                    qty: parseFloat(r.qty)
+                })),
+                salesHead: salesHeadResult.rows.map((r) => ({
+                    name: r.name,
+                    val: parseFloat(r.val),
+                    mw: parseFloat(r.mw),
+                    qty: parseFloat(r.qty)
+                })),
+                customer: customerResult.rows.map((r) => ({
+                    name: r.name,
+                    val: parseFloat(r.val),
+                    mw: parseFloat(r.mw),
+                    qty: parseFloat(r.qty)
+                })),
+                wp: wpResult.rows.map((r) => ({
+                    name: r.name,
+                    val: parseFloat(r.val),
+                    mw: parseFloat(r.mw),
+                    qty: parseFloat(r.qty)
+                }))
             },
-            monthlyTrend: monthlyResult.rows.map(r => ({
+            monthlyTrend: monthlyResult.rows.map((r) => ({
                 month: r.month_name,
                 monthIdx: parseInt(r.month_idx),
                 val: parseFloat(r.val),
@@ -178,8 +257,14 @@ module.exports = async (req, res) => {
             }))
         };
 
+        // Cache the newly aggregated payload for 5 minutes (300 seconds)
+        await Cache.set(cacheKey, payload, 300);
+
         const totalLatency = Date.now() - startTime;
-        Metrics.httpRequestDuration.observe({ method: req.method, route: '/api/revenue/summary', status: 200 }, totalLatency / 1000);
+        Metrics.httpRequestDuration.observe(
+            { method: req.method, route: '/api/revenue/summary', status: 200 },
+            totalLatency / 1000
+        );
         Metrics.httpRequestsTotal.inc({ method: req.method, route: '/api/revenue/summary', status: 200 });
 
         Logger.info('database_aggregation_completed', {
@@ -191,7 +276,10 @@ module.exports = async (req, res) => {
         res.status(200).json(payload);
     } catch (err) {
         const errorLatency = Date.now() - startTime;
-        Metrics.httpRequestDuration.observe({ method: req.method, route: '/api/revenue/summary', status: 500 }, errorLatency / 1000);
+        Metrics.httpRequestDuration.observe(
+            { method: req.method, route: '/api/revenue/summary', status: 500 },
+            errorLatency / 1000
+        );
         Metrics.httpRequestsTotal.inc({ method: req.method, route: '/api/revenue/summary', status: 500 });
 
         Logger.error('database_aggregation_failed', err, {
