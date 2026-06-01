@@ -177,6 +177,22 @@ export const VelocityChart: React.FC = () => {
             };
         });
 
+    // ─── Calculate Max Stacked Value for dynamic scaling ─────────────────
+    let maxStackedVal = 0;
+    const activeDatasets = datasets.filter(ds => !ds.hidden);
+    if (activeDatasets.length > 0) {
+        const numPoints = labels.length;
+        for (let i = 0; i < numPoints; i++) {
+            let sum = 0;
+            activeDatasets.forEach(ds => {
+                sum += (ds.data[i] || 0);
+            });
+            if (sum > maxStackedVal) maxStackedVal = sum;
+        }
+    }
+    // Set a small negative min to "lift" the 0-baseline
+    const yMin = maxStackedVal > 0 ? -(maxStackedVal * 0.12) : -1;
+
     const handleChartClick = (event: any, elements: any[]) => {
         if (elements.length > 0) {
             const idx = elements[0].index;
@@ -199,7 +215,7 @@ export const VelocityChart: React.FC = () => {
                     });
                 }
             } else if (mode === 'Weekly') {
-                const wIdx = idx + 1;
+                const wIdx = parseInt(clickedLabel.replace('W', ''));
                 updateFilters({
                     selectedWeek: filters.selectedWeek === wIdx ? null : wIdx,
                     selectedDay: null
@@ -365,17 +381,16 @@ export const VelocityChart: React.FC = () => {
             if (!scales.y || !chartArea) return;
 
             const y0 = scales.y.getPixelForValue(0);
-            // If y0 is at the bottom boundary, adjust slightly to ensure visibility
-            const lineY = y0 >= chartArea.bottom ? chartArea.bottom - 1 : y0;
             
-            if (lineY < chartArea.top || lineY > chartArea.bottom) return;
+            // Don't draw if outside area
+            if (y0 < chartArea.top || y0 > chartArea.bottom + 5) return;
 
             ctx.save();
             ctx.beginPath();
-            ctx.moveTo(chartArea.left, lineY);
-            ctx.lineTo(chartArea.right, lineY);
-            ctx.lineWidth = 3;
-            ctx.strokeStyle = '#ffffff'; // Match original HTML white baseline
+            ctx.moveTo(chartArea.left, y0);
+            ctx.lineTo(chartArea.right, y0);
+            ctx.lineWidth = 2.5;
+            ctx.strokeStyle = '#ffffff'; // Hero white baseline
             ctx.stroke();
             ctx.restore();
         }
@@ -385,7 +400,7 @@ export const VelocityChart: React.FC = () => {
         responsive: true,
         maintainAspectRatio: false,
         onClick: handleChartClick,
-        layout: { padding: { top: 20, right: 0, left: 0, bottom: 15 } },
+        layout: { padding: { top: 20, right: 0, left: 0, bottom: 20 } },
         interaction: { mode: 'index', intersect: false },
         animation: {
             duration: 400,
@@ -439,52 +454,37 @@ export const VelocityChart: React.FC = () => {
         scales: {
             x: {
                 stacked: mode !== 'Daily',
-                // ─── Visible 0-axis baseline on x ─────────────────────
                 border: {
-                    display: true,
-                    color: '#ffffff',
-                    width: 2.5
+                    display: false // We use the baseline plugin and y-min offset instead
                 },
                 grid: {
-                    color: (ctx: any) => {
-                        if (mode === 'Monthly') {
-                            // Quarter dividers only
-                            return ctx.index === 2 || ctx.index === 5 || ctx.index === 8 || ctx.index === 11
-                                ? '#334155'
-                                : 'transparent';
-                        }
-                        return mode === 'Daily' ? '#1e2638' : 'transparent';
-                    },
-                    tickColor: '#94a3b8'
+                    display: false,
+                    drawOnChartArea: false
                 },
                 ticks: {
                     display: true,
-                    color: '#ffffff',
+                    color: '#94a3b8',
                     font: { size: 10, weight: 'bold' as const },
                     maxRotation: 0,
                     autoSkip: true,
                     maxTicksLimit: 12,
-                    padding: 6
+                    padding: 12 // Space between baseline and labels
                 }
             },
             y: {
                 type: 'linear',
                 stacked: mode !== 'Daily',
-                // ─── Visible 0-axis baseline on y ─────────────────────
                 border: {
-                    display: true,
-                    color: '#ffffff',
-                    width: 2.5
+                    display: false
                 },
                 grid: {
                     color: (ctx: any) => {
-                        // Highlight the zero line more visibly
-                        return ctx.tick?.value === 0 ? '#94a3b8' : '#1e2638';
+                        return ctx.tick?.value === 0 ? 'transparent' : '#1e2638';
                     },
-                    tickColor: '#94a3b8'
+                    tickColor: 'transparent'
                 },
-                beginAtZero: true,
-                min: 0,
+                beginAtZero: false,
+                min: yMin,
                 afterFit: (axis: any) => { axis.width = 80; },
                 ticks: {
                     color: '#94a3b8',
@@ -492,6 +492,7 @@ export const VelocityChart: React.FC = () => {
                     padding: 8,
                     callback: function (v: number) {
                         if (privacyMode) return '••••••';
+                        if (v < 0) return ''; // Hide negative padding ticks
                         if (v === 0) return '0';
                         return Math.round(v).toLocaleString('en-IN');
                     }
