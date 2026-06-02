@@ -62,7 +62,7 @@ export const ExecutiveStories: React.FC<{ isOpen: boolean; onClose: () => void }
     const currentInsight = stories[currentIndex];
 
     return (
-        <div className="fixed inset-0 z-[1000] bg-[#05070A]/95 backdrop-blur-xl flex items-center justify-center animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-[1000000] bg-[#05070A]/95 backdrop-blur-xl flex items-center justify-center animate-in fade-in duration-300">
             <div className="relative w-full max-w-lg aspect-[9/16] bg-[#0B101E] rounded-[40px] shadow-2xl overflow-hidden border border-slate-800 flex flex-col">
                 
                 {/* Top Bars (Progress) */}
@@ -105,7 +105,7 @@ export const ExecutiveStories: React.FC<{ isOpen: boolean; onClose: () => void }
                             <span className="text-[9px] font-black uppercase tracking-widest text-slate-300">{currentInsight.l}</span>
                         </div>
 
-                        <h2 className="text-3xl font-black text-white leading-tight tracking-tighter mb-6">
+                        <h2 className="text-3xl font-black text-white leading-tight mb-6">
                             {currentInsight.txt}
                         </h2>
 
@@ -114,9 +114,9 @@ export const ExecutiveStories: React.FC<{ isOpen: boolean; onClose: () => void }
                             <div className="chart-noise-layer opacity-10" />
                             <div className="flex items-end gap-1.5 h-24 mb-4">
                                 {[40, 70, 45, 90, 65, 80, 55].map((h, i) => (
-                                    <div key={i} className="flex-1 bg-emerald-500/20 rounded-t-sm relative group-hover:bg-emerald-500/40 transition-colors">
+                                    <div key={i} className="flex-1 bg-emerald-500/20 rounded-t-full relative group-hover:bg-emerald-500/40 transition-colors">
                                         <div 
-                                            className="absolute bottom-0 left-0 right-0 bg-emerald-500 rounded-t-sm transition-all duration-1000 delay-[i*100ms]"
+                                            className="absolute bottom-0 left-0 right-0 bg-emerald-500 rounded-t-full transition-all duration-1000 delay-[i*100ms]"
                                             style={{ height: `${h}%` }}
                                         />
                                     </div>

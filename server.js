@@ -153,18 +153,17 @@ app.get(['/api/revenue', '/api/v1/revenue'], async (req, res) => {
         Metrics.httpRequestsTotal.inc({ method: req.method, route: req.path, status: 200 });
     } catch (err) {
         const errorLatency = Date.now() - startTime;
-        Metrics.httpRequestDuration.observe({ method: req.method, route: req.path, status: 200 }, errorLatency / 1000);
-        Metrics.httpRequestsTotal.inc({ method: req.method, route: req.path, status: 200 });
+        Metrics.httpRequestDuration.observe({ method: req.method, route: req.path, status: 500 }, errorLatency / 1000);
+        Metrics.httpRequestsTotal.inc({ method: req.method, route: req.path, status: 500 });
 
-        Logger.warn('database_query_failed_using_mock_fallback', {
+        Logger.error('database_query_failed', {
             error: err.message,
             endpoint: req.path,
             latency_ms: errorLatency
         });
 
-        // Offline failover fallback: return highly realistic mock records
-        const mockRows = generateMockRevenue(1200);
-        res.json(mockRows);
+        // Do not failover to mock data. Fail securely.
+        res.status(500).json({ error: 'System failure: Unable to compute live revenue metrics.' });
     }
 });
 

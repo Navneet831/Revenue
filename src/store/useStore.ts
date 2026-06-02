@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { RevenueRow, FilterConfig, AnalyticalOutput, KeyMap, CONFIG } from '../../data-logic.ts';
+import { RevenueRow, FilterConfig, AnalyticalOutput, KeyMap, CONFIG } from '../../data-logic';
 
 export interface AppState {
     data: RevenueRow[];
@@ -61,6 +61,7 @@ const initialFilters = (minDate: string = '', maxDate: string = ''): FilterConfi
     segment: [],
     metric: 'Amount',
     velocityMode: 'Weekly',
+    velocityDimension: 'Segment',
     salesHead: [],
     customer: [],
     pendingOnly: false,
@@ -91,7 +92,7 @@ export const useStore = create<AppState>((set) => ({
     allSKUs: [],
     allCustomers: [],
     keyMap: null,
-    ui: { segDropOpen: false, velDropOpen: false, insightsOpen: false },
+    ui: { segDropOpen: false, velDropOpen: false, insightsOpen: false, storiesOpen: false },
     hiddenKPIs: [],
     filters: initialFilters(),
     cardViews: { master: 'tabular', cust: 'tabular', sku: 'tabular', saleshead: 'tabular' },
