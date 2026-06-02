@@ -1,13 +1,20 @@
 import React, { useEffect } from 'react';
-import { AlertTriangle, Briefcase, ShieldCheck, X, Sparkles } from 'lucide-react';
+import { AlertTriangle, Briefcase, ShieldCheck, X, Sparkles, PlayCircle } from 'lucide-react';
 import { useStore } from '../store/useStore';
 
 export const InsightsPanel: React.FC = () => {
-    const { stats, ui, updateUIState } = useStore();
+    const { stats, ui, updateUIState, insightsSeen, setInsightsSeen } = useStore();
 
     const handleClose = () => {
         updateUIState({ insightsOpen: false });
     };
+
+    // Mark insights as seen when opened
+    useEffect(() => {
+        if (ui.insightsOpen && !insightsSeen) {
+            setInsightsSeen(true);
+        }
+    }, [ui.insightsOpen, insightsSeen, setInsightsSeen]);
 
     // Keyboard shortcut for closing or opening
     useEffect(() => {
@@ -50,13 +57,26 @@ export const InsightsPanel: React.FC = () => {
                             Intelligence Board
                         </span>
                     </div>
-                    <button
-                        onClick={handleClose}
-                        className="p-1.5 hover:bg-slate-700 text-white rounded-md transition-colors btn-3d bg-[#151921] border border-slate-600 cursor-pointer"
-                        data-tooltip="Close Board (Esc)"
-                    >
-                        <X className="w-3.5 h-3.5" />
-                    </button>
+                    
+                    <div className="flex items-center gap-2">
+                        {/* Executive Story Trigger inside Panel */}
+                        <button 
+                            onClick={() => updateUIState({ storiesOpen: true })}
+                            className="p-1.5 px-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-emerald-400 hover:bg-emerald-500/20 transition-all flex items-center gap-2 cursor-pointer group"
+                            title="Play Data Story"
+                        >
+                            <PlayCircle className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                            <span className="text-[9px] font-black uppercase tracking-widest">Story</span>
+                        </button>
+
+                        <button
+                            onClick={handleClose}
+                            className="p-1.5 hover:bg-slate-700 text-white rounded-md transition-colors btn-3d bg-[#151921] border border-slate-600 cursor-pointer"
+                            data-tooltip="Close Board (Esc)"
+                        >
+                            <X className="w-3.5 h-3.5" />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Insights Scrollable content */}

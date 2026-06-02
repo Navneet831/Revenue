@@ -1,13 +1,14 @@
 import React from 'react';
-import { Activity, Shield, ShieldAlert, LogOut, Calendar, Layers, Terminal, Sliders, Layout, Box } from 'lucide-react';
+import { Activity, Shield, ShieldAlert, LogOut, Calendar, Layers, Terminal, Sliders, Layout, Box, ChevronRight } from 'lucide-react';
 import { useStore } from '../store/useStore';
 
 interface GlobalSidebarProps {
     onLogout: () => void;
     onOpenHelp: () => void;
+    onOpenStories?: () => void;
 }
 
-export const GlobalSidebar: React.FC<GlobalSidebarProps> = ({ onLogout, onOpenHelp }) => {
+export const GlobalSidebar: React.FC<GlobalSidebarProps> = ({ onLogout, onOpenHelp, onOpenStories }) => {
     const {
         sidebarOpen,
         toggleSidebar,
@@ -73,13 +74,16 @@ export const GlobalSidebar: React.FC<GlobalSidebarProps> = ({ onLogout, onOpenHe
                 sidebarOpen ? 'w-64 translate-x-0' : '-translate-x-full lg:translate-x-0 w-64 lg:w-14'
             } border-r border-slate-800 bg-[#141b2d] transition-all duration-300 flex flex-col z-[99999] lg:z-50 shrink-0 shadow-2xl`}
         >
-            {/* Sidebar Brand Header */}
+            {/* Sidebar Brand Header - Executive Story Trigger */}
             <div
-                onClick={toggleSidebar}
+                onClick={() => onOpenStories?.()}
                 className="w-full flex items-center shrink-0 border-b border-slate-800 bg-[#0b101e] py-4 px-[13px] relative overflow-hidden group cursor-pointer"
-                data-tooltip="Toggle Sidebar (Ctrl+B)"
+                data-tooltip="View Executive Stories"
             >
-                <div className="w-7 h-7 shrink-0 flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_12px_rgba(16,185,129,0.6)]">
+                {/* Emerald Pulse Aura */}
+                <div className="absolute inset-0 bg-emerald-500/0 group-hover:bg-emerald-500/5 transition-colors duration-500" />
+                
+                <div className="w-7 h-7 shrink-0 flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_12px_rgba(16,185,129,0.6)] relative">
                     <svg
                         viewBox="0 0 100 100"
                         xmlns="http://www.w3.org/2000/svg"
@@ -89,6 +93,8 @@ export const GlobalSidebar: React.FC<GlobalSidebarProps> = ({ onLogout, onOpenHe
                         <polygon points="4,17.5 88.5,17.5 47.5,95.5 42.5,47.5" fill="#17A38A" />
                         <polygon points="0,85.5 8,100 0,100" fill="#17A38A" />
                     </svg>
+                    {/* The Pulse Dot */}
+                    <div className="absolute -top-1 -right-1 w-2 h-2 bg-emerald-500 rounded-full border border-[#0b101e] animate-ping" />
                 </div>
                 <div
                     className={`font-sans font-black text-white text-[11px] tracking-[0.25em] uppercase whitespace-nowrap transition-all duration-300 ml-3 ${
@@ -98,6 +104,15 @@ export const GlobalSidebar: React.FC<GlobalSidebarProps> = ({ onLogout, onOpenHe
                     Grew<span className="text-emerald-400">.</span>
                 </div>
             </div>
+
+            {/* Sidebar Toggle for Mobile/Desktop */}
+            <button 
+                onClick={toggleSidebar}
+                className={`absolute -right-3 top-20 bg-[#141b2d] border border-slate-800 p-1 rounded-full text-slate-400 hover:text-white z-50 transition-all ${sidebarOpen ? 'rotate-180' : 'rotate-0'}`}
+                title="Toggle Navigation"
+            >
+                <ChevronRight className="w-3.5 h-3.5" />
+            </button>
 
             {/* Sidebar Scrollable Body */}
             <div className="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar bg-transparent flex flex-col py-6 w-full h-full">

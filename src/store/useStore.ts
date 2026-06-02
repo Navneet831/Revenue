@@ -17,7 +17,7 @@ export interface AppState {
     allSKUs: string[];
     allCustomers: string[];
     keyMap: KeyMap | null;
-    ui: { segDropOpen: boolean; velDropOpen: boolean; insightsOpen: boolean };
+    ui: { segDropOpen: boolean; velDropOpen: boolean; insightsOpen: boolean; storiesOpen: boolean };
     hiddenKPIs: string[];
     filters: FilterConfig;
     cardViews: { master: string; cust: string; sku: string; saleshead: string };
@@ -29,6 +29,7 @@ export interface AppState {
     };
     stats: AnalyticalOutput | null;
     userEmail: string | null;
+    insightsSeen: boolean;
 
     // Actions
     setData: (data: RevenueRow[]) => void;
@@ -53,6 +54,7 @@ export interface AppState {
     setColorRegistry: (registry: AppState['COLOR_REGISTRY']) => void;
     setStats: (stats: AnalyticalOutput | null) => void;
     setUserEmail: (email: string | null) => void;
+    setInsightsSeen: (seen: boolean) => void;
 }
 
 const initialFilters = (minDate: string = '', maxDate: string = ''): FilterConfig => ({
@@ -96,6 +98,7 @@ export const useStore = create<AppState>((set) => ({
     COLOR_REGISTRY: { sku: {}, customer: {}, segment: {}, saleshead: {} },
     stats: null,
     userEmail: null,
+    insightsSeen: true,
 
     // Actions
     setData: (data) => set({ data }),
@@ -155,5 +158,6 @@ export const useStore = create<AppState>((set) => ({
         })),
     setColorRegistry: (COLOR_REGISTRY) => set({ COLOR_REGISTRY }),
     setStats: (stats) => set({ stats }),
-    setUserEmail: (userEmail) => set({ userEmail })
+    setUserEmail: (userEmail) => set({ userEmail }),
+    setInsightsSeen: (insightsSeen) => set({ insightsSeen })
 }));
