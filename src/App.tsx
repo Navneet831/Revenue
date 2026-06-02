@@ -10,7 +10,7 @@ import { InsightsPanel } from './components/InsightsPanel';
 import { HelpModal } from './components/HelpModal';
 import { GlobalTooltip } from './components/GlobalTooltip';
 import { ExecutiveStories } from './components/ExecutiveStories';
-import { DataLogic, MetricFormatter, CONFIG, DataSanitizer } from '../data-logic';
+import { DataLogic, MetricFormatter, CONFIG, DataSanitizer } from '../data-logic.ts';
 import { RevenueService } from './services/revenueService';
 
 export const App: React.FC = () => {
@@ -154,14 +154,6 @@ export const App: React.FC = () => {
             }
             workerRef.current.postMessage({ type: 'COMPUTE', data, filters: { ...filters, excludedSeries: Array.from(filters.excludedSeries) }, latestDate: latestDate?.toISOString() });
         }
-
-        // Memory cleanup
-        return () => {
-            if (workerRef.current) {
-                workerRef.current.terminate();
-                workerRef.current = null;
-            }
-        };
     }, [filters, data]);
 
     const handleMetricChange = (metric: 'Amount' | 'MW' | 'Qty') => updateFilters({ metric });

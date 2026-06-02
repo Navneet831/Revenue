@@ -43,7 +43,6 @@ export interface FilterConfig {
     segment: string[];
     metric: string;
     velocityMode: string;
-    velocityDimension: 'Segment' | 'SKU' | 'SalesHead' | 'Customer';
     salesHead: string[];
     customer: string[];
     pendingOnly: boolean;
@@ -97,91 +96,6 @@ export interface Insight {
     t: 'success' | 'risk' | 'strategic';
     l: string;
     txt: string;
-    score?: number;
-    metadata?: {
-        pvm?: { priceEffect: number; volEffect: number; mixEffect: number };
-        entropy?: number;
-        slope?: number;
-    };
-    cta?: { label: string; action: string };
-}
-
-/**
- * Consulting-Grade Quant Analysis Suite (McKinsey/BCG Standards)
- */
-export class AdvancedQuantEngine {
-    /**
-     * Price-Volume-Mix (PVM) Analysis
-     * Explains the delta between two periods by isolating price moves, volume changes, and portfolio mix shifts.
-     */
-    static calculatePVM(current: RevenueRow[], prior: RevenueRow[]) {
-        const sum = (arr: RevenueRow[]) => arr.reduce((a, b) => a + b.val, 0);
-        const qty = (arr: RevenueRow[]) => arr.reduce((a, b) => a + b.qty, 0);
-        
-        const curVal = sum(current);
-        const priVal = sum(prior);
-        const curQty = qty(current);
-        const priQty = qty(prior);
-        
-        if (priVal === 0 || priQty === 0) return null;
-
-        const curAvgPrice = curVal / curQty;
-        const priAvgPrice = priVal / priQty;
-
-        // Price Effect: (Cur Price - Pri Price) * Cur Quantity
-        const priceEffect = (curAvgPrice - priAvgPrice) * curQty;
-        // Volume Effect: (Cur Qty - Pri Qty) * Pri Price
-        const volEffect = (curQty - priQty) * priAvgPrice;
-        // Mix Effect: Residual delta
-        const mixEffect = (curVal - priVal) - (priceEffect + volEffect);
-
-        return { priceEffect, volEffect, mixEffect };
-    }
-
-    /**
-     * Price Entropy (Pricing Dispersion)
-     * Measures the lack of pricing discipline. High entropy = inconsistent pricing for the same SKU.
-     */
-    static calculatePriceEntropy(data: RevenueRow[]) {
-        if (data.length < 5) return 0;
-        const prices = data.map(r => r.unitPrice).filter(p => p > 0);
-        const mean = prices.reduce((a, b) => a + b, 0) / prices.length;
-        const variance = prices.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / prices.length;
-        return Math.sqrt(variance) / mean; // Coefficient of Variation as proxy for entropy
-    }
-
-    /**
-     * Demand Slope (Elasticity Indicator)
-     * Simple linear regression slope of Qty over Time.
-     */
-    static calculateDemandSlope(data: RevenueRow[]) {
-        if (data.length < 2) return 0;
-        const n = data.length;
-        let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
-        data.forEach((r, i) => {
-            sumX += i;
-            sumY += r.qty;
-            sumXY += i * r.qty;
-            sumXX += i * i;
-        });
-        return (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
-    }
-}
-
-/**
- * Insight Scoring Framework (ISF)
- * Score = Impact + Novelty + Confidence + User Relevance + Recency
- */
-export class InsightScorer {
-    static score(insight: Insight, impactMagnitude: number, recencyDays: number): number {
-        const impact = Math.min(40, (impactMagnitude / 10000000) * 5); // Max 40 pts for volume/value impact
-        const novelty = insight.t === 'strategic' ? 20 : 10; // Strategic insights are rarer
-        const confidence = 20; // High confidence for deterministic math
-        const relevance = 10; 
-        const recency = Math.max(0, 10 - recencyDays); // Max 10 pts for freshness
-
-        return impact + novelty + confidence + relevance + recency;
-    }
 }
 
 export interface AnalyticalOutput {
@@ -199,8 +113,7 @@ export interface AnalyticalOutput {
     sh: EntitySummary[];
     cust: EntitySummary[];
     wp: EntitySummary[];
-    insights: Insight[]; // Full history/Algorithm list
-    storyInsights: Insight[]; // Top 5 latest/most important
+    insights: Insight[];
     activeSegments: string[];
     activePlotKeys: string[];
     rawFiltered: RevenueRow[];
@@ -214,7 +127,6 @@ export interface AnalyticalOutput {
     kpiQty: number;
     realization: number;
     isOnlySolar: boolean;
-    velocityDimension: string;
 }
 
 export const CONFIG: ConfigType = {
@@ -248,7 +160,7 @@ export class MetricFormatter {
         let num = Number(val) || 0;
         let formatted;
         if (type === 'Qty') {
-            formatted = Math.round(num).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+            formatted = num.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
         } else {
             formatted = num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
@@ -258,8 +170,7 @@ export class MetricFormatter {
     }
 
     static formatChartTooltip(val: number, type: string, privacyMode: boolean = false): string {
-        const adjustedVal = type === 'Amount' ? val / 10000000 : val;
-        return this.formatValue(adjustedVal, type, privacyMode);
+        return this.formatValue(val, type, privacyMode);
     }
 }
 
@@ -479,14 +390,6 @@ export class RevenueComputeEngine {
         this.indexer = new ChronologicalIndexer(data);
     }
 
-    private getPlotKey(r: RevenueRow): string {
-        const dim = this.filters.velocityDimension || 'Segment';
-        if (dim === 'SKU') return r.wp;
-        if (dim === 'SalesHead') return r.salesHead;
-        if (dim === 'Customer') return r.customer;
-        return r.segment;
-    }
-
     compute(): AnalyticalOutput {
         const f = this.filters;
         const CONFIG = this.config;
@@ -614,6 +517,7 @@ export class RevenueComputeEngine {
         if (customStart) customStart.setHours(0, 0, 0, 0);
         const customStartTime = customStart ? customStart.getTime() : 0;
 
+        const isOnlySolar = f.segment.length === 1 && f.segment[0].toLowerCase().includes('solar');
         const global_full: Record<
             string,
             {
@@ -651,7 +555,7 @@ export class RevenueComputeEngine {
 
         const excludedSet = f.excludedSeries || new Set();
 
-        // 1. First Pass: Compute historical pacing datasets (KPIs only)
+        // 1. First Pass: Compute historical pacing datasets
         for (let i = 0; i < this.rawData.length; i++) {
             const r = this.rawData[i];
             if (segmentFilterSet.size > 0 && !segmentFilterSet.has(r.segment)) continue;
@@ -663,78 +567,83 @@ export class RevenueComputeEngine {
 
             const isPaced = rMonth !== curMonth || r.day <= anchorDay;
             const metricVal = metric === 'Amount' ? r.val : metric === 'MW' ? r.mw : r.qty;
-            const plotKey = this.getPlotKey(r);
+            const plotKey = isOnlySolar ? r.wp : r.segment;
 
-            const matchesDrilldown =
-                (shFilterSet.size === 0 || shFilterSet.has(r.salesHead)) &&
-                (custFilterSet.size === 0 || custFilterSet.has(r.customer)) &&
-                (skuFilterSet.size === 0 || skuFilterSet.has(r.wp));
+            activePlotKeys.add(plotKey);
+            const isExcluded = excludedSet.has(plotKey);
 
-            if (matchesDrilldown) {
-                if (r.isPending) {
-                    if (rTime >= sDateTime && rTime <= eDateTime) {
-                        kpi.pending += metricVal;
-                        kpi.pendingBreakdown[plotKey] = (kpi.pendingBreakdown[plotKey] || 0) + metricVal;
-                    }
-                } else {
-                    const isCustomPeriodActive = !!(
-                        f.startDate &&
-                        f.customStartDate &&
-                        f.startDate !== f.customStartDate
-                    );
-                    if (isCustomPeriodActive && customStart) {
-                        if (rTime >= customStartTime && rTime <= eDateTime) {
-                            kpi.periodSales += metricVal;
-                            kpi.periodBreakdown[plotKey] = (kpi.periodBreakdown[plotKey] || 0) + metricVal;
-                            kpi.periodActiveKeys.add(plotKey);
+            if (!isExcluded) {
+                const matchesDrilldown =
+                    (shFilterSet.size === 0 || shFilterSet.has(r.salesHead)) &&
+                    (custFilterSet.size === 0 || custFilterSet.has(r.customer)) &&
+                    (skuFilterSet.size === 0 || skuFilterSet.has(r.wp));
+
+                if (matchesDrilldown) {
+                    if (r.isPending) {
+                        if (rTime >= sDateTime && rTime <= eDateTime) {
+                            kpi.pending += metricVal;
+                            kpi.pendingBreakdown[plotKey] = (kpi.pendingBreakdown[plotKey] || 0) + metricVal;
                         }
                     } else {
-                        if (rYear === curYear && rMonth === curMonth && r.day === curDate) {
-                            kpi.periodSales += metricVal;
-                            kpi.periodBreakdown[plotKey] = (kpi.periodBreakdown[plotKey] || 0) + metricVal;
-                            kpi.periodActiveKeys.add(plotKey);
+                        const isCustomPeriodActive = !!(
+                            f.startDate &&
+                            f.customStartDate &&
+                            f.startDate !== f.customStartDate
+                        );
+                        if (isCustomPeriodActive && customStart) {
+                            if (rTime >= customStartTime && rTime <= eDateTime) {
+                                kpi.periodSales += metricVal;
+                                kpi.periodBreakdown[plotKey] = (kpi.periodBreakdown[plotKey] || 0) + metricVal;
+                                kpi.periodActiveKeys.add(plotKey);
+                            }
+                        } else {
+                            if (rYear === curYear && rMonth === curMonth && r.day === curDate) {
+                                kpi.periodSales += metricVal;
+                                kpi.periodBreakdown[plotKey] = (kpi.periodBreakdown[plotKey] || 0) + metricVal;
+                                kpi.periodActiveKeys.add(plotKey);
+                            }
+                        }
+
+                        if (rTime > kpiAnchorTime - 7 * dayMs && rTime <= kpiAnchorTime) {
+                            last7DaysSales += metricVal;
                         }
                     }
 
-                    if (rTime > kpiAnchorTime - 7 * dayMs && rTime <= kpiAnchorTime) {
-                        last7DaysSales += metricVal;
-                    }
-                }
+                    const isTargetStateForMatrix = f.pendingOnly ? r.isPending : !r.isPending;
+                    if (isTargetStateForMatrix) {
+                        if (!global_full[key])
+                            global_full[key] = { val: 0, mw: 0, qty: 0, metricVal: 0, plotKeys: {}, hasData: false };
+                        global_full[key].val += r.val;
+                        global_full[key].mw += r.mw;
+                        global_full[key].qty += r.qty;
+                        global_full[key].metricVal += metricVal;
+                        global_full[key].plotKeys[plotKey] = (global_full[key].plotKeys[plotKey] || 0) + metricVal;
+                        global_full[key].hasData = true;
 
-                const isTargetStateForMatrix = f.pendingOnly ? r.isPending : !r.isPending;
-                if (isTargetStateForMatrix) {
-                    if (!global_full[key])
-                        global_full[key] = { val: 0, mw: 0, qty: 0, metricVal: 0, plotKeys: {}, hasData: false };
-                    global_full[key].val += r.val;
-                    global_full[key].mw += r.mw;
-                    global_full[key].qty += r.qty;
-                    global_full[key].metricVal += metricVal;
-                    global_full[key].plotKeys[plotKey] = (global_full[key].plotKeys[plotKey] || 0) + metricVal;
-                    global_full[key].hasData = true;
-
-                    if (isPaced) {
-                        if (!global_paced[key])
-                            global_paced[key] = {
-                                val: 0,
-                                mw: 0,
-                                qty: 0,
-                                metricVal: 0,
-                                plotKeys: {},
-                                hasData: false
-                            };
-                        global_paced[key].val += r.val;
-                        global_paced[key].mw += r.mw;
-                        global_paced[key].qty += r.qty;
-                        global_paced[key].metricVal += metricVal;
-                        global_paced[key].plotKeys[plotKey] =
-                            (global_paced[key].plotKeys[plotKey] || 0) + metricVal;
-                        global_paced[key].hasData = true;
+                        if (isPaced) {
+                            if (!global_paced[key])
+                                global_paced[key] = {
+                                    val: 0,
+                                    mw: 0,
+                                    qty: 0,
+                                    metricVal: 0,
+                                    plotKeys: {},
+                                    hasData: false
+                                };
+                            global_paced[key].val += r.val;
+                            global_paced[key].mw += r.mw;
+                            global_paced[key].qty += r.qty;
+                            global_paced[key].metricVal += metricVal;
+                            global_paced[key].plotKeys[plotKey] =
+                                (global_paced[key].plotKeys[plotKey] || 0) + metricVal;
+                            global_paced[key].hasData = true;
+                        }
                     }
                 }
             }
         }
 
-        // 2. Second Pass: Range-Bounded Analytics (Strictly period-filtered)
+        // 2. Second Pass: Range-Bounded Analytics
         const rangeRecords = this.indexer.getRange(filterStartTime, filterEndTime);
 
         for (let j = 0; j < rangeRecords.length; j++) {
@@ -749,35 +658,32 @@ export class RevenueComputeEngine {
             if (custFilterSet.size > 0 && !custFilterSet.has(r.customer)) continue;
             if (skuFilterSet.size > 0 && !skuFilterSet.has(r.wp)) continue;
 
-            const plotKey = this.getPlotKey(r);
-            // Collect keys that pertain to the SELECTED period
-            activePlotKeys.add(plotKey);
-
+            const plotKey = isOnlySolar ? r.wp : r.segment;
             const isExcluded = excludedSet.has(plotKey);
 
-            const metricVal = metric === 'Amount' ? r.val : metric === 'MW' ? r.mw : r.qty;
-
-            if (!shObj[r.salesHead])
-                shObj[r.salesHead] = { val: 0, mw: 0, qty: 0, comps: new Set<string>(), plotKeys: {} };
-            shObj[r.salesHead].val += r.val;
-            shObj[r.salesHead].mw += r.mw;
-            shObj[r.salesHead].qty += r.qty;
-            shObj[r.salesHead].plotKeys[plotKey] = (shObj[r.salesHead].plotKeys[plotKey] || 0) + metricVal;
-            if (r.customer) shObj[r.salesHead].comps.add(r.customer);
-
-            if (!custObj[r.customer]) custObj[r.customer] = { val: 0, mw: 0, qty: 0, plotKeys: {} };
-            custObj[r.customer].val += r.val;
-            custObj[r.customer].mw += r.mw;
-            custObj[r.customer].qty += r.qty;
-            custObj[r.customer].plotKeys[plotKey] = (custObj[r.customer].plotKeys[plotKey] || 0) + metricVal;
-
-            if (!wpObj[r.wp]) wpObj[r.wp] = { val: 0, mw: 0, qty: 0, plotKeys: {} };
-            wpObj[r.wp].val += r.val;
-            wpObj[r.wp].mw += r.mw;
-            wpObj[r.wp].qty += r.qty;
-            wpObj[r.wp].plotKeys[plotKey] = (wpObj[r.wp].plotKeys[plotKey] || 0) + metricVal;
-
             if (!isExcluded) {
+                const metricVal = metric === 'Amount' ? r.val : metric === 'MW' ? r.mw : r.qty;
+
+                if (!shObj[r.salesHead])
+                    shObj[r.salesHead] = { val: 0, mw: 0, qty: 0, comps: new Set<string>(), plotKeys: {} };
+                shObj[r.salesHead].val += r.val;
+                shObj[r.salesHead].mw += r.mw;
+                shObj[r.salesHead].qty += r.qty;
+                shObj[r.salesHead].plotKeys[plotKey] = (shObj[r.salesHead].plotKeys[plotKey] || 0) + metricVal;
+                if (r.customer) shObj[r.salesHead].comps.add(r.customer);
+
+                if (!custObj[r.customer]) custObj[r.customer] = { val: 0, mw: 0, qty: 0, plotKeys: {} };
+                custObj[r.customer].val += r.val;
+                custObj[r.customer].mw += r.mw;
+                custObj[r.customer].qty += r.qty;
+                custObj[r.customer].plotKeys[plotKey] = (custObj[r.customer].plotKeys[plotKey] || 0) + metricVal;
+
+                if (!wpObj[r.wp]) wpObj[r.wp] = { val: 0, mw: 0, qty: 0, plotKeys: {} };
+                wpObj[r.wp].val += r.val;
+                wpObj[r.wp].mw += r.mw;
+                wpObj[r.wp].qty += r.qty;
+                wpObj[r.wp].plotKeys[plotKey] = (wpObj[r.wp].plotKeys[plotKey] || 0) + metricVal;
+
                 kpiVal += r.val;
                 kpiMW += r.mw;
                 kpiQty += r.qty;
@@ -793,34 +699,20 @@ export class RevenueComputeEngine {
             const rMonth = r.monthIdx;
             const rfmIdx = rMonth >= 3 ? rMonth - 3 : rMonth + 9;
             const mName = CONFIG.FISCAL_MONTHS[rfmIdx];
+            const metricVal = metric === 'Amount' ? r.val : metric === 'MW' ? r.mw : r.qty;
 
-            if (!buckets.chart.monthly[mName][plotKeyChart]) buckets.chart.monthly[mName][plotKeyChart] = 0;
-            buckets.chart.monthly[mName][plotKeyChart] += metricVal;
-            
-            if (r.week <= 5) {
-                if (!buckets.chart.weekly[mName][r.week][plotKeyChart]) buckets.chart.weekly[mName][r.week][plotKeyChart] = 0;
-                buckets.chart.weekly[mName][r.week][plotKeyChart] += metricVal;
-            }
-            if (r.day <= 31) {
-                if (!buckets.chart.daily[mName][r.day - 1][plotKeyChart]) buckets.chart.daily[mName][r.day - 1][plotKeyChart] = 0;
-                buckets.chart.daily[mName][r.day - 1][plotKeyChart] += metricVal;
-            }
+            buckets.chart.monthly[mName][plotKeyChart] = (buckets.chart.monthly[mName][plotKeyChart] || 0) + metricVal;
+            if (r.week <= 5)
+                buckets.chart.weekly[mName][r.week][plotKeyChart] =
+                    (buckets.chart.weekly[mName][r.week][plotKeyChart] || 0) + metricVal;
+            if (r.day <= 31)
+                buckets.chart.daily[mName][r.day - 1][plotKeyChart] =
+                    (buckets.chart.daily[mName][r.day - 1][plotKeyChart] || 0) + metricVal;
 
             const qIdx = qtrMap[r.monthIdx];
-            if (qIdx !== undefined) {
-                if (!buckets.chart.quarterly[qIdx][plotKeyChart]) buckets.chart.quarterly[qIdx][plotKeyChart] = 0;
-                buckets.chart.quarterly[qIdx][plotKeyChart] += metricVal;
-            }
+            buckets.chart.quarterly[qIdx][plotKeyChart] =
+                (buckets.chart.quarterly[qIdx][plotKeyChart] || 0) + metricVal;
         }
-
-        // --- STRICT SKU FILTERING FOR LEGEND ---
-        const finalizedActivePlotKeys = Array.from(activePlotKeys).filter(key => {
-            const hasMonthly = Object.values(buckets.chart.monthly).some(m => m[key] > 0);
-            const hasWeekly = Object.values(buckets.chart.weekly).some(m => Object.values(m).some(w => (w as any)[key] > 0));
-            const hasDaily = Object.values(buckets.chart.daily).some(d => (d as any)[key] > 0);
-            const hasQuarterly = Object.values(buckets.chart.quarterly).some(q => q[key] > 0);
-            return hasMonthly || hasWeekly || hasDaily || hasQuarterly;
-        }).sort();
 
         // 3. Post-Process KPI Pacing Metrics
         const curKey = `${curYear}-${String(curMonth).padStart(2, '0')}`;
@@ -961,82 +853,60 @@ export class RevenueComputeEngine {
         const custArr = mapObjToArray(custObj);
         const wpArr = mapObjToArray(wpObj);
 
-        // 6. Advanced Quant & Insight Engine (McKinsey Standards)
+        // 6. Insight Engine
         const insights: Insight[] = [];
-        
-        // --- PVM Analysis (Price-Volume-Mix) ---
-        // Find prior period for comparison (Paced comparison)
-        const currentPeriodData = rawFiltered;
-        const priorPeriodData = this.rawData.filter(r => {
-            const rTime = r.date.getTime();
-            // Simple logic: same time range shifted by 1 year for PVM
-            const shift = 365 * 24 * 60 * 60 * 1000;
-            return rTime >= (filterStartTime - shift) && rTime <= (filterEndTime - shift);
+        const curMonthDays = new Date(curYear, curMonth + 1, 0).getDate();
+        const weekAvg = last7DaysSales / 7;
+        const projWeek = weekAvg * curMonthDays;
+        const isAccel = kpi.mtd !== null && projWeek > kpi.mtd;
+
+        const formatInsightVal = (v: number) => {
+            if (f.metric === 'Amount')
+                return `₹ ${(v / CONFIG.CURRENCY_DIVIDER).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Cr`;
+            if (f.metric === 'MW')
+                return `${v.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MW`;
+            return `${Math.round(v).toLocaleString('en-IN')} Qty`;
+        };
+
+        insights.push({
+            t: isAccel ? 'success' : 'risk',
+            l: 'MOMENTUM (7-DAY AVG)',
+            txt: `Recent trailing velocity projects ${formatInsightVal(projWeek)} for the current period.`
         });
 
-        const pvm = AdvancedQuantEngine.calculatePVM(currentPeriodData, priorPeriodData);
-        if (pvm) {
-            const pvmImpact = Math.abs(pvm.priceEffect) + Math.abs(pvm.volEffect) + Math.abs(pvm.mixEffect);
-            const pvmInsight: Insight = {
-                t: pvm.priceEffect < 0 ? 'risk' : 'success',
-                l: 'PRICE-VOLUME-MIX (PVM)',
-                txt: `Revenue delta driven by ${MetricFormatter.formatValue(pvm.priceEffect/10000000, 'Amount')} price effect and ${MetricFormatter.formatValue(pvm.volEffect/10000000, 'Amount')} volume swing.`,
-                metadata: { pvm }
-            };
-            pvmInsight.score = InsightScorer.score(pvmInsight, pvmImpact, 0);
-            insights.push(pvmInsight);
-        }
+        const unfiltCust = custArr.sort((a, b) => b.v - a.v);
+        const sumCustAbs = unfiltCust.reduce((a, c) => a + Math.abs(c.v), 0);
+        const hhi = ConcentrationAnalyser.calculateHHI(unfiltCust);
+        const top5 = unfiltCust.slice(0, 5);
+        const top5Share = sumCustAbs > 0 ? (top5.reduce((a, c) => a + Math.abs(c.v), 0) / sumCustAbs) * 100 : 0;
+        const concText = hhi < 1500 ? 'Diversified' : hhi < 2500 ? 'Moderate' : 'Highly Concentrated';
+        const concType = hhi < 1500 ? 'success' : hhi < 2500 ? 'strategic' : 'risk';
 
-        // --- Pricing Entropy (Pricing Discipline) ---
-        const entropy = AdvancedQuantEngine.calculatePriceEntropy(currentPeriodData);
-        if (entropy > 0.15) { // 15% dispersion threshold
-            const entropyInsight: Insight = {
-                t: 'risk',
-                l: 'PRICING DISCIPLINE',
-                txt: `High pricing entropy detected (${(entropy * 100).toFixed(1)}%). Significant realization leakage due to inconsistent SKU pricing.`,
-                metadata: { entropy }
-            };
-            entropyInsight.score = InsightScorer.score(entropyInsight, tVal * 0.05, 0); // 5% value-at-risk estimate
-            insights.push(entropyInsight);
-        }
-
-        // --- Demand Slope (Momentum) ---
-        const slope = AdvancedQuantEngine.calculateDemandSlope(currentPeriodData);
-        if (Math.abs(slope) > 0.1) {
-            const slopeInsight: Insight = {
-                t: slope > 0 ? 'success' : 'risk',
-                l: 'DEMAND VELOCITY',
-                txt: `Demand trajectory is ${slope > 0 ? 'accelerating' : 'decelerating'} at a rate of ${Math.abs(slope).toFixed(1)} units/period.`,
-                metadata: { slope }
-            };
-            slopeInsight.score = InsightScorer.score(slopeInsight, tVal * 0.1, 0);
-            insights.push(slopeInsight);
-        }
-
-        // --- Legacy Standard Insights (Upgraded with Scoring) ---
-        const weekAvg = last7DaysSales / 7;
-        const curMonthDays = new Date(curYear, curMonth + 1, 0).getDate();
-        const projWeek = weekAvg * curMonthDays;
-        const momentumInsight: Insight = {
-            t: projWeek > kpi.mtd ? 'success' : 'risk',
-            l: 'MOMENTUM (7-DAY AVG)',
-            txt: `Recent trailing velocity projects ${MetricFormatter.formatValue(projWeek/10000000, 'Amount')} for the current period.`
-        };
-        momentumInsight.score = InsightScorer.score(momentumInsight, Math.abs(projWeek - kpi.mtd), 1);
-        insights.push(momentumInsight);
-
-        const hhi_score = ConcentrationAnalyser.calculateHHI(custArr);
-        const concentrationInsight: Insight = {
-            t: hhi_score > 2500 ? 'risk' : 'success',
+        insights.push({
+            t: concType,
             l: 'CUSTOMER CONCENTRATION',
-            txt: `Market share is ${hhi_score > 2500 ? 'highly concentrated' : 'well diversified'} (HHI: ${hhi_score.toFixed(0)}). Top 5 hold dominant share.`
-        };
-        concentrationInsight.score = InsightScorer.score(concentrationInsight, tVal * 0.2, 5);
-        insights.push(concentrationInsight);
+            txt: `Top 5 hold ${top5Share.toFixed(1)}%. HHI Score: ${hhi.toFixed(0)} (${concText}).`
+        });
 
-        // Sort by Score and limit to Top 5 for Story Carousel
-        const allInsightsSorted = [...insights].sort((a, b) => (b.score || 0) - (a.score || 0));
-        const top5StoryInsights = allInsightsSorted.slice(0, 5);
+        const unfiltWp = wpArr.sort((a, b) => b.v - a.v);
+        const sumWPAbs = unfiltWp.reduce((a, c) => a + Math.abs(c.v), 0);
+        const prodHhi = ConcentrationAnalyser.calculateHHI(unfiltWp);
+        const top3Prod = unfiltWp.slice(0, 3);
+        const top3ProdShare = sumWPAbs > 0 ? (top3Prod.reduce((a, c) => a + Math.abs(c.v), 0) / sumWPAbs) * 100 : 0;
+
+        insights.push({
+            t: 'strategic',
+            l: 'PRODUCT CONCENTRATION',
+            txt: `Top 3 SKUs hold ${top3ProdShare.toFixed(1)}%. HHI Score: ${prodHhi.toFixed(0)}.`
+        });
+
+        if (tMW > 0) {
+            insights.push({
+                t: 'strategic',
+                l: 'YIELD',
+                txt: `Net Realization: ₹ ${(tVal / CONFIG.CURRENCY_DIVIDER / tMW).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / MW.`
+            });
+        }
 
         return {
             kpi: kpi,
@@ -1046,10 +916,9 @@ export class RevenueComputeEngine {
             sh: shArr,
             cust: custArr,
             wp: wpArr,
-            insights: allInsightsSorted,
-            storyInsights: top5StoryInsights,
+            insights: insights,
             activeSegments: Array.from(activeSegments).sort(),
-            activePlotKeys: finalizedActivePlotKeys,
+            activePlotKeys: Array.from(activePlotKeys).sort(),
             rawFiltered: rawFiltered,
             kpiAnchorDate: kpiAnchorDate,
             last7DaysSales: last7DaysSales,
@@ -1060,8 +929,7 @@ export class RevenueComputeEngine {
             kpiMW: kpiMW,
             kpiQty: kpiQty,
             realization: tMW > 0 ? tVal / CONFIG.CURRENCY_DIVIDER / tMW : 0,
-            isOnlySolar: f.segment.length === 1 && f.segment[0].toLowerCase().includes('solar'),
-            velocityDimension: f.velocityDimension || 'Segment'
+            isOnlySolar: isOnlySolar
         };
     }
 }
