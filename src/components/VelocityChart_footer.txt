@@ -1,6 +1,0 @@
-                    plugins={[topLabelsPlugin, rightLabelsPlugin]}
-                />
-            </div>
-        </div>
-    );
-};

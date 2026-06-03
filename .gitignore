@@ -4,7 +4,6 @@ package-lock.json
 
 # Vercel
 .vercel
-
 # Environment variables
 .env
 .env.local
@@ -12,20 +11,17 @@ package-lock.json
 .env.test.local
 .env.production.local
 *.env
-
 # Build outputs
 dist/
 build/
 .next/
 out/
-
 # Logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
-
 # Python
 __pycache__/
 *.py[cod]
@@ -35,9 +31,7 @@ __pycache__/
 env/
 venv/
 .venv/
-build/
 develop-eggs/
-dist/
 downloads/
 eggs/
 .eggs/
@@ -52,7 +46,6 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
-
 # Data Files & Databases
 *.csv
 *.duckdb
@@ -60,7 +53,6 @@ MANIFEST
 *.xlsx
 *.sqlite
 *.db
-
 # OS Files
 .DS_Store
 .DS_Store?
@@ -69,13 +61,11 @@ MANIFEST
 .Trashes
 ehthumbs.db
 Thumbs.db
-
 # IDEs
 .vscode/
 .idea/
 *.swp
 *.swo
-
 # Project specific maintenance
 other/
 migrate_duckdb_export.py
@@ -85,3 +75,6 @@ update_duckdb.py
 check_xlsb_date.py
 check_duckdb_date.py
 check_pg_date.py
+test-results/
+coverage/
+.env*
