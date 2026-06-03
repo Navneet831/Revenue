@@ -127,11 +127,10 @@ export const GlobalSidebar: React.FC<GlobalSidebarProps> = ({ onLogout, onOpenHe
                                 onClick={(e) => handleSegmentClick(s, e)}
                                 onKeyDown={(e) => handleSegmentClick(s, e)}
                                 role="button"
-                                tabIndex={0}
                                 className={`sidebar-item group relative flex items-center cursor-pointer border py-2.5 px-4 w-full rounded-xl transition-all duration-200 outline-none focus:ring-1 focus:ring-emerald-400/50 ${activeCls} ${
                                     sidebarOpen ? 'justify-start gap-3' : 'lg:w-10 lg:h-10 lg:p-0 lg:justify-center'
                                 }`}
-                            >
+                                >
                                 <div className="shrink-0 transition-transform duration-300 group-hover:scale-110 flex items-center justify-center">
                                     {IconComp}
                                 </div>
