@@ -233,8 +233,27 @@ export const App: React.FC = () => {
                                 <div className="flex items-center gap-3 overflow-x-auto flex-1 min-w-0 no-scrollbar pb-1 lg:pb-0 w-full">
                                     <FYShortcuts />
                                     
-                                    <div className="flex items-center gap-2 shrink-0">
-                                        <div className="flex items-center bg-[#111620] rounded-md overflow-hidden btn-3d">
+                                    <div className="flex items-center gap-2 shrink-0" id="global-filters-container">
+                                        {/* CHRONOLOGICAL FILTERS */}
+                                        <div className="flex items-center bg-[#111620] rounded-md overflow-hidden btn-3d" title="From Date (Isolates primary KPI)">
+                                            <div className="relative">
+                                                <input 
+                                                    type="date" 
+                                                    value={filters.startDate || ''} 
+                                                    onChange={(e) => {
+                                                        updateFilters({ 
+                                                            startDate: e.target.value,
+                                                            customStartDate: e.target.value
+                                                        });
+                                                    }} 
+                                                    className="w-[110px] bg-transparent text-slate-400 focus:text-white text-[10px] p-1.5 pl-7 outline-none font-mono tracking-tight cursor-pointer hover:bg-slate-800 transition-colors" 
+                                                />
+                                                <Calendar className="w-3 h-3 text-slate-500 absolute left-2 top-2 pointer-events-none" />
+                                            </div>
+                                            <button onClick={() => updateFilters({ startDate: DataSanitizer.getFYStart(filters.endDate), customStartDate: null })} className="pr-2 pl-1 text-slate-600 hover:text-rose-400 transition-colors focus:outline-none" title="Clear Period Filter"><X className="w-3 h-3" /></button>
+                                        </div>
+                                        <span className="text-slate-600 text-xs font-bold px-0.5 shrink-0">-</span>
+                                        <div className="flex items-center bg-[#111620] rounded-md overflow-hidden btn-3d" title="As Of Date (System Anchor)">
                                             <div className="relative">
                                                 <input 
                                                     type="date" 
@@ -246,15 +265,51 @@ export const App: React.FC = () => {
                                                             matrixMonth: null, selectedQuarter: null, selectedWeek: null, selectedDay: null
                                                         });
                                                     }} 
-                                                    className="bg-transparent text-white outline-none font-mono text-[10px] p-1.5 pl-7 cursor-pointer" 
+                                                    className="w-[110px] bg-transparent text-white text-[10px] p-1.5 pl-7 outline-none font-mono tracking-tight cursor-pointer hover:bg-slate-800 transition-colors" 
                                                 />
-                                                <Calendar className="w-3.5 h-3.5 text-emerald-500 absolute left-2 top-2 pointer-events-none" />
+                                                <Calendar className="w-3 h-3 text-emerald-400 absolute left-2 top-2 pointer-events-none" />
                                             </div>
                                         </div>
 
-                                        <button onClick={() => updateFilters({ endDate: DataSanitizer.formatDate(latestDate || new Date()) })} className="p-1.5 hover:bg-slate-700 text-slate-400 hover:text-white rounded-md transition-colors bg-[#151921] btn-3d shrink-0" title="Reset Timeline to Latest Data">
+                                        <button onClick={() => updateFilters({ endDate: DataSanitizer.formatDate(latestDate || new Date()), startDate: DataSanitizer.getFYStart(DataSanitizer.formatDate(latestDate || new Date())) })} className="p-1.5 hover:bg-slate-700 text-slate-400 hover:text-white rounded-md transition-colors bg-[#151921] btn-3d shrink-0 ml-1" title="Reset Timeline to Latest Data">
                                             <RotateCcw className="w-3.5 h-3.5" />
                                         </button>
+                                        
+                                        <div className="w-px h-4 bg-slate-700 shrink-0 mx-2" />
+
+                                        {/* SEGMENT DROPDOWN (RESTORED PARITY) */}
+                                        <div className="relative shrink-0 z-[100] mr-1">
+                                            <button 
+                                                onClick={() => updateUIState({ segDropOpen: !ui.segDropOpen })}
+                                                className="flex items-center gap-2 px-3 py-1.5 bg-[#111620] border border-slate-700 rounded-md text-[10px] font-bold text-white hover:bg-slate-800 transition-colors btn-3d"
+                                            >
+                                                <Layers className="w-3 h-3 text-slate-400" />
+                                                <span>{filters.segment.length === 1 ? filters.segment[0] : `${filters.segment.length} Segments`}</span>
+                                                <ChevronDown className={`w-3 h-3 text-slate-500 transition-transform ${ui.segDropOpen ? 'rotate-180' : ''}`} />
+                                            </button>
+                                            {ui.segDropOpen && (
+                                                <div className="absolute top-full left-0 mt-1 w-48 bg-[#141b2d] border border-slate-700 rounded-lg shadow-2xl z-[100] py-1 animate-in fade-in slide-in-from-top-1">
+                                                    {allSegments.map(s => {
+                                                        const isSelected = filters.segment.includes(s);
+                                                        return (
+                                                            <div 
+                                                                key={s}
+                                                                onClick={() => {
+                                                                    const next = filters.segment.includes(s) 
+                                                                        ? filters.segment.filter((x: string) => x !== s)
+                                                                        : [...filters.segment, s];
+                                                                    updateFilters({ segment: next.length > 0 ? next : [s] });
+                                                                }}
+                                                                className="flex items-center justify-between px-3 py-2 hover:bg-[#1e2638] cursor-pointer group"
+                                                            >
+                                                                <span className={`text-[10px] ${isSelected ? 'text-emerald-400 font-bold' : 'text-slate-400 group-hover:text-white'}`}>{s}</span>
+                                                                {isSelected && <Check className="w-3 h-3 text-emerald-400" />}
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
 
                                     <div className="hidden lg:block w-px h-4 bg-slate-700 shrink-0 mx-2" />
