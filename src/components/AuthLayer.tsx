@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { Mail, ShieldCheck, ShieldAlert, ArrowRight, User } from 'lucide-react';
 import { useStore } from '../store/useStore';
+import { CommitDrilldown } from './CommitDrilldown';
 
 interface AuthLayerProps {
     onAuthenticated: (email: string) => void;
@@ -541,6 +542,7 @@ export const AuthLayer: React.FC<AuthLayerProps> = ({ onAuthenticated, isHidden 
                     </div>
                 </div>
             )}
+            <CommitDrilldown />
         </div>
     );
 };

@@ -168,6 +168,45 @@ app.get(['/api/revenue', '/api/v1/revenue'], async (req, res) => {
     }
 });
 
+// ==========================================
+// GIT COMMIT DRILL-DOWN ENDPOINTS
+// ==========================================
+const { execSync } = require('child_process');
+
+app.get('/api/git/commits', (req, res) => {
+    try {
+        const log = execSync('git log --oneline --no-pager').toString().trim();
+        const commits = log.split('\n').map((line, index) => {
+            const parts = line.split(' ');
+            const hash = parts[0];
+            const msg = parts.slice(1).join(' ');
+            return { index, hash, msg };
+        });
+        const currentHash = execSync('git rev-parse --short HEAD').toString().trim();
+        res.json({ commits, currentHash });
+    } catch (err) {
+        Logger.error('git_commits_fetch_failed', err);
+        res.status(500).json({ error: 'Failed to fetch git history' });
+    }
+});
+
+app.post('/api/git/checkout', express.json(), (req, res) => {
+    const { hash } = req.body;
+    if (!hash) return res.status(400).json({ error: 'Hash is required' });
+
+    try {
+        Logger.info('git_checkout_initiated', { hash });
+        execSync(`git checkout ${hash} --quiet`);
+        res.json({ success: true, message: `Switched to ${hash}` });
+        
+        // Note: The server process itself doesn't restart, but the files on disk change.
+        // For a full refresh, the user might need to reload the page or the build process might trigger.
+    } catch (err) {
+        Logger.error('git_checkout_failed', err);
+        res.status(500).json({ error: 'Failed to switch commits. Ensure no unstaged changes exist.' });
+    }
+});
+
 // Serve static assets
 app.use(express.static(path.join(__dirname, 'dist')));
 
