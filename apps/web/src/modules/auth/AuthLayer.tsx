@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { useStore } from '@/store/useStore';
 import { CommitDrilldown } from '../shared/CommitDrilldown';
@@ -35,6 +35,8 @@ export const AuthLayer: React.FC<AuthLayerProps> = ({ onAuthenticated, isHidden 
     const glassCardRef = useRef<HTMLDivElement | null>(null);
     const typewriterRef = useRef<HTMLSpanElement | null>(null);
     const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
+    const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const [otpCooldown, setOtpCooldown] = useState(0);
 
     // ─── Initialization Logic ───────────────────────────────────────────────
     useEffect(() => {
@@ -196,7 +198,7 @@ export const AuthLayer: React.FC<AuthLayerProps> = ({ onAuthenticated, isHidden 
 
             const { error } = await supabaseClient.auth.signInWithOtp({
                 email: cleanEmail,
-                options: { emailRedirectTo: 'http://127.0.0.1:8000/auth/callback' }
+                options: { emailRedirectTo: `${window.location.origin}/auth/callback` }
             });
 
             if (error) throw error;
@@ -204,7 +206,23 @@ export const AuthLayer: React.FC<AuthLayerProps> = ({ onAuthenticated, isHidden 
             setNotification({ text: `Code dispatched to ${cleanEmail}`, type: 'success' });
             setTimeout(() => otpInputRefs.current[0]?.focus(), 100);
         } catch (err: any) {
-            setNotification({ text: err.message || 'Dispatch failure.', type: 'error' });
+            // Rate limit cooldown — match HTML baseline behavior
+            if (err.message && err.message.toLowerCase().includes('rate')) {
+                let countdown = 60;
+                setOtpCooldown(countdown);
+                if (cooldownRef.current) clearInterval(cooldownRef.current);
+                cooldownRef.current = setInterval(() => {
+                    countdown--;
+                    setOtpCooldown(countdown);
+                    if (countdown <= 0 && cooldownRef.current) {
+                        clearInterval(cooldownRef.current);
+                        cooldownRef.current = null;
+                    }
+                }, 1000);
+                setNotification({ text: `Rate limited. Retry in 60s.`, type: 'error' });
+            } else {
+                setNotification({ text: err.message || 'Dispatch failure.', type: 'error' });
+            }
         } finally {
             setLoading(false);
         }
@@ -272,7 +290,7 @@ export const AuthLayer: React.FC<AuthLayerProps> = ({ onAuthenticated, isHidden 
         try {
             const { error } = await supabaseClient.auth.signInWithOAuth({
                 provider: 'google',
-                options: { redirectTo: 'http://127.0.0.1:8000/auth/callback' }
+                options: { redirectTo: `${window.location.origin}/auth/callback` }
             });
             if (error) throw error;
         } catch (err: any) {
@@ -299,6 +317,7 @@ export const AuthLayer: React.FC<AuthLayerProps> = ({ onAuthenticated, isHidden 
                         onOtpKeyDown={handleOtpKeyDown}
                         otpInputRefs={otpInputRefs}
                         loading={loading}
+                        otpCooldown={otpCooldown}
                         onSubmit={handleEmailSubmit}
                         onGoogleLogin={handleGoogleLogin}
                     />

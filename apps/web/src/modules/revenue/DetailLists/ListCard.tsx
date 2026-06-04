@@ -1,5 +1,5 @@
 import React, { useRef, Suspense, lazy } from 'react';
-import { PieChart, Table2, Maximize2 } from 'lucide-react';
+import { PieChart, Table2, Maximize2, Minimize2 } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import { MetricFormatter, CONFIG } from '@revenue/shared';
 import { createRightLabelsPlugin } from './plugins';
@@ -15,9 +15,11 @@ interface ListCardProps {
     filterKey: 'salesHead' | 'customer' | 'selectedSku';
     data: any[];
     count?: number;
+    onToggleExpand?: (cardId: string) => void;
+    isExpanded?: boolean;
 }
 
-export const ListCard: React.FC<ListCardProps> = ({ id, title, icon, cardKey, filterKey, data, count }) => {
+export const ListCard: React.FC<ListCardProps> = ({ id, title, icon, cardKey, filterKey, data, count, onToggleExpand, isExpanded }) => {
     const { cardViews, setCardView, privacyMode, filters, updateFilters, COLOR_REGISTRY, stats } = useStore();
     const chartRef = useRef<any>(null);
     const view = cardViews[cardKey] || 'tabular';
@@ -217,9 +219,18 @@ export const ListCard: React.FC<ListCardProps> = ({ id, title, icon, cardKey, fi
                             ? <Table2 className="w-3.5 h-3.5 text-amber-400" />
                             : <PieChart className="w-3.5 h-3.5 text-blue-400" />}
                     </button>
-                    <button className="p-1 px-1.5 btn-3d bg-[#1E293B] hover:bg-slate-700 text-white rounded-md hidden md:block cursor-pointer">
-                        <Maximize2 className="w-3.5 h-3.5" />
-                    </button>
+                    {onToggleExpand && (
+                        <button
+                            onClick={() => onToggleExpand(id)}
+                            className="p-1 px-1.5 btn-3d bg-[#1E293B] hover:bg-slate-700 text-white rounded-md hidden md:flex items-center justify-center cursor-pointer"
+                            title={isExpanded ? 'Collapse' : 'Expand'}
+                        >
+                            {isExpanded
+                                ? <Minimize2 className="w-3.5 h-3.5 text-amber-400" />
+                                : <Maximize2 className="w-3.5 h-3.5 text-slate-400" />
+                            }
+                        </button>
+                    )}
                 </div>
             </div>
 

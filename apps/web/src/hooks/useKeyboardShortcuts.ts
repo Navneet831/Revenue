@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useStore } from '@/store/useStore';
+import { CacheService } from '@/services/cacheService';
 
 /**
  * EXECUTIVE KEYBOARD SHORTCUTS HOOK
@@ -12,7 +13,8 @@ export const useKeyboardShortcuts = (
 ) => {
     const { 
         filters, updateFilters, togglePrivacyMode, toggleSidebar, 
-        updateUIState, ui, setCardView, cardViews, stats
+        updateUIState, ui, setCardView, cardViews,
+        allSegments, expandedId, setExpandedId
     } = useStore();
 
     useEffect(() => {
@@ -43,6 +45,19 @@ export const useKeyboardShortcuts = (
                 toggleSidebar();
             }
 
+            // Ctrl + R: Force Reload (purge cache first)
+            if (e.ctrlKey && e.key.toLowerCase() === 'r') {
+                e.preventDefault();
+                CacheService.purge();
+                window.location.reload();
+            }
+
+            // Ctrl + A: Select All Segments
+            if (e.ctrlKey && e.key.toLowerCase() === 'a') {
+                e.preventDefault();
+                updateFilters({ segment: [...allSegments] });
+            }
+
             // Alt + A/M/Q: Metric Toggles
             if (e.altKey) {
                 const key = e.key.toLowerCase();
@@ -53,10 +68,9 @@ export const useKeyboardShortcuts = (
                 // Alt + [1-9]: Quick Isolate Segment
                 if (!isNaN(parseInt(key)) && parseInt(key) > 0) {
                     const idx = parseInt(key) - 1;
-                    const segments = stats?.allSegments || [];
-                    if (segments[idx]) {
+                    if (allSegments[idx]) {
                         e.preventDefault();
-                        updateFilters({ segment: [segments[idx]] });
+                        updateFilters({ segment: [allSegments[idx]] });
                     }
                 }
             }
@@ -75,12 +89,27 @@ export const useKeyboardShortcuts = (
 
             // Esc: Collapse / Exit
             if (e.key === 'Escape') {
-                if (ui.insightsOpen) updateUIState({ insightsOpen: false });
-                // Add logic for collapsing expanded cards if implemented
+                // 1. Close insights panel if open
+                if (ui.insightsOpen) {
+                    updateUIState({ insightsOpen: false });
+                }
+
+                // 2. Collapse expanded card if one is expanded
+                if (expandedId) {
+                    const el = document.getElementById(expandedId);
+                    if (el) {
+                        el.classList.remove('card-expanded');
+                        const canvas = document.getElementById('dashboard-canvas');
+                        if (canvas) {
+                            canvas.appendChild(el);
+                        }
+                    }
+                    setExpandedId(null);
+                }
             }
         };
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [authenticated, filters.velocityMode, ui.insightsOpen, stats?.allSegments]);
+    }, [authenticated, filters.velocityMode, ui.insightsOpen, allSegments, expandedId]);
 };

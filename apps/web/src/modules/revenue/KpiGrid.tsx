@@ -1,6 +1,7 @@
 import React from 'react';
 import { KpiCard } from './KpiCard';
 import { useStore } from '@/store/useStore';
+import { DataSanitizer } from '@revenue/shared';
 
 export const KpiGrid: React.FC = () => {
     const {
@@ -8,7 +9,9 @@ export const KpiGrid: React.FC = () => {
         filters,
         updateFilters,
         activeKpiDetail,
-        setActiveKpiDetail
+        setActiveKpiDetail,
+        isCustomPeriodActive,
+        latestDate
     } = useStore();
 
     if (!stats || !stats.kpi) return null;
@@ -22,23 +25,29 @@ export const KpiGrid: React.FC = () => {
         updateFilters({ pendingOnly: !filters.pendingOnly });
     };
 
+    const metricSuffix = filters.metric === 'Amount' ? '(₹ Cr)' : filters.metric === 'MW' ? '(MW)' : '(Qty)';
+    
+    const periodLabel = isCustomPeriodActive
+        ? `PERIOD ${metricSuffix}`
+        : `ANCHOR DATE ${metricSuffix}`;
+
     return (
         <div className="flex w-full gap-3 pb-2 overflow-x-auto no-scrollbar" data-lenis-prevent="true">
             <KpiCard
-                title={filters.pendingOnly ? "Filtered Pending" : "Period Sales"}
-                value={filters.pendingOnly ? kpi.pending : kpi.periodSales}
-                iconName="calendar"
-                isInteractive={true}
-                detailOpen={activeKpiDetail === 'period'}
-                onToggleDetail={() => handleToggleDetail('period')}
-                breakdown={filters.pendingOnly ? kpi.pendingBreakdown : kpi.periodBreakdown}
+                id="w-kpi-today"
+                title={periodLabel}
+                value={kpi.periodSales}
+                iconName="calendar-days"
+                isInteractive={false}
+                breakdown={kpi.periodBreakdown}
             />
 
             <KpiCard
-                title="MTD Performance"
+                id="w-kpi-mtd"
+                title={`MTD ${metricSuffix}`}
                 value={kpi.mtd}
-                iconName="calendar-days"
-                compareLabel="vs Prior Month"
+                iconName="calendar"
+                compareLabel="MoM"
                 compareValue={kpi.prevMtd}
                 isInteractive={true}
                 detailOpen={activeKpiDetail === 'mtd'}
@@ -47,10 +56,11 @@ export const KpiGrid: React.FC = () => {
             />
 
             <KpiCard
-                title="QTD Momentum"
+                id="w-kpi-qtd"
+                title={`QTD ${metricSuffix}`}
                 value={kpi.qtd}
                 iconName="pie-chart"
-                compareLabel="vs Prior Qtr"
+                compareLabel="QoQ"
                 compareValue={kpi.prevQtd}
                 isInteractive={true}
                 detailOpen={activeKpiDetail === 'qtd'}
@@ -59,10 +69,11 @@ export const KpiGrid: React.FC = () => {
             />
 
             <KpiCard
-                title="FY-TD Cumulative"
+                id="w-kpi-ytd"
+                title={`YTD ${metricSuffix}`}
                 value={kpi.ytd}
                 iconName="trending-up"
-                compareLabel="vs Prior Year"
+                compareLabel="YoY"
                 compareValue={kpi.prevYtd}
                 isInteractive={true}
                 detailOpen={activeKpiDetail === 'ytd'}
@@ -70,17 +81,16 @@ export const KpiGrid: React.FC = () => {
                 breakdown={kpi.ytdBreakdown}
             />
 
-            {!filters.pendingOnly && (
-                <KpiCard
-                    title="Total Pending"
-                    value={kpi.pending}
-                    iconName="truck"
-                    isInteractive={true}
-                    detailOpen={activeKpiDetail === 'pending'}
-                    onToggleDetail={handlePendingToggle}
-                    breakdown={kpi.pendingBreakdown}
-                />
-            )}
+            <KpiCard
+                id="w-kpi-pending"
+                title={`PENDING ${metricSuffix}`}
+                value={kpi.pending}
+                iconName="truck"
+                isInteractive={true}
+                onToggleDetail={handlePendingToggle}
+                breakdown={kpi.pendingBreakdown}
+            />
         </div>
     );
 };
+
