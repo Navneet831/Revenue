@@ -20,12 +20,8 @@ export const GlobalSidebar: React.FC<GlobalSidebarProps> = ({ onLogout, onOpenHe
         filters,
         updateFilters,
         activeApp,
-        setActiveApp,
-        ui,
-        updateUIState
+        setActiveApp
     } = useStore();
-
-    const railOpen = (ui as any).railOpen;
 
     const filteredSegments = allSegments.filter((s) => {
         const sLower = s.toLowerCase();
@@ -68,28 +64,24 @@ export const GlobalSidebar: React.FC<GlobalSidebarProps> = ({ onLogout, onOpenHe
 
     return (
         <div className="flex h-full shrink-0 z-[100]">
-            {/* Supabase-style Category Rail */}
-            <div 
-                className={`h-full bg-[#0b101e] border-r border-slate-800 flex flex-col items-center py-4 gap-4 transition-all duration-300 ${
-                    railOpen ? 'w-14 opacity-100' : 'w-0 opacity-0 overflow-hidden border-none'
-                }`}
-            >
-                <div 
+            {/* Supabase-style Category Rail — always visible (primary navigation) */}
+            <div className="h-full w-16 shrink-0 bg-[#0b101e] border-r border-slate-800 flex flex-col items-center py-4 gap-3">
+                <div
                     onClick={() => setActiveApp('REVENUE')}
-                    className={`p-2.5 rounded-xl cursor-pointer transition-all ${activeApp === 'REVENUE' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.2)]' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'}`}
+                    className={`p-3 rounded-xl cursor-pointer transition-all ${activeApp === 'REVENUE' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.2)]' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'}`}
                     title="Revenue Analytics"
                 >
-                    <BarChart3 className="w-5 h-5" />
+                    <BarChart3 className="w-6 h-6" />
                 </div>
-                <div 
+                <div
                     onClick={() => setActiveApp('INVENTORY')}
-                    className={`p-2.5 rounded-xl cursor-pointer transition-all ${activeApp === 'INVENTORY' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'}`}
+                    className={`p-3 rounded-xl cursor-pointer transition-all ${activeApp === 'INVENTORY' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'}`}
                     title="Inventory & Stock"
                 >
-                    <Package className="w-5 h-5" />
+                    <Package className="w-6 h-6" />
                 </div>
-                <div className="mt-auto p-2.5 text-slate-600 hover:text-white cursor-pointer transition-colors" title="System Settings">
-                    <LayoutGrid className="w-5 h-5" />
+                <div className="mt-auto p-3 text-slate-600 hover:text-white cursor-pointer transition-colors" title="System Settings">
+                    <LayoutGrid className="w-6 h-6" />
                 </div>
             </div>
 
@@ -101,7 +93,8 @@ export const GlobalSidebar: React.FC<GlobalSidebarProps> = ({ onLogout, onOpenHe
                 } shadow-2xl relative`}
             >
                 <div
-                    onClick={() => updateUIState({ railOpen: !railOpen } as any)}
+                    onClick={toggleSidebar}
+                    title="Collapse / expand sidebar (Ctrl+B)"
                     className="w-full flex items-center shrink-0 border-b border-slate-800 bg-[#0b101e] py-4 px-4 relative overflow-hidden group select-none cursor-pointer hover:bg-[#0F1219] transition-colors"
                 >
                     <div className="w-6 h-6 shrink-0 flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_12px_rgba(16,185,129,0.6)] relative">
@@ -137,11 +130,11 @@ export const GlobalSidebar: React.FC<GlobalSidebarProps> = ({ onLogout, onOpenHe
                                         ? 'bg-emerald-400/20 text-emerald-400 border-emerald-400/30'
                                         : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/40 border-transparent';
 
-                                    let IconComp = <Layers className="w-4 h-4" />;
-                                    if (isSolar) IconComp = <SolarModuleIcon className="w-4 h-4" />;
-                                    else if (isInternal) IconComp = <InternalIcon className="w-4 h-4" />;
-                                    else if (isRM) IconComp = <RMIcon className="w-4 h-4" />;
-                                    else if (isScrap) IconComp = <ScrapIcon className="w-4 h-4" />;
+                                    let IconComp = <Layers className="w-5 h-5" />;
+                                    if (isSolar) IconComp = <SolarModuleIcon className="w-5 h-5" />;
+                                    else if (isInternal) IconComp = <InternalIcon className="w-5 h-5" />;
+                                    else if (isRM) IconComp = <RMIcon className="w-5 h-5" />;
+                                    else if (isScrap) IconComp = <ScrapIcon className="w-5 h-5" />;
 
                                     return (
                                         <div
@@ -188,15 +181,15 @@ export const GlobalSidebar: React.FC<GlobalSidebarProps> = ({ onLogout, onOpenHe
 
                     <div className="flex flex-col w-full p-2 gap-1">
                         <button onClick={togglePrivacyMode} className={`flex items-center p-2 rounded-lg transition-all cursor-pointer ${privacyMode ? 'text-amber-400 bg-amber-400/10' : 'text-slate-500 hover:text-white'} ${!sidebarOpen && 'justify-center'}`} title={!sidebarOpen ? 'Privacy' : undefined}>
-                            <Shield className="w-4 h-4" />
+                            <Shield className="w-5 h-5" />
                             {sidebarOpen && <span className="ml-3 text-[9px] font-bold uppercase tracking-widest">Privacy</span>}
                         </button>
                         <button onClick={onOpenHelp} className={`flex items-center p-2 rounded-lg text-slate-400 hover:text-white transition-all cursor-pointer ${!sidebarOpen && 'justify-center'}`} title={!sidebarOpen ? 'Help' : undefined}>
-                            <Terminal className="w-4 h-4" />
+                            <Terminal className="w-5 h-5" />
                             {sidebarOpen && <span className="ml-3 text-[9px] font-bold uppercase tracking-widest">Help</span>}
                         </button>
                         <button onClick={onLogout} className={`flex items-center p-2 rounded-lg text-slate-500 hover:text-rose-400 transition-all cursor-pointer ${!sidebarOpen && 'justify-center'}`} title={!sidebarOpen ? 'Exit' : undefined}>
-                            <LogOut className="w-4 h-4" />
+                            <LogOut className="w-5 h-5" />
                             {sidebarOpen && <span className="ml-3 text-[9px] font-bold uppercase tracking-widest">Exit</span>}
                         </button>
                     </div>

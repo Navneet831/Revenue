@@ -72,9 +72,25 @@ export const RevenueMatrix: React.FC = memo(() => {
 
     const thBase = 'p-1 px-1.5 border-b border-slate-800 text-[9px] uppercase font-bold text-center tracking-widest transition-colors whitespace-nowrap bg-[#141b2d]/95 backdrop-blur';
 
-    const renderDataRow = (label: string, key: 'valCr' | 'qty' | 'mw', formatter: (v: number | null) => string) => (
-        <tr className="border-b border-slate-800/50 bg-[#0b101e] hover:bg-[#141b2d] h-10">
-            <td className="p-1.5 px-2 border-r border-slate-800 text-[9px] text-white font-bold uppercase tracking-wider whitespace-nowrap bg-[#0b101e] drop-shadow-md sticky left-0 z-30" style={{ width: '80px', minWidth: '80px' }}>
+    // The active metric drives the matrix: its row is pinned first and emphasized,
+    // and the Δ rows (computed on this metric by the engine) are labeled with it.
+    const metricKey: 'valCr' | 'qty' | 'mw' =
+        filters.metric === 'Amount' ? 'valCr' : filters.metric === 'MW' ? 'mw' : 'qty';
+    const metricTag = filters.metric === 'Amount' ? '₹' : filters.metric;
+
+    const rowDefs: { label: string; key: 'valCr' | 'qty' | 'mw'; fmt: (v: number | null) => string }[] = [
+        { label: 'REV (₹ Cr)', key: 'valCr', fmt: (v) => v !== null ? v.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-' },
+        { label: 'VOL (Qty)', key: 'qty', fmt: (v) => v !== null ? Math.round(v).toLocaleString('en-IN') : '-' },
+        { label: 'CAP (MW)', key: 'mw', fmt: (v) => v !== null ? v.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-' }
+    ];
+    const orderedRows = [
+        ...rowDefs.filter((r) => r.key === metricKey),
+        ...rowDefs.filter((r) => r.key !== metricKey)
+    ];
+
+    const renderDataRow = (label: string, key: 'valCr' | 'qty' | 'mw', formatter: (v: number | null) => string, isPrimary: boolean) => (
+        <tr key={key} className={`border-b border-slate-800/50 hover:bg-[#141b2d] h-10 ${isPrimary ? 'bg-[#0d1524]' : 'bg-[#0b101e]'}`}>
+            <td className={`p-1.5 px-2 border-r border-slate-800 text-[9px] font-bold uppercase tracking-wider whitespace-nowrap drop-shadow-md sticky left-0 z-30 ${isPrimary ? 'text-emerald-400 bg-[#0d1524] border-l-2 border-l-emerald-400' : 'text-slate-500 bg-[#0b101e]'}`} style={{ width: '80px', minWidth: '80px' }}>
                 {label}
             </td>
             {stats.matrix.map((d: any, idx: number) => {
@@ -86,10 +102,10 @@ export const RevenueMatrix: React.FC = memo(() => {
 
                 const borderCls = isQEnd ? 'border-r border-slate-800/50' : '';
                 const textCls = isTotal
-                    ? 'text-emerald-400 text-[11px] font-bold tracking-tight'
+                    ? `${isPrimary ? 'text-emerald-400' : 'text-emerald-400/50'} text-[11px] font-bold tracking-tight`
                     : isSelectedMonth || isPartofSelectedQ
-                        ? 'text-white text-[10px] font-bold tracking-tight'
-                        : 'text-slate-100 text-[10px] font-medium tracking-tight';
+                        ? `${isPrimary ? 'text-white' : 'text-slate-400'} text-[10px] font-bold tracking-tight`
+                        : `${isPrimary ? 'text-white' : 'text-slate-500'} text-[10px] font-medium tracking-tight`;
 
                 return (
                     <td 
@@ -202,13 +218,11 @@ export const RevenueMatrix: React.FC = memo(() => {
                         </tr>
                     </thead>
                     <tbody className="bg-transparent">
-                        {renderDataRow('REV (₹ Cr)', 'valCr', (v) => v !== null ? v.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-')}
-                        {renderDataRow('VOL (Qty)', 'qty', (v) => v !== null ? Math.round(v).toLocaleString('en-IN') : '-')}
-                        {renderDataRow('CAP (MW)', 'mw', (v) => v !== null ? v.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-')}
-                        
-                        {renderBadgeRow('Δ MoM', 'mom')}
-                        {renderBadgeRow('Δ QoQ', 'qoq')}
-                        {renderBadgeRow('Δ YoY', 'yoy')}
+                        {orderedRows.map((row) => renderDataRow(row.label, row.key, row.fmt, row.key === metricKey))}
+
+                        {renderBadgeRow(`Δ MoM · ${metricTag}`, 'mom')}
+                        {renderBadgeRow(`Δ QoQ · ${metricTag}`, 'qoq')}
+                        {renderBadgeRow(`Δ YoY · ${metricTag}`, 'yoy')}
                     </tbody>
                 </table>
             </div>

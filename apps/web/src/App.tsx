@@ -13,6 +13,12 @@ import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { HelpModal } from './modules/shared/HelpModal';
 import { GlobalTooltip } from './modules/shared/GlobalTooltip';
 
+// Agent-feedback toolbar (bottom-right) — dev builds only, never bundled for production.
+// Click the toolbar, then click any element to annotate it and copy structured output.
+const AgentationToolbar = import.meta.env.DEV
+    ? React.lazy(() => import('agentation').then((m) => ({ default: m.Agentation })))
+    : null;
+
 const ModuleLoading: React.FC<{ label: string }> = ({ label }) => (
     <div className="flex-1 h-full flex items-center justify-center gap-3">
         <Loader2 className="w-5 h-5 text-emerald-500 animate-spin" />
@@ -87,6 +93,12 @@ export const App: React.FC = () => {
                     <GlobalTooltip />
                     <HelpModal isOpen={helpOpen} onClose={() => setHelpOpen(false)} />
                 </div>
+            )}
+
+            {AgentationToolbar && (
+                <Suspense fallback={null}>
+                    <AgentationToolbar />
+                </Suspense>
             )}
         </div>
     );
