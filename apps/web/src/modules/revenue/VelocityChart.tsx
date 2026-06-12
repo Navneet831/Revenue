@@ -1,7 +1,8 @@
-import React, { useRef, Suspense, lazy } from 'react';
-import { RotateCcw } from 'lucide-react';
+import React, { useRef, Suspense, lazy, memo } from 'react';
+import { RotateCcw, Loader2, AlertCircle } from 'lucide-react';
 import { useStore } from '@/store/useStore';
-import { CONFIG } from '@revenue/shared';
+import { useSectionData } from '@/hooks/useSectionData';
+import { CONFIG, ColorEngine } from '@revenue/shared';
 import { QUARTER_NAMES } from './VelocityChart/constants';
 import { createTopLabelsPlugin, createRightLabelsPlugin } from './VelocityChart/plugins';
 import { useVelocityChartConfig } from './VelocityChart/hooks/useVelocityChartConfig';
@@ -26,14 +27,19 @@ const ModeIndicator: React.FC<{ month: string; mode: string }> = ({ month, mode 
     </div>
 );
 
-export const VelocityChart: React.FC = () => {
+export const VelocityChart: React.FC = memo(() => {
+    const { 
+        isLoading, 
+        isError, 
+        isReady, 
+        stats, 
+        filters 
+    } = useSectionData('VelocityChart');
+
     const {
-        stats,
-        filters,
         updateFilters,
         privacyMode,
-        expandedId,
-        COLOR_REGISTRY
+        expandedId
     } = useStore();
 
     const chartRef = useRef<any>(null);
@@ -77,14 +83,25 @@ export const VelocityChart: React.FC = () => {
 
     const chartConfig = useVelocityChartConfig(mode, filters, privacyMode, handleChartClick);
 
-    if (!stats || !stats.buckets || !stats.buckets.chart) {
+    if (isLoading) {
         return (
-            <div className="card-3d bg-[#141b2d] border border-slate-800 p-6 rounded-2xl flex flex-col gap-4 animate-pulse h-96">
-                <div className="h-6 w-1/4 bg-slate-800 rounded" />
-                <div className="flex-1 bg-slate-800/50 rounded-xl" />
+            <div className="w-full h-full flex flex-col items-center justify-center bg-[#0b101e] gap-3">
+                <Loader2 className="w-6 h-6 text-emerald-500 animate-spin" />
+                <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">Streaming Velocity Data...</span>
             </div>
         );
     }
+
+    if (isError) {
+        return (
+            <div className="w-full h-full flex flex-col items-center justify-center bg-[#0b101e] gap-3">
+                <AlertCircle className="w-6 h-6 text-rose-500" />
+                <span className="text-[10px] font-mono text-rose-500 uppercase tracking-widest">Visual Engine Crash</span>
+            </div>
+        );
+    }
+
+    if (!isReady || !stats || !stats.buckets || !stats.buckets.chart) return null;
 
     const { buckets } = stats;
 
@@ -92,7 +109,6 @@ export const VelocityChart: React.FC = () => {
     let datasetsMap: Record<string, number[]> = {};
     let validKeys = new Set<string>();
 
-    // Determine active matrix month for Weekly/Daily views
     let activeMatrixMonth = filters.matrixMonth;
     if (!activeMatrixMonth && (mode === 'Daily' || mode === 'Weekly') && buckets.chart.monthly) {
         const mKeys = Object.keys(buckets.chart.monthly).filter(
@@ -103,28 +119,22 @@ export const VelocityChart: React.FC = () => {
 
     if (mode === 'Quarterly' && buckets.chart.quarterly) {
         labels = QUARTER_NAMES;
-
         Object.entries(buckets.chart.quarterly as any).forEach(([qIdxStr, dataObj]: any) => {
             const qIdx = parseInt(qIdxStr);
             Object.entries(dataObj as any).forEach(([seriesKey, val]: any) => {
                 validKeys.add(seriesKey);
-                if (!datasetsMap[seriesKey]) {
-                    datasetsMap[seriesKey] = Array(4).fill(0);
-                }
+                if (!datasetsMap[seriesKey]) datasetsMap[seriesKey] = Array(4).fill(0);
                 datasetsMap[seriesKey][qIdx] = val;
             });
         });
     } else if (mode === 'Monthly' && buckets.chart.monthly) {
         labels = CONFIG.FISCAL_MONTHS;
-
         Object.entries(buckets.chart.monthly as any).forEach(([mName, dataObj]: any) => {
             const mIdx = CONFIG.FISCAL_MONTHS.indexOf(mName);
             if (mIdx !== -1) {
                 Object.entries(dataObj as any).forEach(([seriesKey, val]: any) => {
                     validKeys.add(seriesKey);
-                    if (!datasetsMap[seriesKey]) {
-                        datasetsMap[seriesKey] = Array(12).fill(0);
-                    }
+                    if (!datasetsMap[seriesKey]) datasetsMap[seriesKey] = Array(12).fill(0);
                     datasetsMap[seriesKey][mIdx] = val;
                 });
             }
@@ -133,56 +143,34 @@ export const VelocityChart: React.FC = () => {
         const weekObj = (buckets.chart.weekly as any)[activeMatrixMonth] || {};
         const weeks = Object.keys(weekObj).map(Number).sort((a, b) => a - b);
         labels = weeks.map((w) => `W${w}`);
-
         weeks.forEach((w, wIdx) => {
             const dataObj = weekObj[w] || {};
             Object.entries(dataObj as any).forEach(([seriesKey, val]: any) => {
                 validKeys.add(seriesKey);
-                if (!datasetsMap[seriesKey]) {
-                    datasetsMap[seriesKey] = Array(weeks.length).fill(0);
-                }
+                if (!datasetsMap[seriesKey]) datasetsMap[seriesKey] = Array(weeks.length).fill(0);
                 datasetsMap[seriesKey][wIdx] = val;
             });
         });
     } else if (mode === 'Daily' && buckets.chart.daily && activeMatrixMonth) {
         const days = (buckets.chart.daily as any)[activeMatrixMonth] || [];
         labels = days.map((_: any, dIdx: number) => String(dIdx + 1));
-
         days.forEach((dataObj: any, dIdx: number) => {
             if (!dataObj) return;
             Object.entries(dataObj as any).forEach(([seriesKey, val]: any) => {
                 validKeys.add(seriesKey);
-                if (!datasetsMap[seriesKey]) {
-                    datasetsMap[seriesKey] = Array(days.length).fill(0);
-                }
+                if (!datasetsMap[seriesKey]) datasetsMap[seriesKey] = Array(days.length).fill(0);
                 datasetsMap[seriesKey][dIdx] = val;
             });
         });
     }
 
-    const getColors = (key: string) => {
-        const registry = COLOR_REGISTRY['sku'] || {};
-        return (
-            registry[key] || {
-                stop1: '#10b981',
-                stop2: '#059669',
-                solid: '#10b981',
-                fillFade: 'rgba(16,185,129,0.15)'
-            }
-        );
-    };
-
-    // ─── Build Datasets with per-SKU gradient colors ──────────────────────
     const datasets: any[] = Array.from(validKeys)
         .sort()
         .map((seriesKey) => {
-            const colorDef = getColors(seriesKey);
+            const colorDef = ColorEngine.getColorFor(seriesKey, 'sku');
             const isHidden = filters.excludedSeries.has(seriesKey);
             const rawDataArr = datasetsMap[seriesKey] || [];
-            const dataArr = filters.metric === 'Amount'
-                ? rawDataArr.map(v => v / CONFIG.CURRENCY_DIVIDER)
-                : rawDataArr;
-
+            const dataArr = filters.metric === 'Amount' ? rawDataArr.map(v => v / CONFIG.CURRENCY_DIVIDER) : rawDataArr;
             return {
                 label: seriesKey,
                 hidden: isHidden,
@@ -192,13 +180,6 @@ export const VelocityChart: React.FC = () => {
                     const { chart } = context;
                     if (!chart || !chart.chartArea) return colorDef.stop1;
                     const { ctx, chartArea } = chart;
-
-                    if (mode === 'Daily') {
-                        const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
-                        gradient.addColorStop(0, 'transparent');
-                        gradient.addColorStop(1, colorDef.fillFade);
-                        return gradient;
-                    }
                     const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
                     gradient.addColorStop(0, colorDef.stop1);
                     gradient.addColorStop(1, colorDef.stop2);
@@ -216,45 +197,36 @@ export const VelocityChart: React.FC = () => {
                 pointHoverRadius: 5,
                 pointBackgroundColor: mode === 'Daily' ? colorDef.solid : undefined,
                 pointBorderColor: mode === 'Daily' ? '#0b101e' : undefined,
-                pointBorderWidth: mode === 'Daily' ? 1.5 : undefined,
+                pointBorderWidth: 1.5,
                 spanGaps: true,
                 stack: mode === 'Daily' ? undefined : 'Stack 0'
             };
         });
 
-    const resetZoom = () => {
-        if (chartRef.current) {
-            chartRef.current.resetZoom();
-        }
-    };
-
-    const topLabelsPlugin = createTopLabelsPlugin(filters, privacyMode);
-    const rightLabelsPlugin = createRightLabelsPlugin(filters, privacyMode);
+    const resetZoom = () => { if (chartRef.current) chartRef.current.resetZoom(); };
+    
+    // Google Performance: Disable overlapping labels in high-density views
+    const isHighDensity = mode === 'Daily' || labels.length > 20;
+    const topLabelsPlugin = isHighDensity ? null : createTopLabelsPlugin(filters, privacyMode);
+    const rightLabelsPlugin = isHighDensity ? null : createRightLabelsPlugin(filters, privacyMode);
 
     return (
-        <div className="flex flex-col h-full w-full relative">
+        <div className="flex-1 w-full relative bg-[#0b101e] flex flex-col min-h-0">
             <div className="chart-noise-layer" />
-
-            {/* Zoom Reset overlay */}
             {expandedId === 'w-master' && <ZoomResetButton onReset={resetZoom} />}
-
-            {/* Mode Indicator Badge */}
-            {activeMatrixMonth && (mode === 'Weekly' || mode === 'Daily') && (
-                <ModeIndicator month={activeMatrixMonth} mode={mode} />
-            )}
-
-            {/* High Performance Chart Container */}
+            {activeMatrixMonth && (mode === 'Weekly' || mode === 'Daily') && <ModeIndicator month={activeMatrixMonth} mode={mode} />}
             <div className="flex-1 min-h-[220px] relative w-full z-10 select-none mt-1">
-                <Suspense fallback={<div className="w-full h-full flex items-center justify-center text-slate-500 font-mono text-[10px]">Loading Core Chart Engine&hellip;</div>}>
+                <Suspense fallback={<div className="w-full h-full flex items-center justify-center text-slate-500 font-mono text-[10px]">Loading Analytics...</div>}>
                     <ChartCore
                         ref={chartRef}
                         type={mode === 'Daily' ? 'line' : 'bar'}
                         data={{ labels, datasets }}
                         options={chartConfig}
-                        plugins={[topLabelsPlugin, rightLabelsPlugin]}
+                        plugins={[topLabelsPlugin, rightLabelsPlugin].filter(Boolean) as any[]}
                     />
                 </Suspense>
             </div>
         </div>
     );
-};
+});
+

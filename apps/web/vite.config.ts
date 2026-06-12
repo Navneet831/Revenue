@@ -12,7 +12,19 @@ export default defineConfig({
     // Production build output consumed by Express server.js
     build: {
         outDir: 'dist',
-        emptyOutDir: true
+        emptyOutDir: true,
+        rollupOptions: {
+            output: {
+                // Long-lived vendor chunks: framework code changes rarely, so
+                // returning users hit the HTTP cache instead of re-downloading
+                manualChunks: {
+                    'vendor-react': ['react', 'react-dom'],
+                    'vendor-charts': ['chart.js', 'react-chartjs-2', 'chartjs-plugin-zoom'],
+                    'vendor-supabase': ['@supabase/supabase-js'],
+                    'vendor-observability': ['@sentry/react']
+                }
+            }
+        }
     },
     server: {
         // Dev server: runs alongside Express (which must be on a different port in dev)

@@ -1,5 +1,10 @@
 const { defineConfig, devices } = require('@playwright/test');
 
+// Hermetic test port: default 8000 for parity with production, overridable so
+// the suite never collides with another service already bound to the port.
+const PORT = process.env.PW_PORT || '8000';
+const BASE_URL = `http://127.0.0.1:${PORT}`;
+
 module.exports = defineConfig({
     testDir: './tests/e2e',
     testMatch: '**/*.spec.js',
@@ -10,7 +15,7 @@ module.exports = defineConfig({
     workers: process.env.CI ? 1 : undefined,
     reporter: 'list',
     use: {
-        baseURL: 'http://127.0.0.1:8000',
+        baseURL: BASE_URL,
         trace: 'on-first-retry',
         screenshot: 'only-on-failure'
     },
@@ -22,8 +27,9 @@ module.exports = defineConfig({
     ],
     webServer: {
         command: 'node apps/api/index.js',
-        url: 'http://127.0.0.1:8000',
-        reuseExistingServer: !process.env.CI,
-        timeout: 12000
+        url: BASE_URL,
+        reuseExistingServer: !process.env.CI && PORT === '8000',
+        timeout: 12000,
+        env: { ...process.env, PORT }
     }
 });

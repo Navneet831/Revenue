@@ -1,7 +1,7 @@
 import React, { useRef, Suspense, lazy } from 'react';
 import { PieChart, Table2, Maximize2, Minimize2 } from 'lucide-react';
 import { useStore } from '@/store/useStore';
-import { MetricFormatter, CONFIG } from '@revenue/shared';
+import { MetricFormatter, CONFIG, ColorEngine } from '@revenue/shared';
 import { createRightLabelsPlugin } from './plugins';
 
 const ListChartCore = lazy(() => import('./ListChartCore'));
@@ -20,7 +20,7 @@ interface ListCardProps {
 }
 
 export const ListCard: React.FC<ListCardProps> = ({ id, title, icon, cardKey, filterKey, data, count, onToggleExpand, isExpanded }) => {
-    const { cardViews, setCardView, privacyMode, filters, updateFilters, COLOR_REGISTRY, stats } = useStore();
+    const { cardViews, setCardView, privacyMode, filters, updateFilters, stats } = useStore();
     const chartRef = useRef<any>(null);
     const view = cardViews[cardKey] || 'tabular';
     const isVisual = view === 'visual';
@@ -29,11 +29,10 @@ export const ListCard: React.FC<ListCardProps> = ({ id, title, icon, cardKey, fi
 
     const getColors = (key: string) => {
         const type = stats?.isOnlySolar ? 'sku' : (cardKey === 'sku' ? 'sku' : 'segment');
-        const registry = COLOR_REGISTRY[type] || {};
-        return registry[key] || { stop1: '#10b981', stop2: '#059669', solid: '#10b981', fillFade: 'rgba(16,185,129,0.15)' };
+        return ColorEngine.getColorFor(key, type);
     };
 
-    // Prepare data same way as original HTML renderLists
+    // Prepare data
     const preparedData = data
         .map((item: any) => {
             let v = 0;
@@ -196,7 +195,7 @@ export const ListCard: React.FC<ListCardProps> = ({ id, title, icon, cardKey, fi
     const dynamicHeight = Math.max(300, topData.length * 28);
 
     return (
-        <div id={id} className="card-3d flex flex-col group relative rounded-2xl min-h-0 min-w-0 bg-[#111620] overflow-hidden border border-slate-800">
+        <div id={id} className="card-3d flex flex-col group relative rounded-2xl min-h-0 min-w-0 bg-[#111620] overflow-hidden border border-slate-800 h-full">
             {/* Widget header */}
             <div className="p-2 px-3 border-b border-slate-800 bg-[#0F1219] flex justify-between items-center z-50 shrink-0">
                 <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pr-2">
@@ -235,20 +234,16 @@ export const ListCard: React.FC<ListCardProps> = ({ id, title, icon, cardKey, fi
             </div>
 
             <div className="flex-1 w-full relative bg-transparent overflow-hidden min-h-[280px]">
-                {/* Table container */}
+                {/* Standard Scrollable Table container */}
                 <div
-                    className="absolute inset-0 overflow-x-hidden overflow-y-auto no-scrollbar bg-transparent transition-opacity duration-300"
+                    className="absolute inset-0 transition-opacity duration-300 overflow-y-auto no-scrollbar"
                     style={{ zIndex: isVisual ? 10 : 20, opacity: isVisual ? 0 : 1, pointerEvents: isVisual ? 'none' : 'auto' }}
                 >
-                    <table className="w-full border-collapse min-w-full">
-                        <tbody>
-                            {preparedData.length === 0 ? (
-                                <tr>
-                                    <td colSpan={2} className="text-center text-slate-500 py-6 text-[9px] uppercase tracking-widest font-mono">
-                                        Empty
-                                    </td>
-                                </tr>
-                            ) : preparedData.slice(0, 50).map((r: any, i: number) => {
+                    {preparedData.length === 0 ? (
+                        <div className="w-full h-full flex items-center justify-center text-slate-500 text-[9px] uppercase tracking-widest font-mono">Empty</div>
+                    ) : (
+                        <div className="flex flex-col w-full">
+                            {preparedData.map((r: any, i: number) => {
                                 const isSelected = selectedKeys.includes(r.n);
                                 const colorDef = getColors(r.n);
                                 const activeColor = isSelected
@@ -256,46 +251,43 @@ export const ListCard: React.FC<ListCardProps> = ({ id, title, icon, cardKey, fi
                                     : colorDef.fillFade;
                                 const bgStyle = {
                                     background: `linear-gradient(90deg, transparent ${100 - r.pct}%, ${activeColor} ${100 - r.pct}%)`,
-                                    boxShadow: isSelected ? `inset 0 0 0 1px ${colorDef.solid}` : 'none'
+                                    boxShadow: isSelected ? `inset 0 0 0 1px ${colorDef.solid}` : 'none',
+                                    borderBottom: '1px solid rgba(30, 41, 59, 0.3)'
                                 };
                                 const subtext = cardKey === 'saleshead'
                                     ? `${r.comps ? (Array.isArray(r.comps) ? r.comps.length : r.comps.size || 0) : 0} UNIQUE COMP`
                                     : `${r.pct.toFixed(1)}% SHARE`;
 
                                 return (
-                                    <tr
+                                    <div
                                         key={r.n}
                                         onClick={(e) => handleRowClick(r.n, e.ctrlKey)}
                                         style={bgStyle}
-                                        className="cursor-pointer transition-all duration-200 border-b border-slate-800/30 hover:bg-[#1a233a] relative group h-10 select-none"
+                                        className="cursor-pointer transition-all duration-200 hover:bg-[#1a233a] flex items-center select-none"
                                     >
-                                        <td
-                                            className={`p-2 text-[10px] pl-3 tracking-wide align-middle w-full ${isSelected ? 'font-bold' : 'font-medium'}`}
+                                        <div
+                                            className={`flex-1 p-2 text-[10px] pl-3 tracking-wide truncate ${isSelected ? 'font-bold' : 'font-medium'}`}
                                             style={{ color: isSelected ? colorDef.solid : '#cbd5e1' }}
-                                            data-tooltip={r.n}
+                                            title={r.n}
                                         >
-                                            <div className="line-clamp-2 overflow-hidden text-ellipsis leading-snug break-words whitespace-normal">
-                                                {i + 1}. {r.n}
-                                            </div>
-                                        </td>
-                                        <td className="p-2 pr-3 align-middle whitespace-nowrap">
-                                            <div className="flex flex-col items-end justify-center text-right">
-                                                <span
-                                                    className="text-[11px] font-mono font-bold tracking-tight"
-                                                    style={{ color: isSelected ? colorDef.solid : '#ffffff' }}
-                                                >
-                                                    {privacyMode ? '••••••' : MetricFormatter.formatValue(r.displayV, filters.metric, privacyMode)}
-                                                </span>
-                                                <span className="text-[8.5px] font-sans text-slate-500/80 tracking-widest mt-[2px] uppercase whitespace-nowrap">
-                                                    {subtext}
-                                                </span>
-                                            </div>
-                                        </td>
-                                    </tr>
+                                            {i + 1}. {r.n}
+                                        </div>
+                                        <div className="p-2 pr-3 flex flex-col items-end shrink-0">
+                                            <span
+                                                className="text-[11px] font-mono font-bold tracking-tight"
+                                                style={{ color: isSelected ? colorDef.solid : '#ffffff' }}
+                                            >
+                                                {privacyMode ? '••••••' : MetricFormatter.formatValue(r.displayV, filters.metric, privacyMode)}
+                                            </span>
+                                            <span className="text-[8.5px] font-sans text-slate-500/80 tracking-widest mt-[1px] uppercase whitespace-nowrap">
+                                                {subtext}
+                                            </span>
+                                        </div>
+                                    </div>
                                 );
                             })}
-                        </tbody>
-                    </table>
+                        </div>
+                    )}
                 </div>
 
                 {/* Chart container */}

@@ -1,3 +1,67 @@
+/**
+ * THE COGNITIVE COLOR ENGINE (Palantir/High-Fidelity Standard)
+ * Provides unique complementary colors for SKUs and segments.
+ */
+export const COLOR_PALETTE = [
+    { h: 145, s: 65, l: 48 }, // Grew Emerald (Base)
+    { h: 215, s: 80, l: 65 }, // Blue
+    { h: 35,  s: 90, l: 60 }, // Amber/Orange
+    { h: 280, s: 70, l: 65 }, // Amethyst
+    { h: 340, s: 85, l: 65 }, // Pink/Rose
+    { h: 195, s: 80, l: 55 }, // Cyan
+    { h: 15,  s: 85, l: 60 }, // Rust/Red-Orange
+    { h: 110, s: 70, l: 50 }, // Green
+    { h: 250, s: 85, l: 70 }, // Indigo
+    { h: 55,  s: 90, l: 50 }, // Gold/Yellow
+    { h: 180, s: 80, l: 40 }, // Teal
+    { h: 310, s: 70, l: 60 }, // Magenta
+    { h: 200, s: 60, l: 50 }, // Steel Blue
+    { h: 140, s: 60, l: 55 }, // Sea Green
+    { h: 5,   s: 80, l: 65 }, // Salmon/Light Red
+    { h: 260, s: 65, l: 60 }, // Violet
+];
+
+export const SKU_OVERRIDE_PALETTE: Record<string, any> = {
+    '580': { stop1: '#34d399', stop2: '#059669', solid: '#10b981', fillFade: 'rgba(16,185,129,0.15)' },
+    '590': { stop1: '#fca5a5', stop2: '#dc2626', solid: '#ef4444', fillFade: 'rgba(239,68,68,0.15)' },
+    '540': { stop1: '#93c5fd', stop2: '#2563eb', solid: '#3b82f6', fillFade: 'rgba(59,130,246,0.15)' },
+    '615': { stop1: '#fbcfe8', stop2: '#db2777', solid: '#ec4899', fillFade: 'rgba(236,72,153,0.15)' },
+};
+
+export class ColorEngine {
+    static getColorFor(key: string, type: 'sku' | 'segment' | 'customer' = 'sku'): any {
+        if (!key) key = 'Unknown';
+        const kLower = key.toLowerCase();
+        
+        // 1. Check overrides
+        if (type === 'sku') {
+            for (const [ov, def] of Object.entries(SKU_OVERRIDE_PALETTE)) {
+                if (kLower.includes(ov)) return def;
+            }
+        }
+
+        // 2. Special cases
+        if (kLower.includes('long tail') || kLower.includes('unidentified') || kLower.includes('direct')) {
+            return { stop1: '#64748b', stop2: '#334155', solid: '#475569', fillFade: 'rgba(71,85,105,0.1)' };
+        }
+
+        // 3. Hash-based assignment for consistency
+        let hash = 0;
+        for (let i = 0; i < key.length; i++) {
+            hash = key.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        const cObj = COLOR_PALETTE[Math.abs(hash) % COLOR_PALETTE.length];
+        const h = cObj.h, s = cObj.s, l = cObj.l;
+        
+        return {
+            stop1: `hsla(${h}, ${s}%, ${l}%, 0.95)`,
+            stop2: `hsla(${(h + 10) % 360}, ${s}%, ${Math.max(25, l - 25)}%, 0.85)`,
+            solid: `hsl(${h}, ${s}%, ${Math.max(40, l - 10)}%)`,
+            fillFade: `hsla(${h}, ${s}%, ${l}%, 0.15)`
+        };
+    }
+}
+
 export interface ConfigType {
     SHEET_ID: string | null;
     SHEET_NAME: string;
@@ -42,7 +106,7 @@ export interface RevenueRow {
 export interface FilterConfig {
     segment: string[];
     metric: string;
-    velocityMode: string;
+    velocityMode: 'Daily' | 'Weekly' | 'Monthly' | 'Quarterly';
     salesHead: string[];
     customer: string[];
     pendingOnly: boolean;
@@ -96,6 +160,7 @@ export interface Insight {
     t: 'success' | 'risk' | 'strategic';
     l: string;
     txt: string;
+    cta?: { label: string; action: string };
 }
 
 export interface AnalyticalOutput {
@@ -114,6 +179,7 @@ export interface AnalyticalOutput {
     cust: EntitySummary[];
     wp: EntitySummary[];
     insights: Insight[];
+    storyInsights: Insight[];
     activeSegments: string[];
     activePlotKeys: string[];
     rawFiltered: RevenueRow[];
@@ -664,11 +730,14 @@ export class RevenueComputeEngine {
             const isTargetState = f.pendingOnly ? r.isPending : !r.isPending;
             if (!isTargetState) continue;
 
+            const plotKey = r.wp;
+            // Always add all segment-relevant SKUs to activePlotKeys so they don't vanish
+            activePlotKeys.add(plotKey);
+
             if (shFilterSet.size > 0 && !shFilterSet.has(r.salesHead)) continue;
             if (custFilterSet.size > 0 && !custFilterSet.has(r.customer)) continue;
             if (skuFilterSet.size > 0 && !skuFilterSet.has(r.wp)) continue;
 
-            const plotKey = r.wp;
             const isExcluded = excludedSet.has(plotKey);
 
             if (!isExcluded) {
@@ -699,7 +768,6 @@ export class RevenueComputeEngine {
                 kpiQty += r.qty;
                 rawFiltered.push(r);
                 activeSegments.add(r.segment);
-                activePlotKeys.add(plotKey);
 
                 tVal += r.val;
                 tMW += r.mw;
@@ -928,6 +996,7 @@ export class RevenueComputeEngine {
             cust: custArr,
             wp: wpArr,
             insights: insights,
+            storyInsights: [],
             activeSegments: Array.from(activeSegments).sort(),
             activePlotKeys: Array.from(activePlotKeys).sort(),
             rawFiltered: rawFiltered,

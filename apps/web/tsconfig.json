@@ -27,9 +27,8 @@
         "noFallthroughCasesInSwitch": true,
         "esModuleInterop": true,
         "forceConsistentCasingInFileNames": true,
-        "baseUrl": ".",
         "paths": {
-            "@/*": ["src/*"],
+            "@/*": ["./src/*"],
             "@revenue/shared": ["../../packages/shared/src/index.ts"]
         }
     },

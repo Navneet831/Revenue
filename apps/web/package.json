@@ -13,15 +13,18 @@
     "@sentry/browser": "^10.56.0",
     "@sentry/react": "^10.56.0",
     "@supabase/supabase-js": "^2.106.2",
+    "@tanstack/react-query": "^5.101.0",
     "chart.js": "^4.5.1",
     "chartjs-plugin-zoom": "^2.2.0",
     "flatpickr": "^4.6.13",
     "hammerjs": "^2.0.8",
+    "idb-keyval": "^6.2.5",
     "lucide-react": "^0.468.0",
     "react": "^18.3.1",
     "react-chartjs-2": "^5.3.1",
     "react-dom": "^18.3.1",
     "react-flatpickr": "^3.10.13",
+    "react-window": "^2.2.7",
     "zustand": "^5.0.3"
   },
   "devDependencies": {

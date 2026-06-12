@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { AlertTriangle, Briefcase, ShieldCheck, X, PlayCircle } from 'lucide-react';
 import { useStore } from '@/store/useStore';
-import { IntelligenceBoardIcon } from '@/assets/CustomIcons';
+import { IntelligenceBoardIcon } from '../../assets/CustomIcons';
 
 export const InsightsPanel: React.FC = () => {
     const { stats, ui, updateUIState, insightsSeen, setInsightsSeen } = useStore();

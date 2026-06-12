@@ -6,11 +6,19 @@ import { Insight, Format } from '@revenue/shared';
 export const ExecutiveStories: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
     const { stats } = useStore();
     const [currentIndex, setCurrentIndex] = useState(0);
-    const [progress, setLoadProgress] = useState(0);
+    const [progress, setProgress] = useState(0);
     const timerRef = useRef<any>(null);
     const progressRef = useRef<any>(null);
 
     const stories = (stats?.storyInsights || []); // Top 5 McKinsey Insights
+
+    useEffect(() => {
+        const handleEsc = (e: KeyboardEvent) => {
+            if (e.key === 'Escape' && isOpen) onClose();
+        };
+        window.addEventListener('keydown', handleEsc);
+        return () => window.removeEventListener('keydown', handleEsc);
+    }, [isOpen, onClose]);
 
     useEffect(() => {
         if (!isOpen || stories.length === 0) return;
@@ -20,16 +28,15 @@ export const ExecutiveStories: React.FC<{ isOpen: boolean; onClose: () => void }
     }, [isOpen, currentIndex, stories.length]);
 
     const startStory = () => {
-        setLoadProgress(0);
+        setProgress(0);
         stopStory();
-        
+
         const duration = 6000; // 6 seconds per story
         const interval = 50;
         const step = (interval / duration) * 100;
 
         progressRef.current = setInterval(() => {
-            setLoadProgress(prev => {
-                if (prev >= 100) {
+            setProgress(prev => {                if (prev >= 100) {
                     nextStory();
                     return 0;
                 }

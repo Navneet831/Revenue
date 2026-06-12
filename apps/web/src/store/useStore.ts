@@ -30,6 +30,7 @@ export interface AppState {
     stats: AnalyticalOutput | null;
     userEmail: string | null;
     insightsSeen: boolean;
+    activeApp: 'REVENUE' | 'INVENTORY' | 'LOGISTICS';
 
     // Actions
     setData: (data: RevenueRow[]) => void;
@@ -51,10 +52,12 @@ export interface AppState {
     updateFilters: (updates: Partial<FilterConfig>) => void;
     resetFilters: () => void;
     setCardView: (card: 'master' | 'cust' | 'sku' | 'saleshead', view: string) => void;
+    toggleAllViews: () => void;
     setColorRegistry: (registry: AppState['COLOR_REGISTRY']) => void;
     setStats: (stats: AnalyticalOutput | null) => void;
     setUserEmail: (email: string | null) => void;
     setInsightsSeen: (seen: boolean) => void;
+    setActiveApp: (app: 'REVENUE' | 'INVENTORY' | 'LOGISTICS') => void;
 }
 
 const initialFilters = (minDate: string = '', maxDate: string = ''): FilterConfig => ({
@@ -91,7 +94,7 @@ export const useStore = create<AppState>((set) => ({
     allSKUs: [],
     allCustomers: [],
     keyMap: null,
-    ui: { segDropOpen: false, velDropOpen: false, insightsOpen: false },
+    ui: { segDropOpen: false, velDropOpen: false, insightsOpen: false, storiesOpen: false },
     hiddenKPIs: [],
     filters: initialFilters(),
     cardViews: { master: 'tabular', cust: 'tabular', sku: 'tabular', saleshead: 'tabular' },
@@ -99,6 +102,7 @@ export const useStore = create<AppState>((set) => ({
     stats: null,
     userEmail: null,
     insightsSeen: true,
+    activeApp: 'REVENUE',
 
     // Actions
     setData: (data) => set({ data }),
@@ -156,8 +160,16 @@ export const useStore = create<AppState>((set) => ({
         set((state) => ({
             cardViews: { ...state.cardViews, [card]: view }
         })),
+    toggleAllViews: () =>
+        set((state) => {
+            const nextView = state.cardViews.master === 'visual' ? 'tabular' : 'visual';
+            return {
+                cardViews: { master: nextView, cust: nextView, sku: nextView, saleshead: nextView }
+            };
+        }),
     setColorRegistry: (COLOR_REGISTRY) => set({ COLOR_REGISTRY }),
     setStats: (stats) => set({ stats }),
     setUserEmail: (userEmail) => set({ userEmail }),
-    setInsightsSeen: (insightsSeen) => set({ insightsSeen })
+    setInsightsSeen: (insightsSeen) => set({ insightsSeen }),
+    setActiveApp: (activeApp) => set({ activeApp })
 }));

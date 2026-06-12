@@ -31,9 +31,11 @@ export const SolarModuleIcon: React.FC<{ className?: string }> = ({ className })
             <g transform="matrix(0.5227, 0.0909, -0.2234, 0.3936, 260, 50)">
                 <rect x="0" y="0" width="440" height="940" fill="url(#solarFrameGrad)" rx="4" ry="4" />
                 <rect x="19" y="19" width="402" height="902" fill="#f8f9fa" />
-                {[0, 100, 200, 300].map(x => [0, 100, 200, 300, 400, 500, 600, 700, 800].map(y => (
-                    <use key={`${x}-${y}`} href="#solarCell_sym" x={x + 21} y={y + 21} />
-                )))}
+                <g>
+                    {[0, 100, 200, 300].map(x => [0, 100, 200, 300, 400, 500, 600, 700, 800].map(y => (
+                        <use key={`${x}-${y}`} href="#solarCell_sym" x={x + 21} y={y + 21} />
+                    )))}
+                </g>
             </g>
         </g>
     </svg>

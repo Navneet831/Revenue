@@ -58,12 +58,18 @@ export const useKeyboardShortcuts = (
                 updateFilters({ segment: [...allSegments] });
             }
 
-            // Alt + A/M/Q: Metric Toggles
+            // Alt + A/M/Q/V: Metric and View Toggles
             if (e.altKey) {
                 const key = e.key.toLowerCase();
-                if (key === 'a') { e.preventDefault(); updateFilters({ metric: 'Amount' }); }
-                if (key === 'm') { e.preventDefault(); updateFilters({ metric: 'MW' }); }
-                if (key === 'q') { e.preventDefault(); updateFilters({ metric: 'Qty' }); }
+                const code = e.code; // Fallback for robust detection across locales
+
+                if (key === 'a' || code === 'KeyA') { e.preventDefault(); updateFilters({ metric: 'Amount' }); }
+                if (key === 'm' || code === 'KeyM') { e.preventDefault(); updateFilters({ metric: 'MW' }); }
+                if (key === 'q' || code === 'KeyQ') { e.preventDefault(); updateFilters({ metric: 'Qty' }); }
+                if (key === 'v' || code === 'KeyV') { 
+                    e.preventDefault();
+                    useStore.getState().toggleAllViews();
+                }
                 
                 // Alt + [1-9]: Quick Isolate Segment
                 if (!isNaN(parseInt(key)) && parseInt(key) > 0) {
@@ -111,5 +117,5 @@ export const useKeyboardShortcuts = (
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [authenticated, filters.velocityMode, ui.insightsOpen, allSegments, expandedId]);
+    }, [authenticated, filters.velocityMode, ui.insightsOpen, allSegments, expandedId, cardViews]);
 };

@@ -78,3 +78,6 @@ check_pg_date.py
 test-results/
 coverage/
 .env*
+
+# graphify knowledge-graph artifacts (regenerate with: python -m graphify update apps)
+graphify-out/

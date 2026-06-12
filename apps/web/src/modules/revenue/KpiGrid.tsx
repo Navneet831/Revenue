@@ -1,20 +1,44 @@
 import React from 'react';
 import { KpiCard } from './KpiCard';
 import { useStore } from '@/store/useStore';
-import { DataSanitizer } from '@revenue/shared';
+import { useSectionData } from '@/hooks/useSectionData';
+import { AlertCircle, Loader2 } from 'lucide-react';
 
 export const KpiGrid: React.FC = () => {
+    const { 
+        isLoading, 
+        isError, 
+        isReady, 
+        stats, 
+        filters 
+    } = useSectionData('KpiGrid');
+
     const {
-        stats,
-        filters,
         updateFilters,
         activeKpiDetail,
         setActiveKpiDetail,
-        isCustomPeriodActive,
-        latestDate
+        isCustomPeriodActive
     } = useStore();
 
-    if (!stats || !stats.kpi) return null;
+    if (isLoading) {
+        return (
+            <div className="flex w-full gap-3 pb-2 overflow-x-auto no-scrollbar h-[120px] items-center justify-center bg-[#111620]/50 rounded-xl border border-slate-800/50">
+                <Loader2 className="w-5 h-5 text-emerald-500 animate-spin mr-2" />
+                <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">Calculating KPIs...</span>
+            </div>
+        );
+    }
+
+    if (isError) {
+        return (
+            <div className="flex w-full gap-3 pb-2 overflow-x-auto no-scrollbar h-[120px] items-center justify-center bg-red-900/10 rounded-xl border border-red-900/20">
+                <AlertCircle className="w-5 h-5 text-red-500 mr-2" />
+                <span className="text-[10px] font-mono text-red-500 uppercase tracking-widest">KPI Engine Failure</span>
+            </div>
+        );
+    }
+
+    if (!isReady || !stats || !stats.kpi) return null;
     const { kpi } = stats;
 
     const handleToggleDetail = (id: string) => {
@@ -93,4 +117,5 @@ export const KpiGrid: React.FC = () => {
         </div>
     );
 };
+
 

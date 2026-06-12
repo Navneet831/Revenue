@@ -1,7 +1,7 @@
-import React from 'react';
-import { CalendarDays, Calendar, PieChart, TrendingUp, Truck, TrendingDown } from 'lucide-react';
+import React, { memo } from 'react';
+import { CalendarDays, Calendar, PieChart, TrendingUp, Truck } from 'lucide-react';
 import { useStore } from '@/store/useStore';
-import { MetricFormatter, CONFIG, DataSanitizer } from '@revenue/shared';
+import { MetricFormatter, CONFIG, ColorEngine } from '@revenue/shared';
 
 interface KpiCardProps {
     id: string;
@@ -16,7 +16,7 @@ interface KpiCardProps {
     onToggleDetail?: () => void;
 }
 
-export const KpiCard: React.FC<KpiCardProps> = ({
+export const KpiCard: React.FC<KpiCardProps> = memo(({
     id,
     title,
     value,
@@ -28,7 +28,7 @@ export const KpiCard: React.FC<KpiCardProps> = ({
     detailOpen = false,
     onToggleDetail
 }) => {
-    const { privacyMode, stats, filters, latestDate, COLOR_REGISTRY } = useStore();
+    const { privacyMode, stats, filters, latestDate } = useStore();
 
     const renderIcon = (className: string) => {
         switch (iconName) {
@@ -43,8 +43,7 @@ export const KpiCard: React.FC<KpiCardProps> = ({
 
     const formatVal = (v: number) => {
         if (privacyMode) return '••••••';
-        const metric = filters.metric;
-        return MetricFormatter.formatValue(v, metric, privacyMode);
+        return MetricFormatter.formatValue(v, filters.metric, privacyMode);
     };
 
     const getBadge = () => {
@@ -55,7 +54,7 @@ export const KpiCard: React.FC<KpiCardProps> = ({
         
         return (
             <div 
-                className={`flex flex-col items-end leading-none cursor-pointer hover:opacity-80 transition-all ${detailOpen ? 'bg-emerald-400/10 p-1.5 px-2 rounded-lg border border-emerald-400/30 shadow-[0_0_10px_rgba(16,185,129,0.2)]' : ''}`}
+                className={`flex flex-col items-end leading-none cursor-pointer hover:opacity-80 transition-all ${detailOpen ? 'bg-emerald-400/10 p-1.5 px-2 rounded-lg border border-emerald-400/30' : ''}`}
                 onClick={(e) => { e.stopPropagation(); onToggleDetail?.(); }}
             >
                 <span className={`${colorCls} text-[14px] font-bold font-mono tracking-tighter`}>
@@ -86,13 +85,11 @@ export const KpiCard: React.FC<KpiCardProps> = ({
             const fullM = CONFIG.FULL_MONTHS[mIdx];
             explanation = `${fullM} ${yrShort} vs ${fullM} ${prevYrShort}`;
         } else if (compareLabel === 'QoQ') {
-            const qIdx = filters.selectedQuarter !== null ? filters.selectedQuarter : Math.floor((anchorDate.getMonth() >= 3 ? anchorDate.getMonth() - 3 : anchorDate.getMonth() + 9) / 3);
+            const qIdx = filters.selectedQuarter != null ? filters.selectedQuarter : Math.floor((anchorDate.getMonth() >= 3 ? anchorDate.getMonth() - 3 : anchorDate.getMonth() + 9) / 3);
             const qNames = ['Q1 (Apr-Jun)', 'Q2 (Jul-Sep)', 'Q3 (Oct-Dec)', 'Q4 (Jan-Mar)'];
             explanation = `${qNames[qIdx]} ${yrShort} vs ${qNames[qIdx]} ${prevYrShort}`;
         } else if (compareLabel === 'YoY') {
             explanation = `FY ${yrShort} vs FY ${prevYrShort}`;
-        } else {
-            explanation = `Baseline: ${formatVal(compareValue)}`;
         }
 
         return (
@@ -120,7 +117,7 @@ export const KpiCard: React.FC<KpiCardProps> = ({
             propStrips = sorted.map(([k, v], idx) => {
                 const pct = (v / total) * 100;
                 if (pct < 0.5) return null;
-                const cDef = COLOR_REGISTRY.sku[k] || COLOR_REGISTRY.segment[k] || { stop1: '#10b981', stop2: '#059669' };
+                const cDef = ColorEngine.getColorFor(k, stats?.isOnlySolar ? 'sku' : 'segment');
                 return (
                     <div 
                         key={idx}
@@ -150,12 +147,9 @@ export const KpiCard: React.FC<KpiCardProps> = ({
             } ${detailOpen ? 'border-emerald-400/40 ring-1 ring-emerald-400/10 shadow-[0_15px_40px_rgba(0,0,0,0.4)]' : ''}`}
             onClick={() => isInteractive && onToggleDetail && onToggleDetail()}
         >
-            {/* Bottom Proportional Micro Strip */}
             {renderBreakdownStrip()}
 
-            {/* Inner padding wrapper */}
             <div className="px-4 pt-3 pb-5 flex flex-col h-full w-full gap-2 relative z-10">
-                {/* Top Row: Label & Badge (Right) */}
                 <div className="flex items-start justify-between z-30 w-full">
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest transition-colors drop-shadow-md mt-1">
                         {title}
@@ -165,7 +159,6 @@ export const KpiCard: React.FC<KpiCardProps> = ({
                     </div>
                 </div>
 
-                {/* Main Value & Detail */}
                 <div className="flex flex-col z-10 w-full">
                     <span className="text-2xl lg:text-[26px] font-bold font-mono text-white leading-tight tracking-tighter truncate drop-shadow-md">
                         {formatVal(value)}
@@ -174,14 +167,13 @@ export const KpiCard: React.FC<KpiCardProps> = ({
                 </div>
             </div>
 
-            {/* Watermark Icon */}
             <div className="absolute right-[-10px] bottom-[-10px] w-20 h-20 text-white opacity-[0.03] transform -rotate-12 pointer-events-none transition-transform group-hover:rotate-0 duration-300">
                 {renderIcon("w-full h-full")}
             </div>
 
-            {/* Subtle Texture Overlay */}
             <div className="absolute inset-0 opacity-[0.03] pointer-events-none z-0 bg-grid-pattern" />
         </div>
     );
-};
+});
+
 

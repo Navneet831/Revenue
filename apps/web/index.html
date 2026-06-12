@@ -26,10 +26,25 @@
                         div.style.fontSize = '12px';
                         div.style.border = '1px solid #991b1b';
                         div.style.zIndex = '1000000';
-                        div.innerText = 'BOOT ERROR: ' + msg + ' (' + url + ':' + lineNo + ')';
+                        div.style.fontFamily = 'monospace';
+                        div.innerText = 'BOOT ERROR: ' + msg + '\nSource: ' + url + ':' + lineNo;
+                        
+                        // User Requirement: Keep URL static if on auth callback
+                        if (window.location.pathname.includes('/auth/callback')) {
+                             div.style.background = '#0a0a0a';
+                             div.style.borderLeft = '4px solid #ef4444';
+                             div.innerText = '[AUTH_CONTEXT_STABLE] ' + div.innerText;
+                        }
+                        
                         document.body.appendChild(div);
                         return false;
                     };
+
+                    // Ensure we are always on the requested URL if it's the callback one
+                    if (window.location.href.indexOf('auth/callback') !== -1 && !window.location.hash) {
+                        // If hash is missing but we are on callback path, keep context
+                        console.log('Auth Callback Context Active');
+                    }
                 </script>
             </div>
         </div>

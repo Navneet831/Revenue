@@ -3,8 +3,7 @@ import { X } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 
 export const Breadcrumbs: React.FC = () => {
-    const { filters, updateFilters, stats } = useStore();
-    const allSegments = stats?.allSegments || [];
+    const { filters, updateFilters, allSegments } = useStore();
 
     const createTag = (lbl: string, val: string, clr: string, action: () => void) => (
         <div 

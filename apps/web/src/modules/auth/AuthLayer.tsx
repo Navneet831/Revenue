@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { SupabaseClient } from '@supabase/supabase-js';
+import { supabaseService } from '@/services/supabaseService';
 import { useStore } from '@/store/useStore';
 import { CommitDrilldown } from '../shared/CommitDrilldown';
 import { StarfieldCanvas } from './AuthLayer/StarfieldCanvas';
@@ -52,15 +53,15 @@ export const AuthLayer: React.FC<AuthLayerProps> = ({ onAuthenticated, isHidden 
             }, 15000);
 
             try {
-                const configRes = await fetch('/api/v1/config');
-                if (!configRes.ok) throw new Error('Security handshake failed.');
-                const { SUPABASE_URL, SUPABASE_ANON_KEY } = await configRes.json();
-
-                const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                const client = await supabaseService.getClient();
                 setSupabaseClient(client);
 
                 const { data: { session }, error: sessionError } = await client.auth.getSession();
                 clearTimeout(timeout);
+
+                // Magic-link/OAuth tokens in the URL hash are consumed by getSession();
+                // restore a clean address bar so the app never lives at /auth/callback#
+                cleanAuthCallbackUrl();
 
                 if (sessionError) throw sessionError;
 
@@ -72,6 +73,7 @@ export const AuthLayer: React.FC<AuthLayerProps> = ({ onAuthenticated, isHidden 
 
                 client.auth.onAuthStateChange(async (event, newSession) => {
                     if (newSession && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {
+                        cleanAuthCallbackUrl();
                         await verifyWhitelist(client, newSession.user?.email || '');
                     } else if (event === 'SIGNED_OUT') {
                         setShowUI(true);
@@ -87,6 +89,12 @@ export const AuthLayer: React.FC<AuthLayerProps> = ({ onAuthenticated, isHidden 
 
         initSupabase();
     }, []);
+
+    const cleanAuthCallbackUrl = () => {
+        if (window.location.pathname.startsWith('/auth/callback') || window.location.hash.includes('access_token')) {
+            window.history.replaceState(null, '', '/');
+        }
+    };
 
     const verifyWhitelist = async (client: SupabaseClient, emailAddress: string) => {
         const cleanEmail = emailAddress.trim().toLowerCase();

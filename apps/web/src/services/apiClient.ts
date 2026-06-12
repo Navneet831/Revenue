@@ -1,10 +1,7 @@
-import { createClient } from '@supabase/supabase-js';
+import { supabaseService } from './supabaseService';
 
 export class ApiClient {
     private static instance: ApiClient;
-    private supabaseClient: any | null = null;
-    private config: any = null;
-    private accessToken: string | null = null;
 
     private constructor() {}
 
@@ -16,34 +13,23 @@ export class ApiClient {
     }
 
     public async initialize(): Promise<void> {
-        if (!this.config) {
-            const configRes = await fetch('/api/v1/config');
-            if (!configRes.ok) throw new Error('Failed to retrieve system configuration');
-            this.config = await configRes.json();
-        }
-
-        if (!this.supabaseClient) {
-            this.supabaseClient = createClient(this.config.SUPABASE_URL, this.config.SUPABASE_ANON_KEY);
-        }
-
-        const { data: { session }, error } = await this.supabaseClient.auth.getSession();
-        
-        if (error || !session) {
+        const token = await supabaseService.getAccessToken();
+        if (!token) {
             throw new Error('Active security session not found or expired. Please re-authenticate.');
         }
-        
-        this.accessToken = session.access_token;
     }
 
     public async get<T>(endpoint: string): Promise<T> {
-        if (!this.accessToken) {
+        // Resolve the token per request so a refreshed session is always honored
+        const token = await supabaseService.getAccessToken();
+        if (!token) {
             throw new Error('API Client is not initialized with a valid security token.');
         }
 
         const response = await fetch(endpoint, {
             method: 'GET',
             headers: {
-                'Authorization': `Bearer ${this.accessToken}`,
+                'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
             },
         });
@@ -63,9 +49,6 @@ export class ApiClient {
     }
 
     public async logout(): Promise<void> {
-        if (this.supabaseClient) {
-            await this.supabaseClient.auth.signOut();
-        }
-        this.accessToken = null;
+        await supabaseService.signOut();
     }
 }

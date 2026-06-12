@@ -1,6 +1,7 @@
 import React from 'react';
-import { Briefcase, Users, Box } from 'lucide-react';
+import { Briefcase, Users, Box, Loader2, AlertCircle } from 'lucide-react';
 import { useStore } from '@/store/useStore';
+import { useSectionData } from '@/hooks/useSectionData';
 import { ListCard } from './DetailLists/ListCard';
 
 interface DetailListsProps {
@@ -9,8 +10,36 @@ interface DetailListsProps {
 }
 
 export const DetailLists: React.FC<DetailListsProps> = ({ onToggleExpand, expandedId }) => {
-    const { stats } = useStore();
-    if (!stats) return null;
+    const { 
+        isLoading, 
+        isError, 
+        isReady, 
+        stats 
+    } = useSectionData('DetailLists');
+
+    if (isLoading) {
+        return (
+            <div className="w-full flex items-center justify-center bg-[#111620] rounded-2xl border border-slate-800 border-dashed h-[320px]">
+                <div className="flex flex-col items-center gap-3">
+                    <Loader2 className="w-6 h-6 text-emerald-500 animate-spin" />
+                    <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">Compiling Dimensions...</span>
+                </div>
+            </div>
+        );
+    }
+
+    if (isError) {
+        return (
+            <div className="w-full flex items-center justify-center bg-[#111620] rounded-2xl border border-rose-900/30 h-[320px]">
+                <div className="flex flex-col items-center gap-3">
+                    <AlertCircle className="w-6 h-6 text-rose-500" />
+                    <span className="text-[10px] font-mono text-rose-500 uppercase tracking-widest">Dimension Engine Error</span>
+                </div>
+            </div>
+        );
+    }
+
+    if (!isReady || !stats) return null;
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-12 gap-3 w-full" style={{ minHeight: '320px' }}>
@@ -63,3 +92,4 @@ export const DetailLists: React.FC<DetailListsProps> = ({ onToggleExpand, expand
         </div>
     );
 };
+

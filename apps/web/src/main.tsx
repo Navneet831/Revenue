@@ -1,22 +1,42 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import * as Sentry from "@sentry/react";
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { App } from './App';
 import './index.css';
 
-Sentry.init({
-    dsn: "https://74e3e11132b84cc78e8220ab3edd568f@o450863787.ingest.sentry.io/450863788", // Example DSN
-    integrations: [
-      Sentry.browserTracingIntegration(),
-      Sentry.replayIntegration(),
-    ],
-    tracesSampleRate: 1.0,
-    replaysSessionSampleRate: 0.1,
-    replaysOnErrorSampleRate: 1.0,
+const queryClient = new QueryClient({
+    defaultOptions: {
+        queries: {
+            staleTime: 1000 * 60 * 5, // 5 minutes
+            gcTime: 1000 * 60 * 60, // 1 hour
+            retry: 1,
+            refetchOnWindowFocus: false,
+        },
+    },
 });
+
+// Observability is opt-in: set VITE_SENTRY_DSN in the environment to enable.
+// Never hardcode the DSN — it ends up in the public bundle and ties all
+// deployments (dev/staging/prod) to one project.
+const SENTRY_DSN = import.meta.env.VITE_SENTRY_DSN;
+if (SENTRY_DSN) {
+    Sentry.init({
+        dsn: SENTRY_DSN,
+        integrations: [
+            Sentry.browserTracingIntegration(),
+            Sentry.replayIntegration(),
+        ],
+        tracesSampleRate: 0.2,
+        replaysSessionSampleRate: 0.1,
+        replaysOnErrorSampleRate: 1.0,
+    });
+}
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
     <React.StrictMode>
-        <App />
+        <QueryClientProvider client={queryClient}>
+            <App />
+        </QueryClientProvider>
     </React.StrictMode>
 );
