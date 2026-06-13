@@ -8,7 +8,7 @@ export const SkuLegend: React.FC = () => {
     if (!stats || !stats.activePlotKeys || stats.activePlotKeys.length === 0) return null;
 
     return (
-        <div className="flex-1 ml-4 hidden md:flex items-center no-scrollbar overflow-x-auto minimal-scroll gap-3 px-2 py-1 select-none">
+        <div data-testid="sku-legend" id="velocity-legend-portal" className="flex-1 ml-4 hidden md:flex items-center no-scrollbar overflow-x-auto minimal-scroll gap-3 px-2 py-1 select-none">
             {stats.activePlotKeys.map((key: string) => {
                 const colorDef = ColorEngine.getColorFor(key, 'sku');
                 const isExcluded = filters.excludedSeries.has(key);

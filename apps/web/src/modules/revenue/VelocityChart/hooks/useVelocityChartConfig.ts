@@ -68,7 +68,7 @@ export function useVelocityChartConfig(mode: string, filters: any, privacyMode: 
                 },
                 ticks: {
                     display: true,
-                    color: '#94a3b8',
+                    color: '#000',
                     font: { size: 10, weight: 'bold' as const },
                     maxRotation: 0,
                     autoSkip: true,
@@ -84,7 +84,7 @@ export function useVelocityChartConfig(mode: string, filters: any, privacyMode: 
                 },
                 grid: {
                     color: (ctx: any) => {
-                        return ctx.tick?.value === 0 ? 'rgba(255,255,255,0.2)' : '#1e2638';
+                        return ctx.tick?.value === 0 ? '#cbd5e1' : '#eef2f6';
                     },
                     tickColor: 'transparent'
                 },
@@ -92,7 +92,7 @@ export function useVelocityChartConfig(mode: string, filters: any, privacyMode: 
                 min: 0,
                 afterFit: (axis: any) => { axis.width = 80; },
                 ticks: {
-                    color: '#94a3b8',
+                    color: '#000',
                     font: { size: 10, weight: 'bold' as const },
                     padding: 8,
                     callback: function (v: number) {
@@ -107,8 +107,8 @@ export function useVelocityChartConfig(mode: string, filters: any, privacyMode: 
 
     // For Daily mode (line chart), adjust some settings
     if (mode === 'Daily') {
-        chartConfig.scales.x.grid = { ...chartConfig.scales.x.grid, color: '#1e2638' };
-        chartConfig.scales.x.ticks = { ...chartConfig.scales.x.ticks, color: '#94a3b8', font: { size: 9, weight: 'bold' } };
+        chartConfig.scales.x.grid = { ...chartConfig.scales.x.grid, color: '#eef2f6' };
+        chartConfig.scales.x.ticks = { ...chartConfig.scales.x.ticks, color: '#000', font: { size: 9, weight: 'bold' } };
     }
 
     return chartConfig;

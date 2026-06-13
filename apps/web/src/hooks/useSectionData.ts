@@ -1,46 +1,45 @@
 import { useStore } from '@/store/useStore';
 import { useQuery } from '@tanstack/react-query';
-import { RevenueService } from '@/services/revenueService';
-import { dbService } from '@/services/dbService';
+import { AnalyticsApi, analyticsKey } from '@/services/analyticsService';
+
+const META_KEY = ['revenue-meta'];
 
 /**
  * HOOK: useSectionData
- * Implements decentralized data management. 
- * Each component calls this to manage its own lifecycle.
+ * Every section calls this; they all share one React Query (deduped by the
+ * filter key), whose queryFn fetches the server-computed analytics and pushes
+ * it into the store. Components keep reading `stats` from the store unchanged.
  */
-export function useSectionData(sectionName: string) {
-    const { 
-        data: globalData, 
-        stats, 
-        userEmail, 
-        activeApp 
-    } = useStore();
+export function useSectionData(_sectionName: string) {
+    const { stats, activeApp, filters } = useStore();
 
-    // 1. Data Availability (Common for all sections)
-    const { 
-        isLoading: isFetching, 
-        isError: isFetchError, 
-        error: fetchError 
+    const ready = activeApp === 'REVENUE' && !!filters.startDate && !!filters.endDate;
+
+    // Shared bootstrap query (deduped with RevenueDashboard) — its failure means
+    // the whole feed is down, which must degrade sections rather than spin forever.
+    const meta = useQuery({ queryKey: META_KEY, queryFn: () => AnalyticsApi.meta(), staleTime: 1000 * 60 * 10 });
+
+    const {
+        isFetching,
+        isError: isFetchError,
+        error: fetchError
     } = useQuery({
-        queryKey: ['revenue-data'],
+        queryKey: ['revenue-analytics', analyticsKey(filters)],
         queryFn: async () => {
-            const fresh = await RevenueService.getRevenueData();
-            await dbService.setRawData(fresh);
-            return fresh;
+            const computed = await AnalyticsApi.analytics(filters);
+            useStore.getState().setStats(computed);
+            return computed;
         },
-        enabled: !!userEmail && activeApp === 'REVENUE' && globalData.length === 0,
-        staleTime: 1000 * 60 * 5, // 5 minutes
+        enabled: ready,
+        staleTime: 1000 * 60 * 5,
+        placeholderData: (prev) => prev // keep prior view while refetching on filter change
     });
 
-    // 2. Load State Determination
-    const isComputing = globalData.length > 0 && !stats;
-    const isLoading = isFetching || isComputing;
-
-    // 3. Error Determination
-    const isError = isFetchError;
-    const error = fetchError?.toString() || null;
-
-    // 4. Section Specific Readiness
+    const isError = isFetchError || meta.isError;
+    const error = (fetchError || meta.error)?.toString() || null;
+    // Show loading until the first computed payload lands (and on every refetch),
+    // but never spin on error.
+    const isLoading = !isError && (isFetching || meta.isLoading || (activeApp === 'REVENUE' && !stats));
     const isReady = stats !== null && !isLoading;
 
     return {
@@ -49,6 +48,6 @@ export function useSectionData(sectionName: string) {
         error,
         isReady,
         stats,
-        filters: useStore((state) => state.filters)
+        filters
     };
 }

@@ -7,19 +7,15 @@ import { CacheService } from '@/services/cacheService';
  * Replicates the full system command suite from the original index.html.
  */
 export const useKeyboardShortcuts = (
-    authenticated: boolean,
-    onOpenHelp: () => void,
-    onLogout: () => void
+    onOpenHelp: () => void
 ) => {
-    const { 
-        filters, updateFilters, togglePrivacyMode, toggleSidebar, 
+    const {
+        filters, updateFilters, togglePrivacyMode, toggleSidebar,
         updateUIState, ui, setCardView, cardViews,
         allSegments, expandedId, setExpandedId
     } = useStore();
 
     useEffect(() => {
-        if (!authenticated) return;
-
         const handleKeyDown = (e: KeyboardEvent) => {
             // F1: System Help
             if (e.key === 'F1') {
@@ -117,5 +113,5 @@ export const useKeyboardShortcuts = (
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [authenticated, filters.velocityMode, ui.insightsOpen, allSegments, expandedId, cardViews]);
+    }, [filters.velocityMode, ui.insightsOpen, allSegments, expandedId, cardViews]);
 };

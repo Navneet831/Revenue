@@ -6,7 +6,7 @@ import zoomPlugin from 'chartjs-plugin-zoom';
 ChartJS.register(...registerables, zoomPlugin);
 
 // ─── Global Chart Defaults (Palantir-grade) ────────────────────────────────
-ChartJS.defaults.color = '#94a3b8';
+ChartJS.defaults.color = '#000';
 ChartJS.defaults.font.family = "'Inter', sans-serif";
 ChartJS.defaults.devicePixelRatio = Math.max(window.devicePixelRatio || 1, 2);
 ChartJS.defaults.elements.bar.borderRadius = 8;

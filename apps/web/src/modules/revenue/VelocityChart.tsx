@@ -211,11 +211,11 @@ export const VelocityChart: React.FC = memo(() => {
     const rightLabelsPlugin = isHighDensity ? null : createRightLabelsPlugin(filters, privacyMode);
 
     return (
-        <div className="flex-1 w-full relative bg-white flex flex-col min-h-0">
+        <div className="h-full w-full relative bg-white flex flex-col min-h-0">
             <div className="chart-noise-layer opacity-[0.02]" />
             {expandedId === 'w-master' && <ZoomResetButton onReset={resetZoom} />}
             {activeMatrixMonth && (mode === 'Weekly' || mode === 'Daily') && <ModeIndicator month={activeMatrixMonth} mode={mode} />}
-            <div className="flex-1 min-h-[220px] relative w-full z-10 select-none mt-1">
+            <div className="flex-1 min-h-0 relative w-full z-10 select-none mt-1 pb-1">
                 <Suspense fallback={<div className="w-full h-full flex items-center justify-center text-slate-500 font-mono text-[10px]">Loading Analytics...</div>}>
                     <ChartCore
                         ref={chartRef}

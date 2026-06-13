@@ -28,7 +28,6 @@ export interface AppState {
         saleshead: Record<string, any>;
     };
     stats: AnalyticalOutput | null;
-    userEmail: string | null;
     insightsSeen: boolean;
     activeApp: 'REVENUE' | 'INVENTORY' | 'LOGISTICS';
 
@@ -55,7 +54,6 @@ export interface AppState {
     toggleAllViews: () => void;
     setColorRegistry: (registry: AppState['COLOR_REGISTRY']) => void;
     setStats: (stats: AnalyticalOutput | null) => void;
-    setUserEmail: (email: string | null) => void;
     setInsightsSeen: (seen: boolean) => void;
     setActiveApp: (app: 'REVENUE' | 'INVENTORY' | 'LOGISTICS') => void;
 }
@@ -100,7 +98,6 @@ export const useStore = create<AppState>((set) => ({
     cardViews: { master: 'tabular', cust: 'tabular', sku: 'tabular', saleshead: 'tabular' },
     COLOR_REGISTRY: { sku: {}, customer: {}, segment: {}, saleshead: {} },
     stats: null,
-    userEmail: null,
     insightsSeen: true,
     activeApp: 'REVENUE',
 
@@ -169,7 +166,6 @@ export const useStore = create<AppState>((set) => ({
         }),
     setColorRegistry: (COLOR_REGISTRY) => set({ COLOR_REGISTRY }),
     setStats: (stats) => set({ stats }),
-    setUserEmail: (userEmail) => set({ userEmail }),
     setInsightsSeen: (insightsSeen) => set({ insightsSeen }),
     setActiveApp: (activeApp) => set({ activeApp })
 }));

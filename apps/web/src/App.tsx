@@ -5,8 +5,6 @@ import { GlobalSidebar } from './modules/shared/GlobalSidebar';
 import { SectionBoundary } from './modules/shared/SectionBoundary';
 import { ModulePlaceholder } from './modules/shared/ModulePlaceholder';
 import { MODULE_REGISTRY } from './modules/registry';
-import { dbService } from './services/dbService';
-import { CacheService } from './services/cacheService';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { HelpModal } from './modules/shared/HelpModal';
 import { GlobalTooltip } from './modules/shared/GlobalTooltip';
@@ -52,10 +50,8 @@ const ModuleLoading: React.FC<{ label: string }> = ({ label }) => (
  * the shell mounts exactly one active context and isolates its failures.
  */
 export const App: React.FC = () => {
-    const { setUserEmail, updateUIState, activeApp } = useStore();
+    const { updateUIState, activeApp } = useStore();
 
-    // Authentication completely bypassed
-    const authenticated = true;
     const [helpOpen, setHelpOpen] = useState(false);
 
     useEffect(() => {
@@ -71,29 +67,20 @@ export const App: React.FC = () => {
                 setTimeout(() => loader.remove(), 500);
             }, 500);
         }
+    }, []);
 
-        // Set default admin email for bypassed auth
-        setUserEmail('admin@grew.energy');
-    }, [setUserEmail]);
-
-    const handleLogout = () => {
-        // Auth removed, just reload
-        CacheService.purge();
-        dbService.purge().then(() => window.location.replace('/auth/callback'));
-    };
-
-    useKeyboardShortcuts(authenticated, () => setHelpOpen(true), handleLogout);
+    useKeyboardShortcuts(() => setHelpOpen(true));
 
     const activeModule = MODULE_REGISTRY[activeApp];
 
     return (
         <ErrorBoundary>
-            <div className="w-screen h-screen relative flex flex-col bg-white overflow-hidden">
+            <div className="w-screen h-screen relative flex flex-col bg-[#f4f6f8] overflow-hidden">
                 <div id="core-app" className="flex-1 flex w-full relative overflow-hidden font-sans antialiased text-[11px] font-medium tracking-wide text-slate-900">
                     <div className="flex h-full w-full relative select-none overflow-hidden">
-                        <GlobalSidebar onLogout={handleLogout} onOpenHelp={() => setHelpOpen(true)} onOpenStories={() => updateUIState({ storiesOpen: true })} />
+                        <GlobalSidebar onOpenHelp={() => setHelpOpen(true)} onOpenStories={() => updateUIState({ storiesOpen: true })} />
 
-                        <main className="flex-1 flex flex-col min-w-0 bg-slate-50 relative z-20 overflow-y-auto">
+                        <main className="flex-1 flex flex-col min-w-0 bg-[#f4f6f8] relative z-20 overflow-y-auto">
                             {activeModule?.Component ? (
                                 <SectionBoundary name={activeModule.label} className="m-4 flex-1">
                                     <Suspense fallback={<ModuleLoading label={activeModule.label} />}>

@@ -140,11 +140,12 @@ export const KpiCard: React.FC<KpiCardProps> = memo(({
     };
 
     const getLogicTooltip = () => {
-        if (title.toLowerCase().includes('revenue') || title.toLowerCase().includes('amount')) return "Sum of invoiced amounts (₹) for the selected period, segments, and SKUs.";
-        if (title.toLowerCase().includes('volume') || title.toLowerCase().includes('qty')) return "Sum of physical units (Qty) dispatched or invoiced.";
-        if (title.toLowerCase().includes('capacity') || title.toLowerCase().includes('mw')) return "Sum of capacity (MW) dispatched or invoiced.";
-        if (title.toLowerCase().includes('average') || title.toLowerCase().includes('price')) return "Average price per unit (Total Revenue / Total Volume).";
-        return `Calculated ${title} based on current filters.`;
+        const t = title.toLowerCase();
+        if (t.includes('revenue') || t.includes('amount')) return 'Revenue = Σ "Taxable Value" (₹) · selected period, segments, SKUs';
+        if (t.includes('volume') || t.includes('qty')) return 'Volume = Σ "SalesQty" · current filters';
+        if (t.includes('capacity') || t.includes('mw')) return 'Capacity = Σ "MW" · current filters';
+        if (t.includes('average') || t.includes('price') || t.includes('realis')) return 'Realisation = Σ "Taxable Value" ÷ Σ "SalesQty"';
+        return `${title} = aggregated over current filters`;
     };
 
     return (
@@ -168,9 +169,9 @@ export const KpiCard: React.FC<KpiCardProps> = memo(({
                 </div>
 
                 <div className="flex flex-col z-10 w-full">
-                    <span 
-                        className="text-2xl lg:text-[26px] font-bold font-mono text-slate-900 leading-tight tracking-tighter truncate"
-                        title={getLogicTooltip()}
+                    <span
+                        className="text-2xl lg:text-[26px] font-bold font-mono text-slate-900 leading-tight tracking-tighter truncate cursor-help tabular-nums"
+                        data-tooltip={getLogicTooltip()}
                     >
                         {formatVal(value)}
                     </span>

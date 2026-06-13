@@ -1,26 +1,20 @@
 import React from 'react';
-import { Activity, Shield, LogOut, Terminal, Layers, Check, BarChart3, Package, Truck, LayoutGrid } from 'lucide-react';
+import { Terminal, Layers } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import { SolarModuleIcon, InternalIcon, RMIcon, ScrapIcon } from '../../assets/CustomIcons';
 
 interface GlobalSidebarProps {
-    onLogout: () => void;
     onOpenHelp: () => void;
     onOpenStories?: () => void;
 }
 
-export const GlobalSidebar: React.FC<GlobalSidebarProps> = ({ onLogout, onOpenHelp, onOpenStories }) => {
+export const GlobalSidebar: React.FC<GlobalSidebarProps> = ({ onOpenHelp }) => {
     const {
-        sidebarOpen,
         toggleSidebar,
-        privacyMode,
-        togglePrivacyMode,
-        govStats,
         allSegments,
         filters,
         updateFilters,
-        activeApp,
-        setActiveApp
+        activeApp
     } = useStore();
 
     const filteredSegments = allSegments.filter((s) => {
@@ -82,24 +76,6 @@ export const GlobalSidebar: React.FC<GlobalSidebarProps> = ({ onLogout, onOpenHe
                     </div>
                 </div>
 
-                {/* Main Navigation items (Merged from Rail) */}
-                <div className="flex flex-col items-center py-4 gap-4 border-b border-slate-100">
-                    <div
-                        onClick={() => setActiveApp('REVENUE')}
-                        className={`p-2 rounded-lg cursor-pointer transition-all ${activeApp === 'REVENUE' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}`}
-                        title="Revenue Analytics"
-                    >
-                        <BarChart3 className="w-5 h-5" />
-                    </div>
-                    <div
-                        onClick={() => setActiveApp('INVENTORY')}
-                        className={`p-2 rounded-lg cursor-pointer transition-all ${activeApp === 'INVENTORY' ? 'bg-blue-50 text-blue-600 border border-blue-200' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}`}
-                        title="Inventory & Stock"
-                    >
-                        <Package className="w-5 h-5" />
-                    </div>
-                </div>
-
                 {/* App Specific items (Segments) */}
                 <div className="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar bg-transparent flex flex-col items-center py-6 w-full gap-3">
                     {activeApp === 'REVENUE' && sortedSegments.map((s) => {
@@ -138,9 +114,6 @@ export const GlobalSidebar: React.FC<GlobalSidebarProps> = ({ onLogout, onOpenHe
                 <div className="shrink-0 flex flex-col items-center pb-4 gap-4 border-t border-slate-100 pt-4">
                     <div onClick={onOpenHelp} className="p-2 rounded-lg text-slate-400 hover:text-slate-600 cursor-pointer transition-all" title="Help">
                         <Terminal className="w-5 h-5" />
-                    </div>
-                    <div onClick={onLogout} className="p-2 rounded-lg text-slate-400 hover:text-rose-500 cursor-pointer transition-colors" title="Exit">
-                        <LogOut className="w-5 h-5" />
                     </div>
                 </div>
             </aside>

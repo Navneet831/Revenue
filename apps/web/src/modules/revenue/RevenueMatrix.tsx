@@ -2,25 +2,22 @@ import React, { memo } from 'react';
 import { useStore } from '@/store/useStore';
 import { useSectionData } from '@/hooks/useSectionData';
 import { CONFIG } from '@revenue/shared';
-import { CheckCircle, Truck, Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
 
 export const RevenueMatrix: React.FC = memo(() => {
-    const { 
-        isLoading, 
-        isError, 
-        isReady, 
-        stats, 
-        filters 
+    const {
+        isLoading,
+        isError,
+        isReady,
+        stats,
+        filters
     } = useSectionData('RevenueMatrix');
 
-    const {
-        updateFilters,
-        privacyMode
-    } = useStore();
+    const { privacyMode } = useStore();
 
     if (isLoading) {
         return (
-            <div className="w-full h-full flex flex-col items-center justify-center bg-[#111620] gap-3">
+            <div className="w-full h-full flex flex-col items-center justify-center bg-white gap-3">
                 <Loader2 className="w-6 h-6 text-emerald-500 animate-spin" />
                 <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">Generating Ledger Matrix...</span>
             </div>
@@ -29,7 +26,7 @@ export const RevenueMatrix: React.FC = memo(() => {
 
     if (isError) {
         return (
-            <div className="w-full h-full flex flex-col items-center justify-center bg-[#111620] gap-3">
+            <div className="w-full h-full flex flex-col items-center justify-center bg-white gap-3">
                 <AlertCircle className="w-6 h-6 text-rose-500" />
                 <span className="text-[10px] font-mono text-rose-500 uppercase tracking-widest">Matrix Calculation Failed</span>
             </div>
@@ -38,39 +35,17 @@ export const RevenueMatrix: React.FC = memo(() => {
 
     if (!isReady || !stats || !stats.matrix) return null;
 
-    const handleMonthToggle = (month: string) => {
-        if (filters.matrixMonth === month) {
-            updateFilters({
-                matrixMonth: null,
-                selectedWeek: null,
-                selectedDay: null
-            });
-        } else {
-            updateFilters({
-                matrixMonth: month,
-                selectedQuarter: null,
-                selectedWeek: null,
-                selectedDay: null,
-                velocityMode: 'Weekly'
-            });
-        }
+    // Audit formulas surfaced on hover so every figure is traceable to its source.
+    const ROW_FORMULA: Record<string, string> = {
+        valCr: 'Σ "Taxable Value" ÷ 10,000,000  →  ₹ Cr',
+        qty: 'Σ "SalesQty"  (invoiced units)',
+        mw: 'Σ "MW"  (capacity)'
     };
-
-    const handleQuarterToggle = (qIdx: number) => {
-        if (filters.selectedQuarter === qIdx) {
-            updateFilters({ selectedQuarter: null });
-        } else {
-            updateFilters({
-                selectedQuarter: qIdx,
-                matrixMonth: null,
-                selectedWeek: null,
-                selectedDay: null,
-                velocityMode: 'Monthly'
-            });
-        }
+    const DELTA_FORMULA: Record<'mom' | 'qoq' | 'yoy', string> = {
+        mom: 'Δ MoM = (month − prior month) ÷ prior month × 100',
+        qoq: 'Δ QoQ = (quarter − prior quarter) ÷ prior quarter × 100',
+        yoy: 'Δ YoY = (period − same period prior FY) ÷ prior × 100'
     };
-
-    const thBase = 'p-1 px-1.5 border-b border-slate-200 text-[9px] uppercase font-bold text-center tracking-widest transition-colors whitespace-nowrap bg-white/95 backdrop-blur';
 
     // The active metric drives the matrix: its row is pinned first and emphasized,
     // and the Δ rows (computed on this metric by the engine) are labeled with it.
@@ -91,7 +66,7 @@ export const RevenueMatrix: React.FC = memo(() => {
     const renderDataRow = (label: string, key: 'valCr' | 'qty' | 'mw', formatter: (v: number | null) => string, isPrimary: boolean) => (
         <tr key={key} className={`border-b border-slate-100 hover:bg-slate-50 h-10 ${isPrimary ? 'bg-emerald-50/50' : 'bg-white'}`}>
             <td className={`p-1.5 px-2 border-r border-slate-200 text-[9px] font-bold uppercase tracking-wider whitespace-nowrap sticky left-0 z-30 ${isPrimary ? 'text-emerald-600 bg-emerald-50/50 border-l-2 border-l-emerald-500' : 'text-slate-500 bg-white'}`} style={{ width: '80px', minWidth: '80px' }}>
-                {label}
+                <span className="cursor-help" data-tooltip={ROW_FORMULA[key]}>{label}</span>
             </td>
             {stats.matrix.map((d: any, idx: number) => {
                 const isTotal = d.month === 'Total';
@@ -108,9 +83,10 @@ export const RevenueMatrix: React.FC = memo(() => {
                         : `${isPrimary ? 'text-slate-800' : 'text-slate-500'} text-[10px] font-medium tracking-tight`;
 
                 return (
-                    <td 
-                        key={idx} 
-                        className={`p-1 px-2 font-mono text-right relative transition-all duration-200 whitespace-nowrap overflow-hidden ${borderCls} ${isSelectedMonth || isPartofSelectedQ ? 'bg-slate-50' : ''}`}
+                    <td
+                        key={idx}
+                        data-tooltip={`${d.month} · ${ROW_FORMULA[key]}`}
+                        className={`p-1 px-2 font-mono text-right relative transition-all duration-200 whitespace-nowrap cursor-help ${borderCls} ${isSelectedMonth || isPartofSelectedQ ? 'bg-slate-50' : ''}`}
                     >
                         <span className={`${textCls} relative z-10 pointer-events-none`}>
                             {privacyMode ? '••••' : formatter(d[key])}
@@ -124,7 +100,7 @@ export const RevenueMatrix: React.FC = memo(() => {
     const renderBadgeRow = (label: string, key: 'mom' | 'qoq' | 'yoy') => (
         <tr className="border-b border-slate-100 bg-slate-50/50 h-9">
             <td className="p-1.5 px-2 border-r border-slate-200 text-[8px] text-slate-400 font-bold uppercase tracking-wider whitespace-nowrap bg-slate-50/50 sticky left-0 z-30" style={{ width: '80px', minWidth: '80px' }}>
-                {label}
+                <span className="cursor-help" data-tooltip={DELTA_FORMULA[key]}>{label}</span>
             </td>
             {stats.matrix.map((d: any, idx: number) => {
                 const isTotal = d.month === 'Total';
@@ -150,9 +126,10 @@ export const RevenueMatrix: React.FC = memo(() => {
                 const colorCls = isPos ? 'text-emerald-500' : val < 0 ? 'text-rose-500' : 'text-slate-400';
 
                 return (
-                    <td 
-                        key={idx} 
-                        className={`p-1 px-2 font-mono text-right relative transition-all duration-200 whitespace-nowrap overflow-hidden ${borderCls} ${isSelectedMonth || isPartofSelectedQ ? 'bg-slate-100/50' : ''}`}
+                    <td
+                        key={idx}
+                        data-tooltip={`${d.month} · ${DELTA_FORMULA[key]}`}
+                        className={`p-1 px-2 font-mono text-right relative transition-all duration-200 whitespace-nowrap cursor-help ${borderCls} ${isSelectedMonth || isPartofSelectedQ ? 'bg-slate-100/50' : ''}`}
                     >
                         <span className={`relative z-10 ${colorCls} text-[9px] font-bold tracking-tight`}>
                             {privacyMode ? '••' : `${isPos ? '+' : ''}${val.toFixed(1)}%`}
@@ -167,56 +144,14 @@ export const RevenueMatrix: React.FC = memo(() => {
         <div className="flex flex-col h-full w-full relative bg-white">
             <div className="flex-1 overflow-auto no-scrollbar relative z-20 select-none bg-white" data-lenis-prevent="true">
                 <table className="w-full border-collapse min-w-full relative" style={{ tableLayout: 'fixed' }}>
-                    <thead className="sticky top-0 z-40 shadow-sm">
-                        <tr>
-                            <th className={`${thBase} left-0 border-r border-slate-200 sticky z-50`} style={{ width: '80px', minWidth: '80px' }}>
-                                <button 
-                                    onClick={(e) => { e.stopPropagation(); updateFilters({ pendingOnly: !filters.pendingOnly }); }} 
-                                    className="p-1 transition-colors inline-flex items-center justify-center bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded"
-                                    title="Toggle Dispatched vs Pending Pipeline"
-                                >
-                                    {filters.pendingOnly ? <CheckCircle className="w-3 h-3 text-amber-500" /> : <Truck className="w-3 h-3 text-slate-400" />}
-                                </button>
-                            </th>
-                            {stats.matrix.map((d: any, idx: number) => {
-                                const isTotal = d.month === 'Total';
-                                const qIdxOfM = Math.floor(idx / 3);
-                                const isSelectedMonth = d.month === filters.matrixMonth;
-                                const isPartofSelectedQ = filters.selectedQuarter === qIdxOfM && !isTotal;
-
-                                const isQStart = idx % 3 === 0 && !isTotal;
-                                const isQEnd = idx % 3 === 2 || isTotal;
-
-                                const borderCls = isQEnd ? 'border-r border-slate-200' : '';
-                                const totalThCls = isTotal ? 'text-emerald-600 bg-emerald-50/50' : '';
-                                const selectedThCls = isSelectedMonth || isPartofSelectedQ
-                                    ? 'text-slate-900 border-b-2 border-emerald-500 font-extrabold bg-slate-50'
-                                    : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50';
-
-                                return (
-                                    <th
-                                        key={idx}
-                                        onClick={() => !isTotal && handleMonthToggle(d.month)}
-                                        className={`${thBase} ${borderCls} ${totalThCls} ${selectedThCls} ${!isTotal ? 'cursor-pointer' : ''} px-1 relative h-10`}
-                                        style={{ width: `calc((100% - 80px) / 13)` }}
-                                    >
-                                        {isQStart && (
-                                            <div 
-                                                onClick={(e) => { e.stopPropagation(); handleQuarterToggle(qIdxOfM); }}
-                                                className={`absolute top-0 left-0 w-3.5 h-3.5 flex items-center justify-center text-[9px] font-black cursor-pointer rounded-br-md transition-all z-40 ${isPartofSelectedQ ? 'bg-emerald-500 text-white shadow-[0_0_8px_rgba(16,185,129,0.2)]' : 'bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600'}`}
-                                                title="Select Quarter"
-                                            >
-                                                Q
-                                            </div>
-                                        )}
-                                        <div className="flex items-center justify-center h-full">
-                                            <span>{d.month}</span>
-                                        </div>
-                                    </th>
-                                );
-                            })}
-                        </tr>
-                    </thead>
+                    {/* The month header lives in the shared, fixed <MatrixHeader/> above the
+                        view switch. This colgroup keeps the data columns aligned to it. */}
+                    <colgroup>
+                        <col style={{ width: '80px' }} />
+                        {stats.matrix.map((_: any, i: number) => (
+                            <col key={i} style={{ width: 'calc((100% - 80px) / 13)' }} />
+                        ))}
+                    </colgroup>
                     <tbody className="bg-transparent">
                         {orderedRows.map((row) => renderDataRow(row.label, row.key, row.fmt, row.key === metricKey))}
 

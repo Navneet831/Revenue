@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { GitBranch, ChevronLeft, ChevronRight, X, Loader2 } from 'lucide-react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { GitBranch, ChevronLeft, ChevronRight, X, Loader2, Move } from 'lucide-react';
 
 export const CommitDrilldown: React.FC = () => {
     const [commits, setCommits] = useState<any[]>([]);
@@ -7,6 +7,11 @@ export const CommitDrilldown: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
     const [error, setError] = useState('');
+
+    // Floating panel position (px from viewport top-left). The panel is draggable
+    // by its header so it can be parked anywhere over the dashboard while auditing.
+    const [pos, setPos] = useState({ x: 24, y: 88 });
+    const panelRef = useRef<HTMLDivElement>(null);
 
     const fetchCommits = async () => {
         try {
@@ -23,6 +28,25 @@ export const CommitDrilldown: React.FC = () => {
     useEffect(() => {
         if (isOpen) fetchCommits();
     }, [isOpen]);
+
+    const startDrag = useCallback((e: React.MouseEvent) => {
+        e.preventDefault();
+        const rect = panelRef.current?.getBoundingClientRect();
+        const offX = rect ? e.clientX - rect.left : 0;
+        const offY = rect ? e.clientY - rect.top : 0;
+
+        const onMove = (ev: MouseEvent) => {
+            const x = Math.max(8, Math.min(window.innerWidth - 120, ev.clientX - offX));
+            const y = Math.max(8, Math.min(window.innerHeight - 60, ev.clientY - offY));
+            setPos({ x, y });
+        };
+        const onUp = () => {
+            window.removeEventListener('mousemove', onMove);
+            window.removeEventListener('mouseup', onUp);
+        };
+        window.addEventListener('mousemove', onMove);
+        window.addEventListener('mouseup', onUp);
+    }, []);
 
     const handleCheckout = async (hash: string) => {
         setLoading(true);
@@ -62,20 +86,34 @@ export const CommitDrilldown: React.FC = () => {
     }
 
     return (
-        <div className="fixed inset-0 z-[1000] bg-black/40 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-300">
-            <div className="relative w-full max-w-lg bg-white rounded-[32px] border border-slate-200 shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
-                {/* Header */}
-                <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+        <div
+            ref={panelRef}
+            className="fixed z-[1000] w-full max-w-md animate-in fade-in duration-200"
+            style={{ left: pos.x, top: pos.y }}
+        >
+            <div className="relative bg-white rounded-[28px] border border-slate-200 shadow-2xl overflow-hidden flex flex-col max-h-[70vh]">
+                {/* Header — drag handle */}
+                <div
+                    onMouseDown={startDrag}
+                    className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/80 cursor-move select-none"
+                >
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-emerald-50 rounded-lg text-emerald-600">
                             <GitBranch className="w-5 h-5" />
                         </div>
                         <div>
-                            <h2 className="text-slate-900 font-bold text-lg">Commit Drill-down</h2>
-                            <p className="text-slate-400 text-[10px] uppercase tracking-widest font-bold">Historical Code Navigation</p>
+                            <h2 className="text-slate-900 font-bold text-base flex items-center gap-2">
+                                Commit Drill-down
+                                <Move className="w-3 h-3 text-slate-300" />
+                            </h2>
+                            <p className="text-slate-400 text-[10px] uppercase tracking-widest font-bold">Drag to move · click to jump</p>
                         </div>
                     </div>
-                    <button onClick={() => setIsOpen(false)} className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-900 transition-colors border border-slate-100">
+                    <button
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onClick={() => setIsOpen(false)}
+                        className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-900 transition-colors border border-slate-100"
+                    >
                         <X className="w-5 h-5" />
                     </button>
                 </div>
@@ -96,8 +134,8 @@ export const CommitDrilldown: React.FC = () => {
                                 onClick={() => !isCurrent && handleCheckout(c.hash)}
                                 disabled={loading || isCurrent}
                                 className={`w-full text-left p-4 rounded-2xl border transition-all duration-200 flex items-center justify-between group ${
-                                    isCurrent 
-                                        ? 'bg-emerald-50 border-emerald-200' 
+                                    isCurrent
+                                        ? 'bg-emerald-50 border-emerald-200'
                                         : 'bg-white border-slate-100 hover:border-slate-200 hover:bg-slate-50'
                                 }`}
                             >
@@ -129,8 +167,8 @@ export const CommitDrilldown: React.FC = () => {
                 </div>
 
                 {/* Footer Controls */}
-                <div className="p-6 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between">
-                    <button 
+                <div className="p-5 border-t border-slate-100 bg-slate-50/80 flex items-center justify-between">
+                    <button
                         onClick={() => currentIndex < commits.length - 1 && handleCheckout(commits[currentIndex + 1].hash)}
                         disabled={loading || currentIndex === commits.length - 1}
                         className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 disabled:opacity-30 transition-colors"
@@ -138,7 +176,7 @@ export const CommitDrilldown: React.FC = () => {
                         <ChevronLeft className="w-4 h-4" />
                         Previous Commit
                     </button>
-                    <button 
+                    <button
                         onClick={() => currentIndex > 0 && handleCheckout(commits[currentIndex - 1].hash)}
                         disabled={loading || currentIndex <= 0}
                         className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 disabled:opacity-30 transition-colors"
