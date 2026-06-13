@@ -54,6 +54,11 @@ const ModuleLoading: React.FC<{ label: string }> = ({ label }) => (
  */
 export const App: React.FC = () => {
     useEffect(() => {
+        // Enforce single URL mandate: http://127.0.0.1:8000/auth/callback
+        if (window.location.pathname !== '/auth/callback' && !window.location.pathname.startsWith('/api')) {
+             window.history.replaceState(null, '', '/auth/callback');
+        }
+
         const loader = document.getElementById('app-boot-loader');
         if (loader) {
             setTimeout(() => {

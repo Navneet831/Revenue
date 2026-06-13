@@ -133,6 +133,12 @@ app.get('/api/git/commits', authenticateJWT, (req, res) => {
 
 // --- STATIC ASSET SERVING ---
 const distPath = path.join(__dirname, '..', 'web', 'dist');
+
+// Enforce single URL mandate: redirect root to /auth/callback
+app.get('/', (req, res) => {
+    res.redirect('/auth/callback');
+});
+
 app.use(express.static(distPath));
 
 // SPA fallback: any non-API GET serves the app shell. /auth/callback is just one of
@@ -149,8 +155,9 @@ const server = app.listen(PORT, HOST, () => {
     Logger.info('server_started', { 
         port: PORT, 
         host: HOST,
-        auth_callback: `http://${displayHost}:${PORT}/auth/callback`
+        mandated_url: `http://${displayHost}:${PORT}/auth/callback`
     });
+    console.log(`\n🚀 APPLICATION MANDATE: http://${displayHost}:${PORT}/auth/callback\n`);
 });
 
 // --- LIFECYCLE MANAGEMENT ---
