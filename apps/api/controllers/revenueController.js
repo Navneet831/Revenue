@@ -57,40 +57,37 @@ export const getRevenueSummary = async (req, res) => {
             return;
         }
 
-        // build query logic... (I will keep it simple for now or restore it correctly)
-        // Restoring full logic from previous turn read
-        
         let queryParams = [startDate, endDate];
-        let whereClauses = ['invoicedate >= $1 AND invoicedate <= $2'];
+        let whereClauses = ['"Invoice date" >= $1 AND "Invoice date" <= $2'];
         let paramIndex = 3;
 
         if (segments.length > 0) {
             const placeholders = segments.map(() => `$${paramIndex++}`).join(', ');
-            whereClauses.push(`segment IN (${placeholders})`);
+            whereClauses.push(`"Segment" IN (${placeholders})`);
             queryParams.push(...segments);
         }
 
         if (salesHeads.length > 0) {
             const placeholders = salesHeads.map(() => `$${paramIndex++}`).join(', ');
-            whereClauses.push(`(saleshead IN (${placeholders}) OR saleshead IS NULL)`);
+            whereClauses.push(`("Sales Head" IN (${placeholders}) OR "Sales Head" IS NULL)`);
             queryParams.push(...salesHeads);
         }
 
         if (customers.length > 0) {
             const placeholders = customers.map(() => `$${paramIndex++}`).join(', ');
-            whereClauses.push(`custname IN (${placeholders})`);
+            whereClauses.push(`"Cust_name" IN (${placeholders})`);
             queryParams.push(...customers);
         }
 
         const whereSql = whereClauses.join(' AND ');
 
         const [kpiResult, segmentResult, salesHeadResult, customerResult, wpResult, monthlyResult] = await Promise.all([
-            pool.query(`SELECT COALESCE(SUM(values), 0) as total_val, COALESCE(SUM(mw), 0) as total_mw, COALESCE(SUM(salesqty), 0) as total_qty, COALESCE(SUM(CASE WHEN LOWER(revenue) LIKE '%pending%' THEN values ELSE 0 END), 0) as pending_val FROM public.revenue WHERE ${whereSql}`, queryParams),
-            pool.query(`SELECT segment as name, COALESCE(SUM(values), 0) as val, COALESCE(SUM(mw), 0) as mw, COALESCE(SUM(salesqty), 0) as qty FROM public.revenue WHERE ${whereSql} GROUP BY segment ORDER BY val DESC`, queryParams),
-            pool.query(`SELECT COALESCE(saleshead, 'Direct/Unmapped') as name, COALESCE(SUM(values), 0) as val, COALESCE(SUM(mw), 0) as mw, COALESCE(SUM(salesqty), 0) as qty FROM public.revenue WHERE ${whereSql} GROUP BY saleshead ORDER BY val DESC`, queryParams),
-            pool.query(`SELECT COALESCE(custname, 'Unidentified') as name, COALESCE(SUM(values), 0) as val, COALESCE(SUM(mw), 0) as mw, COALESCE(SUM(salesqty), 0) as qty FROM public.revenue WHERE ${whereSql} GROUP BY custname ORDER BY val DESC LIMIT 20`, queryParams),
-            pool.query(`SELECT COALESCE(wp, 'Generic') as name, COALESCE(SUM(values), 0) as val, COALESCE(SUM(mw), 0) as mw, COALESCE(SUM(salesqty), 0) as qty FROM public.revenue WHERE ${whereSql} GROUP BY wp ORDER BY val DESC`, queryParams),
-            pool.query(`SELECT TO_CHAR(invoicedate, 'Mon') as month_name, EXTRACT(MONTH FROM invoicedate) as month_idx, COALESCE(SUM(values), 0) as val, COALESCE(SUM(mw), 0) as mw, COALESCE(SUM(salesqty), 0) as qty FROM public.revenue WHERE ${whereSql} AND LOWER(revenue) NOT LIKE '%pending%' GROUP BY month_name, month_idx ORDER BY month_idx`, queryParams)
+            pool.query(`SELECT COALESCE(SUM("Taxable Value"), 0) as total_val, COALESCE(SUM("MW"), 0) as total_mw, COALESCE(SUM("SalesQty"), 0) as total_qty, COALESCE(SUM(CASE WHEN LOWER("Revenue") LIKE '%pending%' THEN "Taxable Value" ELSE 0 END), 0) as pending_val FROM public.revenue WHERE ${whereSql}`, queryParams),
+            pool.query(`SELECT "Segment" as name, COALESCE(SUM("Taxable Value"), 0) as val, COALESCE(SUM("MW"), 0) as mw, COALESCE(SUM("SalesQty"), 0) as qty FROM public.revenue WHERE ${whereSql} GROUP BY "Segment" ORDER BY val DESC`, queryParams),
+            pool.query(`SELECT COALESCE("Sales Head", 'Direct/Unmapped') as name, COALESCE(SUM("Taxable Value"), 0) as val, COALESCE(SUM("MW"), 0) as mw, COALESCE(SUM("SalesQty"), 0) as qty FROM public.revenue WHERE ${whereSql} GROUP BY "Sales Head" ORDER BY val DESC`, queryParams),
+            pool.query(`SELECT COALESCE("Cust_name", 'Unidentified') as name, COALESCE(SUM("Taxable Value"), 0) as val, COALESCE(SUM("MW"), 0) as mw, COALESCE(SUM("SalesQty"), 0) as qty FROM public.revenue WHERE ${whereSql} GROUP BY "Cust_name" ORDER BY val DESC LIMIT 20`, queryParams),
+            pool.query(`SELECT COALESCE("Module WP"::text, 'Generic') as name, COALESCE(SUM("Taxable Value"), 0) as val, COALESCE(SUM("MW"), 0) as mw, COALESCE(SUM("SalesQty"), 0) as qty FROM public.revenue WHERE ${whereSql} GROUP BY "Module WP" ORDER BY val DESC`, queryParams),
+            pool.query(`SELECT TO_CHAR("Invoice date", 'Mon') as month_name, EXTRACT(MONTH FROM "Invoice date") as month_idx, COALESCE(SUM("Taxable Value"), 0) as val, COALESCE(SUM("MW"), 0) as mw, COALESCE(SUM("SalesQty"), 0) as qty FROM public.revenue WHERE ${whereSql} AND LOWER("Revenue") NOT LIKE '%pending%' GROUP BY month_name, month_idx ORDER BY month_idx`, queryParams)
         ]);
 
         const totals = kpiResult.rows[0];

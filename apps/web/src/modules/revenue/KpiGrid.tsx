@@ -22,7 +22,7 @@ export const KpiGrid: React.FC = () => {
 
     if (isLoading) {
         return (
-            <div className="flex w-full gap-3 pb-2 overflow-x-auto no-scrollbar h-[120px] items-center justify-center bg-[#111620]/50 rounded-xl border border-slate-800/50">
+            <div className="flex w-full gap-3 pb-2 overflow-x-auto no-scrollbar h-[120px] items-center justify-center bg-white rounded-xl border border-slate-200 shadow-sm">
                 <Loader2 className="w-5 h-5 text-emerald-500 animate-spin mr-2" />
                 <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">Calculating KPIs...</span>
             </div>
@@ -31,9 +31,9 @@ export const KpiGrid: React.FC = () => {
 
     if (isError) {
         return (
-            <div className="flex w-full gap-3 pb-2 overflow-x-auto no-scrollbar h-[120px] items-center justify-center bg-red-900/10 rounded-xl border border-red-900/20">
-                <AlertCircle className="w-5 h-5 text-red-500 mr-2" />
-                <span className="text-[10px] font-mono text-red-500 uppercase tracking-widest">KPI Engine Failure</span>
+            <div className="flex w-full gap-3 pb-2 overflow-x-auto no-scrollbar h-[120px] items-center justify-center bg-rose-50 rounded-xl border border-rose-100 shadow-sm">
+                <AlertCircle className="w-5 h-5 text-rose-500 mr-2" />
+                <span className="text-[10px] font-mono text-rose-500 uppercase tracking-widest">KPI Engine Failure</span>
             </div>
         );
     }

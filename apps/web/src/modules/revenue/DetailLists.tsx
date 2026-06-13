@@ -19,10 +19,10 @@ export const DetailLists: React.FC<DetailListsProps> = ({ onToggleExpand, expand
 
     if (isLoading) {
         return (
-            <div className="w-full flex items-center justify-center bg-[#111620] rounded-2xl border border-slate-800 border-dashed h-[320px]">
+            <div className="w-full flex items-center justify-center bg-white rounded-2xl border border-slate-200 border-dashed h-[320px]">
                 <div className="flex flex-col items-center gap-3">
                     <Loader2 className="w-6 h-6 text-emerald-500 animate-spin" />
-                    <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">Compiling Dimensions...</span>
+                    <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">Hydrating List Repositories...</span>
                 </div>
             </div>
         );
@@ -30,10 +30,10 @@ export const DetailLists: React.FC<DetailListsProps> = ({ onToggleExpand, expand
 
     if (isError) {
         return (
-            <div className="w-full flex items-center justify-center bg-[#111620] rounded-2xl border border-rose-900/30 h-[320px]">
+            <div className="w-full flex items-center justify-center bg-white rounded-2xl border border-rose-100 h-[320px]">
                 <div className="flex flex-col items-center gap-3">
                     <AlertCircle className="w-6 h-6 text-rose-500" />
-                    <span className="text-[10px] font-mono text-rose-500 uppercase tracking-widest">Dimension Engine Error</span>
+                    <span className="text-[10px] font-mono text-rose-500 uppercase tracking-widest">Detail List Error</span>
                 </div>
             </div>
         );

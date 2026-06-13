@@ -274,7 +274,7 @@ export class ChronologicalIndexer {
     private timestamps: number[];
 
     constructor(data: RevenueRow[]) {
-        this.data = data.toSorted((a, b) => a.date.getTime() - b.date.getTime());
+        this.data = [...data].sort((a, b) => a.date.getTime() - b.date.getTime());
         this.timestamps = this.data.map((r) => r.date.getTime());
     }
 
@@ -356,13 +356,13 @@ export class DataSanitizer {
             segment: find('segment') || 'Segment',
             invoicedate: find('invoicedate') || 'Invoice date',
             revenue: find('revenue') || 'Revenue',
-            saleshead: find('saleshead') || find('sales head') || find('manager') || 'SalesHead',
-            values: find('values') || find('value') || find('amount') || 'Values',
+            saleshead: find('saleshead') || find('sales head') || find('manager') || 'Sales Head',
+            values: find('taxablevalue') || find('values') || find('value') || find('amount') || 'Taxable Value',
             qty: find('salesqty') || find('qty') || 'SalesQty',
             mw: find('mw') || 'MW',
             unitprice: find('unitprice') || 'UnitPrice',
-            custname: find('custname') || 'Cust_name',
-            wp: find('wp') || 'WP'
+            custname: find('custname') || find('custname') || 'Cust_name',
+            wp: find('modulewp') || find('wp') || 'Module WP'
         };
     }
 

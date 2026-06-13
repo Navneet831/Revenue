@@ -35,11 +35,9 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
     }
 }
 
-// Agent-feedback toolbar (bottom-right) — dev builds only, never bundled for production.
+// Agent-feedback toolbar (bottom-right) — enabled per user request.
 // Click the toolbar, then click any element to annotate it and copy structured output.
-const AgentationToolbar = import.meta.env.DEV
-    ? React.lazy(() => import('agentation').then((m) => ({ default: m.Agentation })))
-    : null;
+const AgentationToolbar = React.lazy(() => import('agentation').then((m) => ({ default: m.Agentation })));
 
 const ModuleLoading: React.FC<{ label: string }> = ({ label }) => (
     <div className="flex-1 h-full flex items-center justify-center gap-3">

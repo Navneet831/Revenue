@@ -45,7 +45,7 @@ export const GlobalTooltip: React.FC = () => {
     return (
         <div
             ref={ttRef}
-            className={`fixed z-[999999] bg-[#0b101e]/80 backdrop-blur-xl border border-white/10 p-3 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.6)] max-w-xs pointer-events-none transition-opacity duration-150 text-[11px] font-sans text-slate-100 leading-relaxed tracking-wide ${
+            className={`fixed z-[999999] bg-white/90 backdrop-blur-xl border border-slate-200 p-3 rounded-2xl shadow-xl max-w-xs pointer-events-none transition-opacity duration-150 text-[11px] font-sans text-slate-900 leading-relaxed tracking-wide ${
                 visible ? 'opacity-100' : 'opacity-0'
             }`}
             style={{

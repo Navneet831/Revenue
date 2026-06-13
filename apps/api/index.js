@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
 import express from 'express';
 import compression from 'compression';
 import cors from 'cors';
@@ -15,6 +15,9 @@ import { execFileSync } from 'child_process';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Centralised .env loading from root
+dotenv.config({ path: path.join(__dirname, '../../.env') });
+
 const app = express();
 
 // Global request logger
@@ -24,7 +27,7 @@ app.use((req, res, next) => {
 });
 
 app.use(compression());
-app.use(helmet({ contentSecurityPolicy: false }));
+app.use(helmet({ contentSecurityPolicy: false, hsts: false }));
 
 // CORS: only the origins we explicitly trust (comma-separated CORS_ORIGINS env override)
 const allowedOrigins = (process.env.CORS_ORIGINS || 'http://127.0.0.1:5173,http://localhost:5173,http://127.0.0.1:8000,http://localhost:8000')
@@ -140,12 +143,13 @@ app.use((req, res, next) => {
 });
 
 const PORT = Number(process.env.PORT) || 8000;
-const HOST = process.env.HOST || '0.0.0.0';
+const HOST = process.env.HOST || '127.0.0.1';
 const server = app.listen(PORT, HOST, () => {
+    const displayHost = HOST === '0.0.0.0' ? '127.0.0.1' : HOST;
     Logger.info('server_started', { 
         port: PORT, 
         host: HOST,
-        auth_callback: `http://${HOST}:${PORT}/auth/callback`
+        auth_callback: `http://${displayHost}:${PORT}/auth/callback`
     });
 });
 

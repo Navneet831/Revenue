@@ -7,7 +7,8 @@ import { RevenueService } from '../services/revenueService.js';
 
 const router = express.Router();
 
-// ...
+router.get('/summary', getRevenueSummary);
+
 router.get('/', async (req, res) => {
     try {
         const rows = await RevenueService.getCleanRevenue();

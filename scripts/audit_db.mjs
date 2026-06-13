@@ -3,10 +3,10 @@ import pkg from 'pg';
 const { Pool } = pkg;
 
 async function auditDatabase() {
-    console.log('[AUDIT] Connecting to 192.168.80.67...');
+    console.log('[AUDIT] Connecting to localhost...');
     const pool = new Pool({
-        host: '192.168.80.67',
-        port: 5432,
+        host: 'localhost',
+        port: 5433,
         user: 'navneet',
         password: 'Navn@98765',
         database: 'Grewdb',
@@ -37,8 +37,8 @@ async function auditDatabase() {
 
         // 4. Check for 'NaN' or stringified numbers that might fail parsing
         const nanCheck = await pool.query(`
-            SELECT COUNT(*) FROM public.revenue 
-            WHERE "Value" = 'NaN' OR "WP" = 'NaN'
+            SELECT COUNT(*) FROM public.revenue
+            WHERE "Taxable Value"::text = 'NaN' OR "Module WP"::text = 'NaN'
         `);
         console.log('[AUDIT] NaN string check:', nanCheck.rows[0].count);
 

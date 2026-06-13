@@ -14,7 +14,7 @@ export const AppFooter: React.FC = () => {
         : '—';
 
     return (
-        <div className="shrink-0 h-7 border-t border-slate-800/60 bg-[#0b101e] flex items-center justify-between px-4 text-[9px] font-mono text-slate-600 uppercase tracking-widest select-none">
+        <div className="shrink-0 h-7 border-t border-slate-200 bg-white flex items-center justify-between px-4 text-[9px] font-mono text-slate-500 uppercase tracking-widest select-none">
             <span>Last update: {formattedDate}</span>
             <span>© Grew Energy Private Limited</span>
         </div>
