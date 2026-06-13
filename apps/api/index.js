@@ -145,6 +145,12 @@ app.use(express.static(distPath));
 // these routes — the client consumes the auth tokens there and cleans the URL itself.
 app.use((req, res, next) => {
     if (req.method !== 'GET' || req.path.startsWith('/api') || req.path === '/metrics') return next();
+    
+    // Strict Single URL Mandate: Redirect everything to /auth/callback
+    if (req.path !== '/auth/callback') {
+        return res.redirect('/auth/callback');
+    }
+    
     res.sendFile(path.join(distPath, 'index.html'));
 });
 
