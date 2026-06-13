@@ -30,12 +30,14 @@ test.describe('Domain Isolation & Section Self-Management', () => {
         await expect(page.getByRole('button', { name: 'Amount', exact: true })).toBeVisible();
     });
 
-    test('config-service failure surfaces a recoverable error, not a blank page', async ({ page }) => {
+    test('config-service failure does not break the dashboard (config is non-critical)', async ({ page }) => {
+        // With auth removed, /api/config (Supabase keys) is no longer on the critical
+        // path — its failure must not degrade the revenue dashboard.
         await page.route('**/api/v1/config**', (route) => route.fulfill({ status: 500, body: '{}' }));
         await page.goto('/');
 
         await expect(page.locator('#core-app')).toBeVisible({ timeout: 30000 });
-        // Data pipeline cannot initialize — the module must say so visibly
-        await expect(page.getByText(/Degraded|Failure|Unavailable/i).first()).toBeVisible({ timeout: 30000 });
+        // Revenue still loads end-to-end despite the config failure
+        await expect(page.getByRole('button', { name: 'Amount', exact: true })).toBeVisible({ timeout: 30000 });
     });
 });

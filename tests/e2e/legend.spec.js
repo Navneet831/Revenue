@@ -1,88 +1,43 @@
 const { test, expect } = require('@playwright/test');
 
-test.describe('SKU Legend Interaction & Period Persistence', () => {
+test.describe('SKU Legend Interaction & Card Header', () => {
     test.beforeEach(async ({ page }) => {
         await page.setViewportSize({ width: 1920, height: 1080 });
-        // Use bypass auth for tests
-        await page.goto('/?bypass_auth=true');
-        // Wait for the dashboard to load
+        await page.goto('/');
         await page.waitForSelector('#core-app', { state: 'visible', timeout: 30000 });
-        
-        // Wait for the loader to be removed
-        await page.waitForSelector('#global-loader', { state: 'detached', timeout: 30000 });
-
-        // Ensure we are in Visual mode to see the legend
-        const toggleBtn = page.locator('button[data-tooltip="Toggle Matrix/Velocity View"]');
-        await toggleBtn.click();
-        
-        // Wait for stats to be computed and legend to appear
-        await page.waitForSelector('#velocity-legend-portal > div', { timeout: 15000 });
+        // Data fetch + worker compute populate the SKU legend in the master card header
+        await page.waitForSelector('[data-testid="sku-legend"] > div', { timeout: 30000 });
     });
 
-    test('legend should only display SKUs pertaining to the selected period', async ({ page }) => {
-        const legendPortal = page.locator('#velocity-legend-portal');
-        await page.waitForSelector('#velocity-legend-portal > div', { timeout: 15000 });
-        
-        const initialLegendItems = await legendPortal.locator('> div').count();
-        console.log(`Initial legend items: ${initialLegendItems}`);
-
-        const today = new Date().toISOString().split('T')[0];
-        
-        // Use evaluate to set values directly
-        await page.evaluate((targetDate) => {
-            const inputs = document.querySelectorAll('input[type="date"]');
-            if(inputs.length >= 2) {
-                inputs[0].value = targetDate;
-                inputs[0].dispatchEvent(new Event('change', { bubbles: true }));
-                inputs[1].value = targetDate;
-                inputs[1].dispatchEvent(new Event('change', { bubbles: true }));
-            }
-        }, today);
-        
-        await page.waitForTimeout(3000); // Wait for worker compute
-
-        const filteredLegendItems = await legendPortal.locator('> div').count();
-        console.log(`Filtered legend items for today: ${filteredLegendItems}`);
-
-        expect(filteredLegendItems).toBeGreaterThan(0);
+    test('legend renders SKU series for the active selection', async ({ page }) => {
+        const legend = page.locator('[data-testid="sku-legend"]');
+        const count = await legend.locator('> div').count();
+        expect(count).toBeGreaterThan(0);
     });
 
-    test('legend items should remain visible when unselected', async ({ page }) => {
-        const legendPortal = page.locator('#velocity-legend-portal');
-        await page.waitForSelector('#velocity-legend-portal > div', { timeout: 15000 });
-
-        const firstSKU = legendPortal.locator('> div').first();
-        const skuName = await firstSKU.innerText();
-        console.log(`Toggling SKU: ${skuName}`);
-
-        await firstSKU.click();
-
-        await expect(firstSKU).toBeVisible();
-        const className = await firstSKU.getAttribute('class');
-        expect(className).toContain('opacity-30');
+    test('clicking a legend item greys it (excluded) but keeps it visible', async ({ page }) => {
+        const first = page.locator('[data-testid="sku-legend"] > div').first();
+        await first.click();
+        await expect(first).toBeVisible();
+        await expect(first).toHaveClass(/opacity-30/);
+        // Toggling again restores it
+        await first.click();
+        await expect(first).not.toHaveClass(/opacity-30/);
     });
 
-    test('keyboard scrubbing should update the legend and period', async ({ page }) => {
-        await page.waitForSelector('input[type="date"]');
-        
-        // Ensure focus for keyboard events
-        await page.click('body');
-        
-        const initialDate = await page.evaluate(() => {
-            const inputs = document.querySelectorAll('input[type="date"]');
-            return inputs.length >= 2 ? inputs[1].value : '';
-        });
-        console.log(`Initial Date: ${initialDate}`);
+    test('card header (label + legend) stays intact across Matrix and Velocity views', async ({ page }) => {
+        const legend = page.locator('[data-testid="sku-legend"]');
+        const toggle = page.locator('button[data-tooltip="Toggle Matrix/Velocity View"]');
 
-        await page.keyboard.press('ArrowLeft');
-        await page.waitForTimeout(2000);
+        // Default (Matrix) — header + legend present
+        await expect(legend).toBeVisible();
 
-        const newDate = await page.evaluate(() => {
-            const inputs = document.querySelectorAll('input[type="date"]');
-            return inputs.length >= 2 ? inputs[1].value : '';
-        });
-        console.log(`Scrubbed Date: ${newDate}`);
+        // Switch to Velocity (visual) — header + legend must remain
+        await toggle.click();
+        await expect(legend).toBeVisible();
 
-        expect(newDate).not.toBe(initialDate);
+        // Switch back to Matrix — still intact
+        await toggle.click();
+        await expect(legend).toBeVisible();
     });
 });

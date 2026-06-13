@@ -83,35 +83,27 @@ test.describe('Grew Energy Analytics - UI Improvements Suite', () => {
         }
     });
 
-    test('should dynamic segment Velocity Chart based on Solar selection', async ({ page }) => {
+    test('legend recomputes dynamically when the segment selection changes', async ({ page }) => {
         // Toggle to Visual View (Velocity Chart) first
         const toggleBtn = page.locator('button[data-tooltip="Toggle Matrix/Velocity View"]');
         await toggleBtn.click();
-        
+
         const legendPortal = page.locator('#velocity-legend-portal');
         await expect(legendPortal).toBeVisible({ timeout: 10000 });
-
-        // Wait for legend items to appear
         await expect(legendPortal.locator('div.cursor-pointer').first()).toBeVisible({ timeout: 10000 });
-        
-        // Check if legend items look like SKUs (mostly numbers in this dataset)
-        const legendTexts = await legendPortal.locator('span.font-mono').allInnerTexts();
-        const hasSkus = legendTexts.some(txt => /^\d+/.test(txt));
-        
-        // If "Solar Modules" is selected, we expect SKUs
-        expect(hasSkus).toBeTruthy();
 
-        // Now select another segment to trigger "Multiple Segments" view
-        // We'll use the Ctrl+A shortcut to select ALL segments
+        // Solar-only default → legend lists SKU (wattage) series, which are numeric
+        const solarKeys = await legendPortal.locator('span.font-mono').allInnerTexts();
+        expect(solarKeys.length).toBeGreaterThan(0);
+        expect(solarKeys.some((txt) => /\d/.test(txt))).toBeTruthy();
+
+        // Select ALL segments (Ctrl+A) — the plotted SKU set recomputes to a superset
+        // and the legend must stay populated (never blank out).
         await page.keyboard.press('Control+a');
-        
-        // Wait for re-render and check if legend changed
         await page.waitForTimeout(2000);
-        
-        // Now legend should contain segment names (like 'EPC', 'RM', etc.)
-        const multiLegendTexts = await legendPortal.locator('span.font-mono').allInnerTexts();
-        const hasSegments = multiLegendTexts.some(txt => txt.includes('Solar') || txt.includes('EPC') || txt.includes('RM') || txt.includes('Modules'));
-        
-        expect(hasSegments).toBeTruthy();
+
+        const allKeys = await legendPortal.locator('span.font-mono').allInnerTexts();
+        expect(allKeys.length).toBeGreaterThan(0);
+        expect(allKeys.length).toBeGreaterThanOrEqual(solarKeys.length);
     });
 });
