@@ -18,6 +18,7 @@ start "Revenue Web" cmd /c "npm run dev -w apps/web"
 
 echo ======================================================
 echo   System is initializing. 
-echo   URL: http://127.0.0.1:8000/auth/callback
+echo   PLEASE OPEN: http://127.0.0.1:8000/auth/callback
+echo   (IGNORE ports 5173/5175 if shown in secondary windows)
 echo ======================================================
 pause
