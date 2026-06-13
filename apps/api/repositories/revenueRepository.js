@@ -20,7 +20,14 @@ export const pool = new Pool({
  */
 export class RevenueRepository {
     static async findAll() {
-        const query = 'SELECT * FROM public.revenue';
+        // Project only the columns the client-side sanitizer/engine actually reads
+        // (10 of 38). Avoids shipping ~28 unused columns per row over the wire.
+        // NOTE: column names must stay in sync with DataSanitizer.buildKeyMap.
+        const query = `
+            SELECT "Invoice date", "Taxable Value", "MW", "SalesQty",
+                   "Segment", "Sales Head", "Cust_name", "Module WP",
+                   "Revenue", "UnitPrice"
+            FROM public.revenue`;
         const start = Date.now();
         try {
             const result = await pool.query(query);

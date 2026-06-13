@@ -1,4 +1,6 @@
-import dotenv from 'dotenv';
+// Load environment FIRST — before any import below constructs a DB pool from
+// process.env (see env.js for why a function call here would be too late).
+import './env.js';
 import express from 'express';
 import compression from 'compression';
 import cors from 'cors';
@@ -14,9 +16,6 @@ import { execFileSync } from 'child_process';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-// Centralised .env loading from root
-dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 const app = express();
 
@@ -34,6 +33,7 @@ const allowedOrigins = (process.env.CORS_ORIGINS || 'http://127.0.0.1:5173,http:
     .split(',')
     .map((o) => o.trim());
 app.use(cors({ origin: allowedOrigins }));
+app.use(express.json());
 
 // --- RATE LIMITING ---
 const apiLimiter = rateLimit({
@@ -86,6 +86,24 @@ app.get('/api/git/commits', authenticateJWT, (req, res) => {
         res.json(gitCommitsCache.payload);
     } catch (err) {
         res.status(500).json({ error: 'Git history unavailable' });
+    }
+});
+
+// Commit checkout — lets the drill-down jump the working tree to a past commit.
+// hash is validated as a git short/long SHA (hex) and passed as an argv element
+// (never through a shell) so it cannot be used for command injection.
+app.post('/api/git/checkout', authenticateJWT, (req, res) => {
+    const hash = (req.body && req.body.hash) || '';
+    if (!/^[0-9a-f]{7,40}$/i.test(hash)) {
+        return res.status(400).json({ error: 'Invalid commit hash' });
+    }
+    try {
+        execFileSync('git', ['checkout', hash]);
+        gitCommitsCache = null; // force a fresh "current" marker on next read
+        res.json({ ok: true, hash });
+    } catch (err) {
+        Logger.error('git_checkout_failed', err);
+        res.status(500).json({ error: 'Checkout failed. Commit local changes first.' });
     }
 });
 

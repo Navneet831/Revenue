@@ -1,5 +1,5 @@
 import express from 'express';
-import { getRevenueSummary } from '../controllers/revenueController.js';
+import { getRevenueSummary, getMeta, getRevenueAnalytics } from '../controllers/revenueController.js';
 import { RevenueRepository } from '../repositories/revenueRepository.js';
 import Logger from '../../../monitoring/logging/index.js';
 
@@ -8,6 +8,8 @@ import { RevenueService } from '../services/revenueService.js';
 const router = express.Router();
 
 router.get('/summary', getRevenueSummary);
+router.get('/meta', getMeta);
+router.get('/analytics', getRevenueAnalytics);
 
 router.get('/', async (req, res) => {
     try {
