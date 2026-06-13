@@ -45,53 +45,11 @@ const apiLimiter = rateLimit({
     }
 });
 
-// --- AUTHENTICATION ---
-// Tokens are verified against Supabase Auth (GET /auth/v1/user). Valid results are
-// cached briefly so we don't pay a network round-trip on every request.
-const TOKEN_CACHE_TTL_MS = 60 * 1000;
-const tokenCache = new Map();
-
+// --- AUTHENTICATION (BYPASSED) ---
 const authenticateJWT = async (req, res, next) => {
-    const authHeader = req.headers.authorization || '';
-    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
-
-    if (!token) {
-        Logger.warn('auth_missing_token', { ip: req.ip, url: req.originalUrl });
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-
-    const cached = tokenCache.get(token);
-    if (cached && cached.expires > Date.now()) {
-        req.user = cached.user;
-        return next();
-    }
-
-    try {
-        const verifyRes = await fetch(`${process.env.SUPABASE_URL}/auth/v1/user`, {
-            headers: {
-                apikey: process.env.SUPABASE_ANON_KEY,
-                Authorization: `Bearer ${token}`
-            }
-        });
-
-        if (!verifyRes.ok) {
-            Logger.warn('auth_invalid_token', { ip: req.ip, url: req.originalUrl, status: verifyRes.status });
-            return res.status(401).json({ error: 'Unauthorized' });
-        }
-
-        const userData = await verifyRes.json();
-        const user = { id: userData.id, email: userData.email };
-
-        if (tokenCache.size > 1000) tokenCache.clear();
-        tokenCache.set(token, { user, expires: Date.now() + TOKEN_CACHE_TTL_MS });
-
-        req.user = user;
-        Logger.info('auth_verified', { email: user.email, url: req.originalUrl, ip: req.ip });
-        next();
-    } catch (err) {
-        Logger.error('auth_verification_failed', { message: err.message });
-        res.status(503).json({ error: 'Authentication service unavailable' });
-    }
+    // Authentication completely removed as per request
+    req.user = { id: 'admin', email: 'admin@grew.energy' };
+    next();
 };
 
 app.use('/api/', apiLimiter);

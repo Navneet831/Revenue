@@ -1,17 +1,16 @@
-import React, { useEffect, useState, useCallback, Suspense } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useStore } from './store/useStore';
-import { AuthLayer } from './modules/auth/AuthLayer';
 import { GlobalSidebar } from './modules/shared/GlobalSidebar';
 import { SectionBoundary } from './modules/shared/SectionBoundary';
 import { ModulePlaceholder } from './modules/shared/ModulePlaceholder';
 import { MODULE_REGISTRY } from './modules/registry';
 import { dbService } from './services/dbService';
-import { supabaseService } from './services/supabaseService';
 import { CacheService } from './services/cacheService';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { HelpModal } from './modules/shared/HelpModal';
 import { GlobalTooltip } from './modules/shared/GlobalTooltip';
+import { CommitDrilldown } from './modules/shared/CommitDrilldown';
 
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean; error: Error | null }> {
     constructor(props: any) {
@@ -53,6 +52,12 @@ const ModuleLoading: React.FC<{ label: string }> = ({ label }) => (
  * the shell mounts exactly one active context and isolates its failures.
  */
 export const App: React.FC = () => {
+    const { setUserEmail, updateUIState, activeApp } = useStore();
+
+    // Authentication completely bypassed
+    const authenticated = true;
+    const [helpOpen, setHelpOpen] = useState(false);
+
     useEffect(() => {
         // Enforce single URL mandate: http://127.0.0.1:8000/auth/callback
         if (window.location.pathname !== '/auth/callback' && !window.location.pathname.startsWith('/api')) {
@@ -66,28 +71,16 @@ export const App: React.FC = () => {
                 setTimeout(() => loader.remove(), 500);
             }, 500);
         }
-    }, []);
 
-    const { setUserEmail, setStats, setData, resetFilters, updateUIState, activeApp } = useStore();
+        // Set default admin email for bypassed auth
+        setUserEmail('admin@grew.energy');
+    }, [setUserEmail]);
 
-    const [authenticated, setAuthenticated] = useState(false);
-    const [helpOpen, setHelpOpen] = useState(false);
-
-    const handleLogout = useCallback(async () => {
-        try {
-            await supabaseService.signOut();
-        } catch (e) {
-            // Continue local cleanup even if the remote sign-out fails
-        }
-        setAuthenticated(false);
-        setUserEmail(null);
-        setStats(null);
-        setData([]);
-        resetFilters();
+    const handleLogout = () => {
+        // Auth removed, just reload
         CacheService.purge();
-        await dbService.purge();
-        window.location.replace('/auth/callback');
-    }, [resetFilters, setData, setStats, setUserEmail]);
+        dbService.purge().then(() => window.location.replace('/auth/callback'));
+    };
 
     useKeyboardShortcuts(authenticated, () => setHelpOpen(true), handleLogout);
 
@@ -96,30 +89,27 @@ export const App: React.FC = () => {
     return (
         <ErrorBoundary>
             <div className="w-screen h-screen relative flex flex-col bg-white overflow-hidden">
-                <AuthLayer onAuthenticated={(email) => { setUserEmail(email); setAuthenticated(true); }} isHidden={authenticated} />
+                <div id="core-app" className="flex-1 flex w-full relative overflow-hidden font-sans antialiased text-[11px] font-medium tracking-wide text-slate-900">
+                    <div className="flex h-full w-full relative select-none overflow-hidden">
+                        <GlobalSidebar onLogout={handleLogout} onOpenHelp={() => setHelpOpen(true)} onOpenStories={() => updateUIState({ storiesOpen: true })} />
 
-                {authenticated && (
-                    <div id="core-app" className="flex-1 flex w-full relative overflow-hidden font-sans antialiased text-[11px] font-medium tracking-wide text-slate-900">
-                        <div className="flex h-full w-full relative select-none overflow-hidden">
-                            <GlobalSidebar onLogout={handleLogout} onOpenHelp={() => setHelpOpen(true)} onOpenStories={() => updateUIState({ storiesOpen: true })} />
-
-                            <main className="flex-1 flex flex-col min-w-0 bg-slate-50 relative z-20 overflow-y-auto">
-                                {activeModule?.Component ? (
-                                    <SectionBoundary name={activeModule.label} className="m-4 flex-1">
-                                        <Suspense fallback={<ModuleLoading label={activeModule.label} />}>
-                                            <activeModule.Component />
-                                        </Suspense>
-                                    </SectionBoundary>
-                                ) : (
-                                    <ModulePlaceholder moduleId={activeApp} />
-                                )}
-                            </main>
-                        </div>
-
-                        <GlobalTooltip />
-                        <HelpModal isOpen={helpOpen} onClose={() => setHelpOpen(false)} />
+                        <main className="flex-1 flex flex-col min-w-0 bg-slate-50 relative z-20 overflow-y-auto">
+                            {activeModule?.Component ? (
+                                <SectionBoundary name={activeModule.label} className="m-4 flex-1">
+                                    <Suspense fallback={<ModuleLoading label={activeModule.label} />}>
+                                        <activeModule.Component />
+                                    </Suspense>
+                                </SectionBoundary>
+                            ) : (
+                                <ModulePlaceholder moduleId={activeApp} />
+                            )}
+                        </main>
                     </div>
-                )}
+
+                    <GlobalTooltip />
+                    <HelpModal isOpen={helpOpen} onClose={() => setHelpOpen(false)} />
+                    <CommitDrilldown />
+                </div>
 
                 {AgentationToolbar && (
                     <Suspense fallback={null}>
