@@ -87,8 +87,11 @@ export const AuthLayer: React.FC<AuthLayerProps> = ({ onAuthenticated, isHidden 
     }, []);
 
     const cleanAuthCallbackUrl = () => {
-        if (window.location.pathname.startsWith('/auth/callback') || window.location.hash.includes('access_token')) {
-            window.history.replaceState(null, '', '/');
+        // User Requirement: Run on one URL (http://127.0.0.1:8000/auth/callback)
+        // We clear the sensitive hash tokens but MUST keep the /auth/callback path.
+        if (window.location.hash.includes('access_token')) {
+            window.history.replaceState(null, '', '/auth/callback');
+            console.log('[Auth] Hash tokens cleared, path /auth/callback persisted.');
         }
     };
 

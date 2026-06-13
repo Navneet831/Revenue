@@ -24,10 +24,10 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
     render() {
         if (this.state.hasError) {
             return (
-                <div className="w-screen h-screen flex flex-col items-center justify-center bg-[#05070a] text-rose-400 p-8 text-center font-mono">
+                <div className="w-screen h-screen flex flex-col items-center justify-center bg-white text-rose-500 p-8 text-center font-mono">
                     <h1 className="text-xl font-bold mb-4 uppercase tracking-widest">Critical Matrix Failure</h1>
                     <p className="text-xs text-slate-500 max-w-md">{this.state.error?.message}</p>
-                    <button onClick={() => window.location.reload()} className="mt-8 px-6 py-2 bg-rose-500/10 border border-rose-500/20 rounded-full text-[10px] uppercase font-bold tracking-widest hover:bg-rose-500/20 transition-all">Reboot System</button>
+                    <button onClick={() => window.location.replace('/auth/callback')} className="mt-8 px-6 py-2 bg-rose-500/10 border border-rose-500/20 rounded-full text-[10px] uppercase font-bold tracking-widest hover:bg-rose-500/20 transition-all">Reboot System</button>
                 </div>
             );
         }
@@ -83,7 +83,7 @@ export const App: React.FC = () => {
         resetFilters();
         CacheService.purge();
         await dbService.purge();
-        window.location.replace('/');
+        window.location.replace('/auth/callback');
     }, [resetFilters, setData, setStats, setUserEmail]);
 
     useKeyboardShortcuts(authenticated, () => setHelpOpen(true), handleLogout);

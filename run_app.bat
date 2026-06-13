@@ -18,7 +18,6 @@ start "Revenue Web" cmd /c "npm run dev -w apps/web"
 
 echo ======================================================
 echo   System is initializing. 
-echo   API: http://localhost:8000
-echo   WEB: http://localhost:5173
+echo   URL: http://127.0.0.1:8000/auth/callback
 echo ======================================================
 pause
