@@ -70,7 +70,7 @@ export const RevenueMatrix: React.FC = memo(() => {
         }
     };
 
-    const thBase = 'p-1 px-1.5 border-b border-slate-800 text-[9px] uppercase font-bold text-center tracking-widest transition-colors whitespace-nowrap bg-[#141b2d]/95 backdrop-blur';
+    const thBase = 'p-1 px-1.5 border-b border-slate-200 text-[9px] uppercase font-bold text-center tracking-widest transition-colors whitespace-nowrap bg-white/95 backdrop-blur';
 
     // The active metric drives the matrix: its row is pinned first and emphasized,
     // and the Δ rows (computed on this metric by the engine) are labeled with it.
@@ -89,8 +89,8 @@ export const RevenueMatrix: React.FC = memo(() => {
     ];
 
     const renderDataRow = (label: string, key: 'valCr' | 'qty' | 'mw', formatter: (v: number | null) => string, isPrimary: boolean) => (
-        <tr key={key} className={`border-b border-slate-800/50 hover:bg-[#141b2d] h-10 ${isPrimary ? 'bg-[#0d1524]' : 'bg-[#0b101e]'}`}>
-            <td className={`p-1.5 px-2 border-r border-slate-800 text-[9px] font-bold uppercase tracking-wider whitespace-nowrap drop-shadow-md sticky left-0 z-30 ${isPrimary ? 'text-emerald-400 bg-[#0d1524] border-l-2 border-l-emerald-400' : 'text-slate-500 bg-[#0b101e]'}`} style={{ width: '80px', minWidth: '80px' }}>
+        <tr key={key} className={`border-b border-slate-100 hover:bg-slate-50 h-10 ${isPrimary ? 'bg-emerald-50/50' : 'bg-white'}`}>
+            <td className={`p-1.5 px-2 border-r border-slate-200 text-[9px] font-bold uppercase tracking-wider whitespace-nowrap sticky left-0 z-30 ${isPrimary ? 'text-emerald-600 bg-emerald-50/50 border-l-2 border-l-emerald-500' : 'text-slate-500 bg-white'}`} style={{ width: '80px', minWidth: '80px' }}>
                 {label}
             </td>
             {stats.matrix.map((d: any, idx: number) => {
@@ -100,17 +100,17 @@ export const RevenueMatrix: React.FC = memo(() => {
                 const isPartofSelectedQ = filters.selectedQuarter === qIdxOfM && !isTotal;
                 const isQEnd = idx % 3 === 2 || isTotal;
 
-                const borderCls = isQEnd ? 'border-r border-slate-800/50' : '';
+                const borderCls = isQEnd ? 'border-r border-slate-200' : '';
                 const textCls = isTotal
-                    ? `${isPrimary ? 'text-emerald-400' : 'text-emerald-400/50'} text-[11px] font-bold tracking-tight`
+                    ? `${isPrimary ? 'text-emerald-600' : 'text-emerald-600/50'} text-[11px] font-bold tracking-tight`
                     : isSelectedMonth || isPartofSelectedQ
-                        ? `${isPrimary ? 'text-white' : 'text-slate-400'} text-[10px] font-bold tracking-tight`
-                        : `${isPrimary ? 'text-white' : 'text-slate-500'} text-[10px] font-medium tracking-tight`;
+                        ? `${isPrimary ? 'text-slate-900' : 'text-slate-600'} text-[10px] font-bold tracking-tight`
+                        : `${isPrimary ? 'text-slate-800' : 'text-slate-500'} text-[10px] font-medium tracking-tight`;
 
                 return (
                     <td 
                         key={idx} 
-                        className={`p-1 px-2 font-mono text-right relative transition-all duration-200 whitespace-nowrap overflow-hidden ${borderCls} ${isSelectedMonth || isPartofSelectedQ ? 'bg-[#141b2d]/50' : ''}`}
+                        className={`p-1 px-2 font-mono text-right relative transition-all duration-200 whitespace-nowrap overflow-hidden ${borderCls} ${isSelectedMonth || isPartofSelectedQ ? 'bg-slate-50' : ''}`}
                     >
                         <span className={`${textCls} relative z-10 pointer-events-none`}>
                             {privacyMode ? '••••' : formatter(d[key])}
@@ -122,8 +122,8 @@ export const RevenueMatrix: React.FC = memo(() => {
     );
 
     const renderBadgeRow = (label: string, key: 'mom' | 'qoq' | 'yoy') => (
-        <tr className="border-b border-slate-800/30 bg-[#10141d] h-9">
-            <td className="p-1.5 px-2 border-r border-slate-800 text-[8px] text-slate-500 font-bold uppercase tracking-wider whitespace-nowrap bg-[#10141d] sticky left-0 z-30" style={{ width: '80px', minWidth: '80px' }}>
+        <tr className="border-b border-slate-100 bg-slate-50/50 h-9">
+            <td className="p-1.5 px-2 border-r border-slate-200 text-[8px] text-slate-400 font-bold uppercase tracking-wider whitespace-nowrap bg-slate-50/50 sticky left-0 z-30" style={{ width: '80px', minWidth: '80px' }}>
                 {label}
             </td>
             {stats.matrix.map((d: any, idx: number) => {
@@ -133,26 +133,26 @@ export const RevenueMatrix: React.FC = memo(() => {
                 const isPartofSelectedQ = filters.selectedQuarter === qIdxOfM && !isTotal;
                 const isQEnd = idx % 3 === 2 || isTotal;
 
-                const borderCls = isQEnd ? 'border-r border-slate-800/30' : '';
+                const borderCls = isQEnd ? 'border-r border-slate-200' : '';
 
                 if (isTotal) return <td key={idx} className={`p-1 text-center whitespace-nowrap ${borderCls}`}>-</td>;
 
                 const val = d[key];
                 if (val === null || val === undefined) {
                     return (
-                        <td key={idx} className={`p-1 px-2 text-right text-slate-600 text-[9px] font-mono whitespace-nowrap ${borderCls} ${isSelectedMonth || isPartofSelectedQ ? 'bg-[#141b2d]/30' : ''}`}>
+                        <td key={idx} className={`p-1 px-2 text-right text-slate-400 text-[9px] font-mono whitespace-nowrap ${borderCls} ${isSelectedMonth || isPartofSelectedQ ? 'bg-slate-100/50' : ''}`}>
                             N/A
                         </td>
                     );
                 }
 
                 const isPos = val > 0;
-                const colorCls = isPos ? 'text-emerald-400' : val < 0 ? 'text-rose-400' : 'text-slate-500';
+                const colorCls = isPos ? 'text-emerald-500' : val < 0 ? 'text-rose-500' : 'text-slate-400';
 
                 return (
                     <td 
                         key={idx} 
-                        className={`p-1 px-2 font-mono text-right relative transition-all duration-200 whitespace-nowrap overflow-hidden ${borderCls} ${isSelectedMonth || isPartofSelectedQ ? 'bg-[#141b2d]/30' : ''}`}
+                        className={`p-1 px-2 font-mono text-right relative transition-all duration-200 whitespace-nowrap overflow-hidden ${borderCls} ${isSelectedMonth || isPartofSelectedQ ? 'bg-slate-100/50' : ''}`}
                     >
                         <span className={`relative z-10 ${colorCls} text-[9px] font-bold tracking-tight`}>
                             {privacyMode ? '••' : `${isPos ? '+' : ''}${val.toFixed(1)}%`}
@@ -164,15 +164,15 @@ export const RevenueMatrix: React.FC = memo(() => {
     );
 
     return (
-        <div className="flex flex-col h-full w-full relative">
-            <div className="flex-1 overflow-auto no-scrollbar relative z-20 select-none bg-transparent" data-lenis-prevent="true">
-                <table className="w-full border-collapse min-w-full" style={{ tableLayout: 'fixed' }}>
-                    <thead className="sticky top-0 z-40">
+        <div className="flex flex-col h-full w-full relative bg-white">
+            <div className="flex-1 overflow-auto no-scrollbar relative z-20 select-none bg-white" data-lenis-prevent="true">
+                <table className="w-full border-collapse min-w-full relative" style={{ tableLayout: 'fixed' }}>
+                    <thead className="sticky top-0 z-40 shadow-sm">
                         <tr>
-                            <th className={`${thBase} left-0 border-r border-slate-800 sticky z-50`} style={{ width: '80px', minWidth: '80px' }}>
+                            <th className={`${thBase} left-0 border-r border-slate-200 sticky z-50`} style={{ width: '80px', minWidth: '80px' }}>
                                 <button 
                                     onClick={(e) => { e.stopPropagation(); updateFilters({ pendingOnly: !filters.pendingOnly }); }} 
-                                    className="p-1 transition-colors inline-flex items-center justify-center btn-3d bg-[#111620]"
+                                    className="p-1 transition-colors inline-flex items-center justify-center bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded"
                                     title="Toggle Dispatched vs Pending Pipeline"
                                 >
                                     {filters.pendingOnly ? <CheckCircle className="w-3 h-3 text-amber-500" /> : <Truck className="w-3 h-3 text-slate-400" />}
@@ -187,11 +187,11 @@ export const RevenueMatrix: React.FC = memo(() => {
                                 const isQStart = idx % 3 === 0 && !isTotal;
                                 const isQEnd = idx % 3 === 2 || isTotal;
 
-                                const borderCls = isQEnd ? 'border-r border-slate-800' : '';
-                                const totalThCls = isTotal ? 'text-emerald-400' : '';
+                                const borderCls = isQEnd ? 'border-r border-slate-200' : '';
+                                const totalThCls = isTotal ? 'text-emerald-600 bg-emerald-50/50' : '';
                                 const selectedThCls = isSelectedMonth || isPartofSelectedQ
-                                    ? 'text-white border-b-2 border-emerald-400 font-extrabold bg-[#1e2638]'
-                                    : 'text-slate-400 hover:text-white hover:bg-slate-800/50';
+                                    ? 'text-slate-900 border-b-2 border-emerald-500 font-extrabold bg-slate-50'
+                                    : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50';
 
                                 return (
                                     <th
@@ -203,7 +203,7 @@ export const RevenueMatrix: React.FC = memo(() => {
                                         {isQStart && (
                                             <div 
                                                 onClick={(e) => { e.stopPropagation(); handleQuarterToggle(qIdxOfM); }}
-                                                className={`absolute top-0 left-0 w-3.5 h-3.5 flex items-center justify-center text-[9px] font-black cursor-pointer rounded-br-md transition-all z-40 ${isPartofSelectedQ ? 'bg-emerald-400 text-black shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-800 text-slate-500 hover:bg-slate-700 hover:text-slate-300'}`}
+                                                className={`absolute top-0 left-0 w-3.5 h-3.5 flex items-center justify-center text-[9px] font-black cursor-pointer rounded-br-md transition-all z-40 ${isPartofSelectedQ ? 'bg-emerald-500 text-white shadow-[0_0_8px_rgba(16,185,129,0.2)]' : 'bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600'}`}
                                                 title="Select Quarter"
                                             >
                                                 Q

@@ -139,19 +139,27 @@ export const KpiCard: React.FC<KpiCardProps> = memo(({
         );
     };
 
+    const getLogicTooltip = () => {
+        if (title.toLowerCase().includes('revenue') || title.toLowerCase().includes('amount')) return "Sum of invoiced amounts (₹) for the selected period, segments, and SKUs.";
+        if (title.toLowerCase().includes('volume') || title.toLowerCase().includes('qty')) return "Sum of physical units (Qty) dispatched or invoiced.";
+        if (title.toLowerCase().includes('capacity') || title.toLowerCase().includes('mw')) return "Sum of capacity (MW) dispatched or invoiced.";
+        if (title.toLowerCase().includes('average') || title.toLowerCase().includes('price')) return "Average price per unit (Total Revenue / Total Volume).";
+        return `Calculated ${title} based on current filters.`;
+    };
+
     return (
         <div 
             id={id}
-            className={`kpi-module min-w-[210px] flex-shrink-0 flex-1 min-h-[110px] h-auto card-3d rounded-2xl flex flex-col relative group overflow-hidden transition-all duration-300 ${
-                isInteractive ? 'cursor-pointer hover:border-emerald-400/30' : ''
-            } ${detailOpen ? 'border-emerald-400/40 ring-1 ring-emerald-400/10 shadow-[0_15px_40px_rgba(0,0,0,0.4)]' : ''}`}
+            className={`kpi-module min-w-[210px] flex-shrink-0 flex-1 min-h-[110px] h-auto bg-white border border-slate-200 rounded-2xl flex flex-col relative group overflow-hidden transition-all duration-300 ${
+                isInteractive ? 'cursor-pointer hover:border-emerald-200' : ''
+            } ${detailOpen ? 'border-emerald-300 ring-1 ring-emerald-100 shadow-lg' : 'shadow-sm'}`}
             onClick={() => isInteractive && onToggleDetail && onToggleDetail()}
         >
             {renderBreakdownStrip()}
 
             <div className="px-4 pt-3 pb-5 flex flex-col h-full w-full gap-2 relative z-10">
                 <div className="flex items-start justify-between z-30 w-full">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest transition-colors drop-shadow-md mt-1">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest transition-colors mt-1">
                         {title}
                     </span>
                     <div className="flex items-start gap-3 ml-auto shrink-0">
@@ -160,18 +168,19 @@ export const KpiCard: React.FC<KpiCardProps> = memo(({
                 </div>
 
                 <div className="flex flex-col z-10 w-full">
-                    <span className="text-2xl lg:text-[26px] font-bold font-mono text-white leading-tight tracking-tighter truncate drop-shadow-md">
+                    <span 
+                        className="text-2xl lg:text-[26px] font-bold font-mono text-slate-900 leading-tight tracking-tighter truncate"
+                        title={getLogicTooltip()}
+                    >
                         {formatVal(value)}
                     </span>
                     {renderDetails()}
                 </div>
             </div>
 
-            <div className="absolute right-[-10px] bottom-[-10px] w-20 h-20 text-white opacity-[0.03] transform -rotate-12 pointer-events-none transition-transform group-hover:rotate-0 duration-300">
+            <div className="absolute right-[-10px] bottom-[-10px] w-20 h-20 text-slate-100 transform -rotate-12 pointer-events-none transition-transform group-hover:rotate-0 duration-300 z-0">
                 {renderIcon("w-full h-full")}
             </div>
-
-            <div className="absolute inset-0 opacity-[0.03] pointer-events-none z-0 bg-grid-pattern" />
         </div>
     );
 });
