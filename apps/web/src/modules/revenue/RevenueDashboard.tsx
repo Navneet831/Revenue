@@ -188,7 +188,7 @@ export const RevenueDashboard: React.FC = () => {
             </div>
 
             <div className="flex-1 px-3 pb-3 flex flex-col gap-4 w-full">
-                <div id="w-master" className="w-full bg-white rounded-2xl border border-slate-200 flex flex-col overflow-hidden relative shrink-0 shadow-sm" style={{ height: '345px' }}>
+                <div id="w-master" className="w-full bg-white rounded-2xl border border-slate-200 flex flex-col overflow-hidden relative shrink-0 shadow-sm" style={{ height: '450px' }}>
                     <div className="chart-noise-layer opacity-[0.02]" />
                     <div className="p-1 px-3 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center z-50 shrink-0 h-9">
                         <div className="flex items-center gap-2 overflow-hidden flex-1">
@@ -207,7 +207,7 @@ export const RevenueDashboard: React.FC = () => {
                             </button>
                         </div>
                     </div>
-                    <div className="flex-1 relative">
+                    <div className="flex-1 relative pt-4">
                         <SectionBoundary name="Velocity Engine" className="h-full">
                             {cardViews.master === 'visual' ? <VelocityChart /> : <RevenueMatrix />}
                         </SectionBoundary>

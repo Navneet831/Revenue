@@ -136,12 +136,6 @@ export const GlobalSidebar: React.FC<GlobalSidebarProps> = ({ onLogout, onOpenHe
 
                 {/* Bottom Actions */}
                 <div className="shrink-0 flex flex-col items-center pb-4 gap-4 border-t border-slate-100 pt-4">
-                    <div className="flex items-center justify-center p-2" title="System Health">
-                         <Activity className={`w-5 h-5 ${((govStats?.valid || 0) / (govStats?.total || 1)) > 0.9 ? 'text-emerald-500' : 'text-amber-500'}`} />
-                    </div>
-                    <div onClick={togglePrivacyMode} className={`p-2 rounded-lg cursor-pointer transition-all ${privacyMode ? 'text-amber-500 bg-amber-50' : 'text-slate-400 hover:text-slate-600'}`} title="Privacy Mode">
-                        <Shield className="w-5 h-5" />
-                    </div>
                     <div onClick={onOpenHelp} className="p-2 rounded-lg text-slate-400 hover:text-slate-600 cursor-pointer transition-all" title="Help">
                         <Terminal className="w-5 h-5" />
                     </div>

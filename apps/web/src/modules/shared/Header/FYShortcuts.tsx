@@ -66,7 +66,7 @@ export const FYShortcuts: React.FC = () => {
     };
 
     return (
-        <div className="flex items-center shrink-0 border-r border-slate-700 pr-3 gap-1">
+        <div className="flex items-center shrink-0 border-r border-slate-200 pr-3 gap-1 overflow-x-auto no-scrollbar max-w-[210px]">
             {allYears.map((year: number) => {
                 const startYear  = year - 1;
                 const isSelected = filters.startDate === `${startYear}-04-01`;
@@ -74,10 +74,10 @@ export const FYShortcuts: React.FC = () => {
                     <button
                         key={year}
                         onClick={() => handleSetFY(year)}
-                        className={`px-2 py-1 text-[11px] font-mono font-bold rounded-lg transition-colors btn-3d ${
+                        className={`px-2 py-1 text-[10px] font-black uppercase tracking-widest rounded-full transition-all border shrink-0 whitespace-nowrap ${
                             isSelected
-                                ? 'text-emerald-400 border-emerald-400 bg-emerald-400/5 shadow-none'
-                                : 'text-slate-500 border-transparent hover:border-slate-700 hover:text-slate-300 hover:bg-slate-800'
+                                ? 'text-white border-emerald-600 bg-emerald-500 shadow-sm'
+                                : 'text-slate-900 border-slate-200 bg-white hover:bg-slate-50 shadow-sm'
                         }`}
                     >
                         {fyLabel(year)}
