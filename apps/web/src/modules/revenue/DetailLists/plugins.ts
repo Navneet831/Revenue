@@ -48,18 +48,14 @@ export const createRightLabelsPlugin = (privacyMode: boolean) => ({
                 
                 if (startX + totalTextWidth > chartArea.right - 10) {
                     startX = row.maxX - 6 - totalTextWidth;
-                    ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
-                    ctx.shadowBlur = 4;
-                    ctx.shadowOffsetX = 0;
-                    ctx.shadowOffsetY = 1;
                 }
                 
-                ctx.fillStyle = '#ffffff';
+                ctx.fillStyle = '#000000';
                 ctx.textAlign = 'left';
                 ctx.fillText(valText, startX, row.y);
                 
                 if (pctText) {
-                    ctx.fillStyle = (startX < row.maxX) ? '#ffffff' : '#cbd5e1'; 
+                    ctx.fillStyle = '#475569'; 
                     ctx.fillText(pctText, startX + valWidth, row.y);
                 }
                 

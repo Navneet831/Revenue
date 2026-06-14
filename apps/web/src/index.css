@@ -3,9 +3,9 @@
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
 
-/* COOL SLATE CANVAS — light, layered: off-white canvas, white cards, black text */
+/* BRAND CANVAS — warm cream neutral so white cards lift off the surface. */
 body {
-    background-color: #f4f6f8;
+    background-color: #F8F4E6;
     color: #000;
     overflow: hidden;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
@@ -36,37 +36,10 @@ body {
     font-feature-settings: 'tnum' 1;
 }
 
-/* GLOBAL TOOLTIP - GLASSMORPHIC ROUNDED */
-[data-tooltip]:not(.absolute):not(.fixed):not(.relative) {
-    position: relative;
-}
-[data-tooltip]:hover::after {
-    content: attr(data-tooltip);
-    position: absolute;
-    bottom: calc(100% + 8px);
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(15, 23, 42, 0.7);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    padding: 8px 12px;
-    border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    color: #fff;
-    font-size: 10px;
-    font-family: monospace;
-    white-space: nowrap;
-    pointer-events: none;
-    z-index: 1000;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-    opacity: 0;
-    animation: tooltip-fade 0.2s ease forwards;
-}
-@keyframes tooltip-fade {
-    to {
-        opacity: 1;
-    }
-}
+/* GLOBAL TOOLTIP — single source of truth is the React <GlobalTooltip />
+   component (cursor-following, viewport-aware, wraps long text). The old CSS
+   ::after tooltip was removed because it rendered a SECOND tooltip for the same
+   data-tooltip attribute (the "dual tooltip" bug). */
 
 /* SIDEBAR PERFORMANCE OPTIMIZATION */
 #sidebar .sidebar-item {
@@ -199,12 +172,12 @@ input[type='checkbox'] {
     background-position: center top;
 }
 
-/* TEXTURE OVERLAY FOR CHARTS */
+/* TEXTURE OVERLAY FOR CHARTS — opacity is controlled per-usage via Tailwind
+   (e.g. opacity-[0.02]) so we intentionally omit it here to avoid cascade conflicts. */
 .chart-noise-layer {
     position: absolute;
     inset: 0;
     pointer-events: none;
-    opacity: 0.15;
     mix-blend-mode: overlay;
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
     z-index: 15;

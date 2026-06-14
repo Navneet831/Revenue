@@ -123,7 +123,7 @@ export const KpiCard: React.FC<KpiCardProps> = memo(({
                         key={idx}
                         style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${cDef.stop1}, ${cDef.stop2})` }} 
                         className="h-full transition-all cursor-pointer border-r border-black/10 relative rounded-full"
-                        title={k}
+                        data-tooltip={k}
                     />
                 );
             });
@@ -170,7 +170,7 @@ export const KpiCard: React.FC<KpiCardProps> = memo(({
 
                 <div className="flex flex-col z-10 w-full">
                     <span
-                        className="text-2xl lg:text-[26px] font-bold font-mono text-slate-900 leading-tight tracking-tighter truncate cursor-help tabular-nums"
+                        className="text-2xl lg:text-[26px] font-bold font-mono text-black leading-tight tracking-tighter truncate cursor-help tabular-nums"
                         data-tooltip={getLogicTooltip()}
                     >
                         {formatVal(value)}

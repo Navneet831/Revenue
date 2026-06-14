@@ -25,7 +25,10 @@ async function testConnection() {
         console.log('Record Count:', res.rows[0].count);
         console.log('Latency:', Date.now() - start, 'ms');
     } catch (err) {
-        console.error('Connection Failed:', err.message);
+        console.error('Connection Failed:');
+        console.error('Message:', err.message);
+        console.error('Code:', err.code);
+        console.error('Stack:', err.stack);
     } finally {
         await pool.end();
     }

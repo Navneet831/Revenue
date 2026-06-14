@@ -8,12 +8,12 @@ export const Breadcrumbs: React.FC = () => {
     const createTag = (lbl: string, val: string, clr: string, action: () => void) => (
         <div 
             onClick={action}
-            className={`flex items-center text-[10px] border border-${clr}-500/30 bg-${clr}-500/10 text-${clr}-400 px-2 py-1 rounded-md tracking-wider font-mono shrink-0 cursor-pointer hover:bg-rose-900/40 hover:text-rose-400 transition-colors group`}
-            title="Click to remove filter"
+            className={`flex items-center text-[10px] border border-${clr}-600 bg-${clr}-100 text-${clr}-800 px-2.5 py-1.5 rounded-lg tracking-wider font-bold shrink-0 cursor-pointer hover:bg-rose-600 hover:text-white hover:border-rose-700 transition-all group shadow-sm`}
+            data-tooltip="Click to remove filter"
         >
-            <span className="text-slate-400 mr-1.5 pointer-events-none">{lbl}:</span>
-            <span className="truncate max-w-[150px] inline-block align-bottom pointer-events-none">{val}</span>
-            <X className="w-3 h-3 ml-1.5 pointer-events-none" />
+            <span className={`text-${clr}-900/50 mr-1.5 pointer-events-none uppercase text-[8px]`}>{lbl}:</span>
+            <span className="truncate max-w-[150px] inline-block align-bottom pointer-events-none uppercase">{val}</span>
+            <X className="w-3.5 h-3.5 ml-1.5 pointer-events-none opacity-50 group-hover:opacity-100" />
         </div>
     );
 

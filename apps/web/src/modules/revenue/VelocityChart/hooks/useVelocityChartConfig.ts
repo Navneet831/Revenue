@@ -14,12 +14,12 @@ export function useVelocityChartConfig(mode: string, filters: any, privacyMode: 
         plugins: {
             legend: { display: false },
             tooltip: {
-                backgroundColor: 'rgba(11, 16, 30, 0.80)',
-                backdropFilter: 'blur(12px)',
-                titleColor: '#fff',
-                bodyColor: '#cbd5e1',
-                footerColor: '#10b981',
-                borderColor: 'rgba(255, 255, 255, 0.1)',
+                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                backdropFilter: 'blur(8px)',
+                titleColor: '#000',
+                bodyColor: '#334155',
+                footerColor: '#059669',
+                borderColor: 'rgba(0, 0, 0, 0.1)',
                 borderWidth: 1,
                 padding: 12,
                 cornerRadius: 12,

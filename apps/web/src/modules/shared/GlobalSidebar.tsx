@@ -52,7 +52,10 @@ export const GlobalSidebar: React.FC<GlobalSidebarProps> = ({ onOpenHelp }) => {
                 updateFilters({ segment: [...currentSegments, segmentName] });
             }
         } else {
-            updateFilters({ segment: [segmentName] });
+            // Plain click toggles: clicking the already-isolated segment clears
+            // the selection (back to all segments); otherwise isolate this one.
+            const isOnlyThis = currentSegments.length === 1 && currentSegments[0] === segmentName;
+            updateFilters({ segment: isOnlyThis ? [] : [segmentName] });
         }
     };
 
@@ -65,7 +68,7 @@ export const GlobalSidebar: React.FC<GlobalSidebarProps> = ({ onOpenHelp }) => {
                 {/* Logo Section */}
                 <div
                     onClick={toggleSidebar}
-                    title="Collapse / expand sidebar (Ctrl+B)"
+                    data-tooltip="Collapse / expand sidebar (Ctrl+B)"
                     className="w-full flex items-center justify-center shrink-0 border-b border-slate-200 bg-white py-4 px-2 relative overflow-hidden group select-none cursor-pointer hover:bg-slate-50 transition-colors h-14"
                 >
                     <div className="w-6 h-6 shrink-0 flex items-center justify-center transition-all duration-300 group-hover:scale-110 relative">
@@ -87,22 +90,22 @@ export const GlobalSidebar: React.FC<GlobalSidebarProps> = ({ onOpenHelp }) => {
                         const isScrap = sLower.includes('scrap');
 
                         const activeCls = isSelected
-                            ? 'text-emerald-600'
-                            : 'text-slate-400 hover:text-slate-600';
+                            ? 'text-white bg-emerald-600 shadow-md scale-110'
+                            : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50';
 
                         let IconComp = <Layers className="w-5 h-5" />;
-                        if (isSolar) IconComp = <SolarModuleIcon className="w-5 h-5" />;
-                        else if (isInternal) IconComp = <InternalIcon className="w-5 h-5" />;
-                        else if (isRM) IconComp = <RMIcon className="w-5 h-5" />;
-                        else if (isScrap) IconComp = <ScrapIcon className="w-5 h-5" />;
+                        if (isSolar) IconComp = <SolarModuleIcon className={isSelected ? "w-5 h-5 fill-current" : "w-5 h-5"} />;
+                        else if (isInternal) IconComp = <InternalIcon className={isSelected ? "w-5 h-5 fill-current" : "w-5 h-5"} />;
+                        else if (isRM) IconComp = <RMIcon className={isSelected ? "w-5 h-5 fill-current" : "w-5 h-5"} />;
+                        else if (isScrap) IconComp = <ScrapIcon className={isSelected ? "w-5 h-5 fill-current" : "w-5 h-5"} />;
 
                         return (
                             <div
                                 key={s}
                                 onClick={(e) => handleSegmentClick(s, e)}
                                 role="button"
-                                className={`flex items-center justify-center p-2 rounded-lg transition-all duration-200 outline-none ${activeCls}`}
-                                title={s}
+                                className={`flex items-center justify-center p-2.5 rounded-xl transition-all duration-200 outline-none cursor-pointer ${activeCls}`}
+                                data-tooltip={s}
                             >
                                 {IconComp}
                             </div>
@@ -112,7 +115,7 @@ export const GlobalSidebar: React.FC<GlobalSidebarProps> = ({ onOpenHelp }) => {
 
                 {/* Bottom Actions */}
                 <div className="shrink-0 flex flex-col items-center pb-4 gap-4 border-t border-slate-100 pt-4">
-                    <div onClick={onOpenHelp} className="p-2 rounded-lg text-slate-400 hover:text-slate-600 cursor-pointer transition-all" title="Help">
+                    <div onClick={onOpenHelp} className="p-2 rounded-lg text-slate-400 hover:text-slate-600 cursor-pointer transition-all" data-tooltip="Help">
                         <Terminal className="w-5 h-5" />
                     </div>
                 </div>

@@ -18,22 +18,32 @@ export const SkuLegend: React.FC = () => {
                         onClick={(e) => {
                             const isCtrl = e.ctrlKey || e.metaKey;
                             const next = new Set(filters.excludedSeries);
+                            
                             if (isCtrl) {
-                                if (next.size > 0 && !next.has(key) && next.size === stats.activePlotKeys.length - 1) {
-                                    next.clear();
-                                } else {
-                                    next.clear();
-                                    stats.activePlotKeys.forEach((k: string) => { if(k !== key) next.add(k); });
-                                }
-                            } else {
+                                // Existing multi-toggle behavior
                                 next.has(key) ? next.delete(key) : next.add(key);
+                            } else {
+                                // New Select/Unselect Global behavior
+                                const otherVisible = stats.activePlotKeys.some(k => k !== key && !filters.excludedSeries.has(k));
+                                
+                                if (next.has(key) || otherVisible) {
+                                    // Isolate this key: Exclude everything EXCEPT this one
+                                    next.clear();
+                                    stats.activePlotKeys.forEach((k: string) => {
+                                        if (k !== key) next.add(k);
+                                    });
+                                } else {
+                                    // Already isolated, so unselect (show all)
+                                    next.clear();
+                                }
                             }
                             updateFilters({ excludedSeries: next });
                         }}
+                        data-tooltip={`${key} · Click to Select (Isolate) · Ctrl+Click to Toggle`}
                         className={`flex items-center gap-1.5 cursor-pointer shrink-0 transition-all hover:opacity-70 ${isExcluded ? 'opacity-30 grayscale line-through' : 'opacity-100'}`}
                     >
                         <div className="w-2 h-2 rounded-[2px]" style={{ background: colorDef.solid }} />
-                        <span className="text-[8.5px] text-slate-500 font-mono tracking-tight whitespace-nowrap">{key}</span>
+                        <span className="text-[8.5px] text-black font-mono tracking-tight whitespace-nowrap">{key}</span>
                     </div>
                 );
             })}

@@ -1,7 +1,7 @@
 import React, { useEffect, Suspense } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useStore } from '@/store/useStore';
-import { DataSanitizer } from '@revenue/shared';
+import { DataSanitizer, CONFIG, ColorEngine } from '@revenue/shared';
 import { AnalyticsApi } from '@/services/analyticsService';
 import { useSectionData } from '@/hooks/useSectionData';
 import { IntelligenceBoardIcon } from '@/assets/CustomIcons';
@@ -51,16 +51,26 @@ export const RevenueDashboard: React.FC = () => {
     useEffect(() => {
         if (!meta || !meta.latestDate) return;
         setAllLists(meta.years, meta.segments, meta.skus, meta.customers);
+        // Assign each SKU a unique, evenly-spaced colour from the full sorted
+        // universe so every SKU is visually distinct across chart/legend/strip.
+        ColorEngine.registerSkus(meta.skus);
         setLatestDate(new Date(meta.latestDate));
         if (meta.minDate && meta.maxDate) setGlobalMinMax(new Date(meta.minDate), new Date(meta.maxDate));
         setGovStats({ total: meta.totalRecords, valid: meta.totalRecords, rejected: 0 });
-        // One-time default selection: current FY range + Solar Modules (if present).
+        // One-time default selection: current FY range + Weekly view anchored to latest month.
+        // Without matrixMonth, Weekly mode renders an empty canvas until FY shortcut is clicked.
         if (!filters.startDate) {
-            const solar = meta.segments.find((s) => s.toLowerCase().includes('solar module'));
+            const latestDateObj = new Date(meta.latestDate);
+            // Use the LOCAL calendar date (not the UTC split), so the To date
+            // matches the "Last updated on …" footer and the anchor reflects the
+            // true latest invoice day.
+            const latestDateStr = DataSanitizer.formatDate(latestDateObj);
+            const matrixMonth = CONFIG.CALENDAR_MONTHS[latestDateObj.getMonth()];
             updateFilters({
-                segment: solar ? [solar] : meta.segments[0] ? [meta.segments[0]] : [],
-                startDate: DataSanitizer.getFYStart(meta.latestDate.split('T')[0]),
-                endDate: meta.latestDate.split('T')[0]
+                startDate:    DataSanitizer.getFYStart(latestDateStr),
+                endDate:      latestDateStr,
+                matrixMonth,
+                velocityMode: 'Weekly',
             });
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -130,8 +140,8 @@ export const RevenueDashboard: React.FC = () => {
                     <div className="p-1 px-3 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center z-50 shrink-0 h-9">
                         <div className="flex items-center gap-2 overflow-hidden flex-1">
                             <div className="flex items-center shrink-0">
-                                <LayoutDashboard className="w-3.5 h-3.5 text-emerald-500 mr-2" />
-                                <span className="text-[10px] font-bold text-slate-900 uppercase tracking-tight whitespace-nowrap">{cardViews.master === 'visual' ? 'Velocity' : 'Matrix'}</span>
+                                <LayoutDashboard className="w-3.5 h-3.5 text-emerald-600 mr-2" />
+                                <span className="text-[10px] font-bold text-black uppercase tracking-tight whitespace-nowrap">{cardViews.master === 'visual' ? 'Velocity' : 'Matrix'}</span>
                             </div>
                             <SkuLegend />
                         </div>

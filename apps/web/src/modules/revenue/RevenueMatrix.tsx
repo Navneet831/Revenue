@@ -65,7 +65,7 @@ export const RevenueMatrix: React.FC = memo(() => {
 
     const renderDataRow = (label: string, key: 'valCr' | 'qty' | 'mw', formatter: (v: number | null) => string, isPrimary: boolean) => (
         <tr key={key} className={`border-b border-slate-100 hover:bg-slate-50 h-10 ${isPrimary ? 'bg-emerald-50/50' : 'bg-white'}`}>
-            <td className={`p-1.5 px-2 border-r border-slate-200 text-[9px] font-bold uppercase tracking-wider whitespace-nowrap sticky left-0 z-30 ${isPrimary ? 'text-emerald-600 bg-emerald-50/50 border-l-2 border-l-emerald-500' : 'text-slate-500 bg-white'}`} style={{ width: '80px', minWidth: '80px' }}>
+            <td className={`p-1.5 px-2 border-r border-slate-200 text-[9px] font-bold uppercase tracking-wider whitespace-nowrap sticky left-0 z-30 ${isPrimary ? 'text-black bg-emerald-50/50 border-l-2 border-l-emerald-600' : 'text-black/60 bg-white'}`} style={{ width: '80px', minWidth: '80px' }}>
                 <span className="cursor-help" data-tooltip={ROW_FORMULA[key]}>{label}</span>
             </td>
             {stats.matrix.map((d: any, idx: number) => {
@@ -77,16 +77,16 @@ export const RevenueMatrix: React.FC = memo(() => {
 
                 const borderCls = isQEnd ? 'border-r border-slate-200' : '';
                 const textCls = isTotal
-                    ? `${isPrimary ? 'text-emerald-600' : 'text-emerald-600/50'} text-[11px] font-bold tracking-tight`
+                    ? `${isPrimary ? 'text-emerald-700' : 'text-emerald-700/60'} text-[11px] font-bold tracking-tight`
                     : isSelectedMonth || isPartofSelectedQ
-                        ? `${isPrimary ? 'text-slate-900' : 'text-slate-600'} text-[10px] font-bold tracking-tight`
-                        : `${isPrimary ? 'text-slate-800' : 'text-slate-500'} text-[10px] font-medium tracking-tight`;
+                        ? `${isPrimary ? 'text-black' : 'text-black/80'} text-[10px] font-bold tracking-tight`
+                        : `${isPrimary ? 'text-black' : 'text-black/70'} text-[10px] font-medium tracking-tight`;
 
                 return (
                     <td
                         key={idx}
                         data-tooltip={`${d.month} · ${ROW_FORMULA[key]}`}
-                        className={`p-1 px-2 font-mono text-right relative transition-all duration-200 whitespace-nowrap cursor-help ${borderCls} ${isSelectedMonth || isPartofSelectedQ ? 'bg-slate-50' : ''}`}
+                        className={`p-1 px-2 font-mono text-right relative transition-all duration-200 whitespace-nowrap cursor-help ${borderCls} ${isSelectedMonth || isPartofSelectedQ ? 'bg-slate-100' : ''}`}
                     >
                         <span className={`${textCls} relative z-10 pointer-events-none`}>
                             {privacyMode ? '••••' : formatter(d[key])}

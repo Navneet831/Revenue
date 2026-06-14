@@ -27,10 +27,17 @@ export const ListCard: React.FC<ListCardProps> = ({ id, title, icon, cardKey, fi
 
     const selectedKeys = (filters[filterKey] as string[]) || [];
 
+    // Row-tint colour: for the SKU card the row IS an SKU; for Sales Head /
+    // Clients the row is an entity, which keeps its own per-entity tint.
     const getColors = (key: string) => {
         const type = stats?.isOnlySolar ? 'sku' : (cardKey === 'sku' ? 'sku' : 'segment');
         return ColorEngine.getColorFor(key, type);
     };
+
+    // SKU identity colour — used for every chart series, because in ALL three
+    // cards the stacked-bar segments / bars represent SKUs (plotKeys). This is
+    // what makes a given SKU the SAME colour across SKU, Sales Head and Clients.
+    const getSkuColor = (sku: string) => ColorEngine.getColorFor(sku, 'sku');
 
     // Prepare data
     const preparedData = data
@@ -80,7 +87,7 @@ export const ListCard: React.FC<ListCardProps> = ({ id, title, icon, cardKey, fi
             data: topData.map((d: any) => d.displayV),
             backgroundColor: (ctx: any) => {
                 const lbl = labels[ctx.dataIndex];
-                const colorDef = getColors(lbl);
+                const colorDef = getSkuColor(lbl);
                 const { chart } = ctx;
                 if (!chart || !chart.chartArea) return colorDef.solid;
                 const { ctx: cCtx, chartArea } = chart;
@@ -102,7 +109,7 @@ export const ListCard: React.FC<ListCardProps> = ({ id, title, icon, cardKey, fi
         datasets = Array.from(uniqueKeys)
             .filter(k => !filters.excludedSeries.has(k))
             .map(k => {
-                const colorDef = getColors(k);
+                const colorDef = getSkuColor(k);
                 return {
                     label: k,
                     data: topData.map((d: any) => {
@@ -161,7 +168,7 @@ export const ListCard: React.FC<ListCardProps> = ({ id, title, icon, cardKey, fi
                 beginAtZero: true,
                 min: 0,
                 ticks: {
-                    color: '#94a3b8',
+                    color: '#000000',
                     font: { size: 10, weight: 'bold' as const },
                     callback: (v: any) => {
                         if (privacyMode) return '••••••';
@@ -173,8 +180,8 @@ export const ListCard: React.FC<ListCardProps> = ({ id, title, icon, cardKey, fi
                 stacked: cardKey !== 'sku',
                 grid: { display: false },
                 ticks: {
-                    color: '#64748b',
-                    font: { size: 9, weight: 600 as const },
+                    color: '#000000',
+                    font: { size: 9, weight: 'bold' as const },
                     autoSkip: false,
                     callback: function (this: any, value: any) {
                         const lbl: string = this.getLabelForValue(value) || '';
@@ -200,18 +207,18 @@ export const ListCard: React.FC<ListCardProps> = ({ id, title, icon, cardKey, fi
             <div className="p-2 px-3 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center z-50 shrink-0">
                 <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pr-2">
                     {icon}
-                    <span className="text-[11px] font-bold text-slate-900 uppercase tracking-tight flex items-center whitespace-nowrap">
+                    <span className="text-[11px] font-bold text-black uppercase tracking-tight flex items-center whitespace-nowrap">
                         {title}
                         {count !== undefined && (
-                            <span className="ml-1 text-slate-400 font-mono text-[9px]">({count})</span>
+                            <span className="ml-1 text-black/40 font-mono text-[9px]">({count})</span>
                         )}
                     </span>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest">{metricLabel}</span>
+                    <span className="text-[9px] font-bold text-emerald-700 uppercase tracking-widest">{metricLabel}</span>
                     <button
                         onClick={() => setCardView(cardKey, isVisual ? 'tabular' : 'visual')}
-                        className="p-1 px-1.5 bg-white text-slate-500 hover:text-slate-900 border border-slate-200 rounded-md transition-all shadow-sm cursor-pointer"
+                        className="p-1 px-1.5 bg-white text-black hover:bg-slate-50 border border-slate-200 rounded-md transition-all shadow-sm cursor-pointer"
                         data-tooltip="Toggle Table/Chart View"
                     >
                         {isVisual
@@ -221,12 +228,12 @@ export const ListCard: React.FC<ListCardProps> = ({ id, title, icon, cardKey, fi
                     {onToggleExpand && (
                         <button
                             onClick={() => onToggleExpand(id)}
-                            className="p-1 px-1.5 bg-white border border-slate-200 text-slate-500 hover:text-slate-900 rounded-md hidden md:flex items-center justify-center cursor-pointer shadow-sm"
-                            title={isExpanded ? 'Collapse' : 'Expand'}
+                            className="p-1 px-1.5 bg-white border border-slate-200 text-black hover:bg-slate-50 rounded-md hidden md:flex items-center justify-center cursor-pointer shadow-sm"
+                            data-tooltip={isExpanded ? 'Collapse' : 'Expand'}
                         >
                             {isExpanded
                                 ? <Minimize2 className="w-3.5 h-3.5 text-amber-500" />
-                                : <Maximize2 className="w-3.5 h-3.5 text-slate-400" />
+                                : <Maximize2 className="w-3.5 h-3.5 text-black/40" />
                             }
                         </button>
                     )}
@@ -267,19 +274,19 @@ export const ListCard: React.FC<ListCardProps> = ({ id, title, icon, cardKey, fi
                                     >
                                         <div
                                             className={`flex-1 p-2 text-[10px] pl-3 tracking-wide truncate ${isSelected ? 'font-bold' : 'font-medium'}`}
-                                            style={{ color: isSelected ? colorDef.solid : '#334155' }}
-                                            title={r.n}
+                                            style={{ color: isSelected ? colorDef.solid : '#000000' }}
+                                            data-tooltip={r.n}
                                         >
                                             {i + 1}. {r.n}
                                         </div>
                                         <div className="p-2 pr-3 flex flex-col items-end shrink-0">
                                             <span
                                                 className="text-[11px] font-mono font-bold tracking-tight"
-                                                style={{ color: isSelected ? colorDef.solid : '#0f172a' }}
+                                                style={{ color: isSelected ? colorDef.solid : '#000000' }}
                                             >
                                                 {privacyMode ? '••••••' : MetricFormatter.formatValue(r.displayV, filters.metric, privacyMode)}
                                             </span>
-                                            <span className="text-[8.5px] font-sans text-slate-400 tracking-widest mt-[1px] uppercase whitespace-nowrap">
+                                            <span className="text-[8.5px] font-sans text-black/50 tracking-widest mt-[1px] uppercase whitespace-nowrap">
                                                 {subtext}
                                             </span>
                                         </div>

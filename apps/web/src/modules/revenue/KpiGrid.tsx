@@ -50,10 +50,15 @@ export const KpiGrid: React.FC = () => {
     };
 
     const metricSuffix = filters.metric === 'Amount' ? '(₹ Cr)' : filters.metric === 'MW' ? '(MW)' : '(Qty)';
-    
+
+    // The anchor card reflects sales on the To date (endDate); surface that date
+    // in the label so it's clear which day the value belongs to.
+    const toDateLabel = filters.endDate
+        ? new Date(`${filters.endDate}T00:00:00`).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
+        : '';
     const periodLabel = isCustomPeriodActive
         ? `PERIOD ${metricSuffix}`
-        : `ANCHOR DATE ${metricSuffix}`;
+        : `ANCHOR · ${toDateLabel} ${metricSuffix}`;
 
     return (
         <div className="flex w-full gap-3 pb-2 overflow-x-auto no-scrollbar" data-lenis-prevent="true">

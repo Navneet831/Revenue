@@ -62,13 +62,6 @@ app.get('/metrics', async (req, res) => {
 // --- API DOMAIN ROUTES ---
 app.use(['/api/revenue', '/api/v1/revenue'], authenticateJWT, revenueRoutes);
 
-app.get(['/api/config', '/api/v1/config'], (req, res) => {
-    res.json({
-        SUPABASE_URL: process.env.SUPABASE_URL,
-        SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY
-    });
-});
-
 // Git history is internal metadata — authenticated users only, and the result is
 // cached so each request doesn't spawn a child process.
 let gitCommitsCache = null;

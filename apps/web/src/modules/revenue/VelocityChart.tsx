@@ -12,7 +12,7 @@ const ChartCore = lazy(() => import('./VelocityChart/ChartCore'));
 const ZoomResetButton: React.FC<{ onReset: () => void }> = ({ onReset }) => (
     <button
         onClick={onReset}
-        className="absolute top-2 right-2 p-1.5 flex items-center justify-center rounded-xl bg-white text-slate-400 hover:text-slate-900 transition-all cursor-pointer border border-slate-200 z-20 shadow-sm"
+        className="absolute top-2 right-2 p-1.5 flex items-center justify-center rounded-xl bg-white text-black hover:bg-slate-50 transition-all cursor-pointer border border-slate-200 z-20 shadow-sm"
         data-tooltip="Reset Zoom Scale"
     >
         <RotateCcw className="w-3.5 h-3.5" />
@@ -21,7 +21,7 @@ const ZoomResetButton: React.FC<{ onReset: () => void }> = ({ onReset }) => (
 
 const ModeIndicator: React.FC<{ month: string; mode: string }> = ({ month, mode }) => (
     <div className="absolute top-1 left-1 z-10 pointer-events-none">
-        <span className="text-[8px] font-bold uppercase tracking-widest text-slate-500 bg-white/60 px-1.5 py-0.5 rounded border border-slate-100">
+        <span className="text-[8px] font-bold uppercase tracking-widest text-black bg-white/60 px-1.5 py-0.5 rounded border border-slate-100">
             {month} · {mode}
         </span>
     </div>
@@ -110,12 +110,15 @@ export const VelocityChart: React.FC = memo(() => {
     let validKeys = new Set<string>();
 
     let activeMatrixMonth = filters.matrixMonth;
+    // Automatic selection of latest month removed per user request
+    /*
     if (!activeMatrixMonth && (mode === 'Daily' || mode === 'Weekly') && buckets.chart.monthly) {
         const mKeys = Object.keys(buckets.chart.monthly).filter(
             (m) => Object.keys(buckets.chart.monthly[m as keyof typeof buckets.chart.monthly] || {}).length > 0
         );
         activeMatrixMonth = mKeys[mKeys.length - 1] || 'March';
     }
+    */
 
     if (mode === 'Quarterly' && buckets.chart.quarterly) {
         labels = QUARTER_NAMES;

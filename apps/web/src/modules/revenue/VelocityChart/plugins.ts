@@ -33,7 +33,7 @@ export const createTopLabelsPlugin = (filters: any, privacyMode: boolean) => ({
 
         metaSums.forEach((sum) => {
             if (sum.hasData && sum.total > 0) {
-                ctx.fillStyle = '#ffffff';
+                ctx.fillStyle = '#000000';
                 ctx.font = 'bold 11px Inter';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'bottom';
@@ -48,11 +48,7 @@ export const createTopLabelsPlugin = (filters: any, privacyMode: boolean) => ({
                         minimumFractionDigits: filters.metric === 'Qty' ? 0 : 2,
                         maximumFractionDigits: filters.metric === 'Qty' ? 0 : 2
                     });
-                    ctx.shadowColor = 'rgba(0,0,0,0.6)';
-                    ctx.shadowBlur = 3;
                     ctx.fillText(formattedText, sharpX, sharpY);
-                    ctx.shadowBlur = 0;
-                    ctx.shadowColor = 'transparent';
                 }
             }
         });
@@ -111,18 +107,14 @@ export const createRightLabelsPlugin = (filters: any, privacyMode: boolean) => (
 
                 if (startX + totalTextWidth > chartArea.right - 10) {
                     startX = row.maxX - 6 - totalTextWidth;
-                    ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
-                    ctx.shadowBlur = 4;
-                    ctx.shadowOffsetX = 0;
-                    ctx.shadowOffsetY = 1;
                 }
 
-                ctx.fillStyle = '#ffffff';
+                ctx.fillStyle = '#000000';
                 ctx.textAlign = 'left';
                 ctx.fillText(valText, startX, row.y);
 
                 if (pctText) {
-                    ctx.fillStyle = (startX < row.maxX) ? '#ffffff' : '#cbd5e1';
+                    ctx.fillStyle = '#475569';
                     ctx.fillText(pctText, startX + valWidth, row.y);
                 }
 

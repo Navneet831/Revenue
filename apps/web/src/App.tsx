@@ -75,12 +75,12 @@ export const App: React.FC = () => {
 
     return (
         <ErrorBoundary>
-            <div className="w-screen h-screen relative flex flex-col bg-[#f4f6f8] overflow-hidden">
+            <div className="w-screen h-screen relative flex flex-col bg-[#F8F4E6] overflow-hidden">
                 <div id="core-app" className="flex-1 flex w-full relative overflow-hidden font-sans antialiased text-[11px] font-medium tracking-wide text-slate-900">
                     <div className="flex h-full w-full relative select-none overflow-hidden">
                         <GlobalSidebar onOpenHelp={() => setHelpOpen(true)} onOpenStories={() => updateUIState({ storiesOpen: true })} />
 
-                        <main className="flex-1 flex flex-col min-w-0 bg-[#f4f6f8] relative z-20 overflow-y-auto">
+                        <main className="flex-1 flex flex-col min-w-0 bg-[#F8F4E6] relative z-20 overflow-y-auto">
                             {activeModule?.Component ? (
                                 <SectionBoundary name={activeModule.label} className="m-4 flex-1">
                                     <Suspense fallback={<ModuleLoading label={activeModule.label} />}>
