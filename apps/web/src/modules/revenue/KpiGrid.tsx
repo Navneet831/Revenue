@@ -22,9 +22,9 @@ export const KpiGrid: React.FC = () => {
 
     if (isLoading) {
         return (
-            <div className="flex w-full gap-3 pb-2 overflow-x-auto no-scrollbar h-[120px] items-center justify-center bg-white rounded-xl border border-slate-200 shadow-sm">
-                <Loader2 className="w-5 h-5 text-emerald-500 animate-spin mr-2" />
-                <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">Calculating KPIs...</span>
+            <div className="flex w-full gap-3 pb-2 overflow-x-auto no-scrollbar h-[120px] items-center justify-center bg-white rounded-xl border border-hairline shadow-sm">
+                <Loader2 className="w-5 h-5 text-primary animate-spin mr-2" />
+                <span className="text-[10px] font-mono text-ink-mute uppercase tracking-widest">Calculating KPIs...</span>
             </div>
         );
     }

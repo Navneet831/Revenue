@@ -164,7 +164,7 @@ export const ListCard: React.FC<ListCardProps> = ({ id, title, icon, cardKey, fi
         scales: {
             x: {
                 stacked: cardKey !== 'sku',
-                grid: { color: '#f1f5f9' },
+                grid: { color: '#EAE3D6' },
                 beginAtZero: true,
                 min: 0,
                 ticks: {
@@ -202,9 +202,9 @@ export const ListCard: React.FC<ListCardProps> = ({ id, title, icon, cardKey, fi
     const dynamicHeight = Math.max(300, topData.length * 28);
 
     return (
-        <div id={id} className="flex flex-col group relative rounded-2xl min-h-0 min-w-0 bg-white overflow-hidden border border-slate-200 h-full shadow-sm">
+        <div id={id} className="flex flex-col group relative rounded-2xl min-h-0 min-w-0 bg-white overflow-hidden border border-hairline h-full shadow-sm">
             {/* Widget header */}
-            <div className="p-2 px-3 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center z-50 shrink-0">
+            <div className="p-2 px-3 border-b border-hairline bg-canvas-soft/40 flex justify-between items-center z-50 shrink-0">
                 <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pr-2">
                     {icon}
                     <span className="text-[11px] font-bold text-black uppercase tracking-tight flex items-center whitespace-nowrap">
@@ -218,7 +218,7 @@ export const ListCard: React.FC<ListCardProps> = ({ id, title, icon, cardKey, fi
                     <span className="text-[9px] font-bold text-emerald-700 uppercase tracking-widest">{metricLabel}</span>
                     <button
                         onClick={() => setCardView(cardKey, isVisual ? 'tabular' : 'visual')}
-                        className="p-1 px-1.5 bg-white text-black hover:bg-slate-50 border border-slate-200 rounded-md transition-all shadow-sm cursor-pointer"
+                        className="p-1 px-1.5 bg-white text-ink hover:bg-canvas border border-hairline rounded-md transition-all shadow-sm cursor-pointer"
                         data-tooltip="Toggle Table/Chart View"
                     >
                         {isVisual
@@ -228,7 +228,7 @@ export const ListCard: React.FC<ListCardProps> = ({ id, title, icon, cardKey, fi
                     {onToggleExpand && (
                         <button
                             onClick={() => onToggleExpand(id)}
-                            className="p-1 px-1.5 bg-white border border-slate-200 text-black hover:bg-slate-50 rounded-md hidden md:flex items-center justify-center cursor-pointer shadow-sm"
+                            className="p-1 px-1.5 bg-white border border-hairline text-ink hover:bg-canvas rounded-md hidden md:flex items-center justify-center cursor-pointer shadow-sm"
                             data-tooltip={isExpanded ? 'Collapse' : 'Expand'}
                         >
                             {isExpanded
@@ -247,7 +247,7 @@ export const ListCard: React.FC<ListCardProps> = ({ id, title, icon, cardKey, fi
                     style={{ zIndex: isVisual ? 10 : 20, opacity: isVisual ? 0 : 1, pointerEvents: isVisual ? 'none' : 'auto' }}
                 >
                     {preparedData.length === 0 ? (
-                        <div className="w-full h-full flex items-center justify-center text-slate-400 text-[9px] uppercase tracking-widest font-mono">Empty</div>
+                        <div className="w-full h-full flex items-center justify-center text-ink-faint text-[9px] uppercase tracking-widest font-mono">Empty</div>
                     ) : (
                         <div className="flex flex-col w-full">
                             {preparedData.map((r: any, i: number) => {
@@ -259,7 +259,7 @@ export const ListCard: React.FC<ListCardProps> = ({ id, title, icon, cardKey, fi
                                 const bgStyle = {
                                     background: `linear-gradient(90deg, transparent ${100 - r.pct}%, ${activeColor} ${100 - r.pct}%)`,
                                     boxShadow: isSelected ? `inset 0 0 0 1px ${colorDef.solid}` : 'none',
-                                    borderBottom: '1px solid #f1f5f9'
+                                    borderBottom: '1px solid #E7E5E4'
                                 };
                                 const subtext = cardKey === 'saleshead'
                                     ? `${r.comps ? (Array.isArray(r.comps) ? r.comps.length : r.comps.size || 0) : 0} UNIQUE COMP`
@@ -270,7 +270,7 @@ export const ListCard: React.FC<ListCardProps> = ({ id, title, icon, cardKey, fi
                                         key={r.n}
                                         onClick={(e) => handleRowClick(r.n, e.ctrlKey)}
                                         style={bgStyle}
-                                        className="cursor-pointer transition-all duration-200 hover:bg-slate-50 flex items-center select-none"
+                                        className="cursor-pointer transition-all duration-200 hover:bg-canvas flex items-center select-none"
                                     >
                                         <div
                                             className={`flex-1 p-2 text-[10px] pl-3 tracking-wide truncate ${isSelected ? 'font-bold' : 'font-medium'}`}
@@ -304,7 +304,7 @@ export const ListCard: React.FC<ListCardProps> = ({ id, title, icon, cardKey, fi
                 >
                     <div className="chart-noise-layer opacity-[0.02]" />
                     <div className="relative w-full shrink-0 z-20 p-4" style={{ minHeight: `${dynamicHeight}px` }}>
-                        <Suspense fallback={<div className="w-full h-full flex items-center justify-center text-slate-400 font-mono text-[10px]">Loading Analytics&hellip;</div>}>
+                        <Suspense fallback={<div className="w-full h-full flex items-center justify-center text-ink-faint font-mono text-[10px]">Loading Analytics&hellip;</div>}>
                             <ListChartCore
                                 ref={chartRef}
                                 type="bar"

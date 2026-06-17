@@ -40,18 +40,18 @@ export class SectionBoundary extends React.Component<SectionBoundaryProps, Secti
             return (
                 <div
                     data-testid="section-fallback"
-                    className={`flex flex-col items-center justify-center gap-2 bg-[#111620] border border-rose-900/40 rounded-2xl p-6 min-h-[120px] ${this.props.className || ''}`}
+                    className={`flex flex-col items-center justify-center gap-2 bg-white border border-rose-200 rounded-xl p-6 min-h-[120px] ${this.props.className || ''}`}
                 >
-                    <div className="flex items-center gap-2 text-rose-400">
+                    <div className="flex items-center gap-2 text-rose-500">
                         <AlertTriangle className="w-4 h-4" />
-                        <span className="text-[10px] font-bold uppercase tracking-widest">{this.props.name} Unavailable</span>
+                        <span className="text-[11px] font-bold uppercase tracking-wide">{this.props.name} Unavailable</span>
                     </div>
                     <p className="text-[10px] text-slate-500 font-mono max-w-md text-center truncate">
                         {this.state.error.message}
                     </p>
                     <button
                         onClick={() => this.setState({ error: null })}
-                        className="flex items-center gap-1.5 mt-1 px-3 py-1 bg-[#1E293B] text-slate-300 hover:text-white rounded-md text-[10px] font-bold uppercase tracking-wider"
+                        className="flex items-center gap-1.5 mt-1 px-3 py-1.5 bg-[#D97706] text-[#1C1917] hover:bg-[#B45309] hover:text-white rounded-md text-[13px] font-medium transition-colors shadow-sm"
                     >
                         <RotateCcw className="w-3 h-3" /> Retry
                     </button>

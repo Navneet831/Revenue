@@ -6,11 +6,11 @@ export const TopNavigationRail: React.FC = () => {
     const railOpen = (ui as any).railOpen;
 
     return (
-        <nav className="w-full bg-[#0b101e] border-b border-slate-800 z-[1000] shrink-0">
+        <nav className="w-full bg-[#EAE3D6] border-b border-[#E7E5E4] z-[1000] shrink-0">
             <div className="flex items-center px-4 py-1 h-9">
                 <div 
                     onClick={() => updateUIState({ railOpen: !railOpen } as any)}
-                    className={`flex items-center justify-center cursor-pointer transition-all duration-300 hover:scale-110 drop-shadow-[0_0_8px_rgba(16,185,129,0.3)] ${railOpen ? 'scale-110 brightness-125' : ''}`}
+                    className={`flex items-center justify-center cursor-pointer transition-all duration-300 hover:scale-110 drop-shadow-[0_0_8px_rgba(217,119,6,0.35)] ${railOpen ? 'scale-110 brightness-125' : ''}`}
                     title="Toggle App Selection"
                 >
                     <div className="w-5 h-5">

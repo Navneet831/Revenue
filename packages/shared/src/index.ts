@@ -1,3 +1,9 @@
+export const FEATURES = {
+    agentation: false,
+    story: true,
+    commitDrilldown: false,
+};
+
 /**
  * THE COGNITIVE COLOR ENGINE
  * Guarantees a unique, perceptually distinct color for every key by using

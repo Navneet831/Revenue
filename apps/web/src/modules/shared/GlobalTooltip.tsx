@@ -45,14 +45,15 @@ export const GlobalTooltip: React.FC = () => {
     return (
         <div
             ref={ttRef}
-            className={`fixed z-[999999] bg-white/90 backdrop-blur-xl border border-slate-200 p-3 rounded-2xl shadow-xl max-w-xs pointer-events-none transition-opacity duration-150 text-[11px] font-sans text-slate-900 leading-relaxed tracking-wide ${
+            className={`fixed z-[999999] bg-white border border-[#E7E5E4] p-3 rounded-xl shadow-[0_8px_24px_rgba(28,25,23,0.09)] max-w-xs pointer-events-none transition-opacity duration-150 text-[12px] font-sans text-[#1C1917] leading-relaxed ${
                 visible ? 'opacity-100' : 'opacity-0'
             }`}
             style={{
                 left: `${pos.x}px`,
                 top: `${pos.y}px`,
             }}
-            dangerouslySetInnerHTML={{ __html: content }}
-        />
+        >
+            {content}
+        </div>
     );
 };

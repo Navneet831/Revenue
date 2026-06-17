@@ -50,7 +50,7 @@ export const KpiCard: React.FC<KpiCardProps> = memo(({
         if (compareValue === undefined || compareValue === null || compareValue === 0) return null;
         const pct = ((value - compareValue) / compareValue) * 100;
         const isPos = pct > 0;
-        const colorCls = isPos ? 'text-emerald-400' : pct < 0 ? 'text-rose-400' : 'text-slate-400';
+        const colorCls = isPos ? 'text-emerald-400' : pct < 0 ? 'text-rose-400' : 'text-ink-faint';
         
         return (
             <div 
@@ -60,7 +60,7 @@ export const KpiCard: React.FC<KpiCardProps> = memo(({
                 <span className={`${colorCls} text-[14px] font-bold font-mono tracking-tighter`}>
                     {isPos ? '↑' : pct < 0 ? '↓' : ''}{Math.abs(pct).toFixed(1)}%
                 </span>
-                <span className="text-slate-400 font-sans text-[9px] font-bold uppercase tracking-widest mt-1 opacity-70">{compareLabel}</span>
+                <span className="text-ink-faint font-sans text-[9px] font-bold uppercase tracking-widest mt-1 opacity-70">{compareLabel}</span>
             </div>
         );
     };
@@ -95,7 +95,7 @@ export const KpiCard: React.FC<KpiCardProps> = memo(({
         return (
             <div className="mt-2 flex flex-col animate-in fade-in slide-in-from-top-1 duration-300">
                 <div className="flex items-center gap-2 text-[10px] font-mono">
-                    <span className="text-slate-500 font-bold">{formatVal(value)} <span className="text-[8px] opacity-50">vs</span> {formatVal(compareValue)}</span>
+                    <span className="text-ink-mute font-bold">{formatVal(value)} <span className="text-[8px] opacity-50">vs</span> {formatVal(compareValue)}</span>
                 </div>
                 <div className="flex items-center gap-1.5 mt-0.5">
                     <span className={`${colorCls} font-bold text-[10px]`}>({sign}{formatVal(diff)})</span>
@@ -128,7 +128,7 @@ export const KpiCard: React.FC<KpiCardProps> = memo(({
                 );
             });
         } else {
-            propStrips = [<div key="empty" className="w-full h-full bg-slate-700/30 rounded-full" />];
+            propStrips = [<div key="empty" className="w-full h-full bg-canvas-deep/60 rounded-full" />];
         }
 
         return (
@@ -149,18 +149,18 @@ export const KpiCard: React.FC<KpiCardProps> = memo(({
     };
 
     return (
-        <div 
+        <div
             id={id}
-            className={`kpi-module min-w-[210px] flex-shrink-0 flex-1 min-h-[110px] h-auto bg-white border border-slate-200 rounded-2xl flex flex-col relative group overflow-hidden transition-all duration-300 ${
-                isInteractive ? 'cursor-pointer hover:border-emerald-200' : ''
-            } ${detailOpen ? 'border-emerald-300 ring-1 ring-emerald-100 shadow-lg' : 'shadow-sm'}`}
+            className={`kpi-module min-w-[210px] flex-shrink-0 flex-1 min-h-[110px] h-auto bg-gradient-to-br from-white to-canvas/60 border border-hairline rounded-2xl flex flex-col relative group overflow-hidden transition-all duration-300 ${
+                isInteractive ? 'cursor-pointer hover:border-primary/30 hover:shadow-md' : ''
+            } ${detailOpen ? 'border-primary/40 ring-1 ring-primary/10 shadow-lg' : 'shadow-sm'}`}
             onClick={() => isInteractive && onToggleDetail && onToggleDetail()}
         >
             {renderBreakdownStrip()}
 
             <div className="px-4 pt-3 pb-5 flex flex-col h-full w-full gap-2 relative z-10">
                 <div className="flex items-start justify-between z-30 w-full">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest transition-colors mt-1">
+                    <span className="text-[10px] font-bold text-ink-mute uppercase tracking-widest transition-colors mt-1">
                         {title}
                     </span>
                     <div className="flex items-start gap-3 ml-auto shrink-0">
@@ -179,7 +179,7 @@ export const KpiCard: React.FC<KpiCardProps> = memo(({
                 </div>
             </div>
 
-            <div className="absolute right-[-10px] bottom-[-10px] w-20 h-20 text-slate-100 transform -rotate-12 pointer-events-none transition-transform group-hover:rotate-0 duration-300 z-0">
+            <div className="absolute right-[-10px] bottom-[-10px] w-20 h-20 text-canvas-deep transform -rotate-12 pointer-events-none transition-transform group-hover:rotate-0 duration-300 z-0">
                 {renderIcon("w-full h-full")}
             </div>
         </div>

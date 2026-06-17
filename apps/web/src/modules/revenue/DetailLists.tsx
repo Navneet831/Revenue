@@ -19,10 +19,10 @@ export const DetailLists: React.FC<DetailListsProps> = ({ onToggleExpand, expand
 
     if (isLoading) {
         return (
-            <div className="w-full flex items-center justify-center bg-white rounded-2xl border border-slate-200 border-dashed h-[320px]">
+            <div className="w-full flex items-center justify-center bg-white rounded-2xl border border-hairline border-dashed h-[320px]">
                 <div className="flex flex-col items-center gap-3">
-                    <Loader2 className="w-6 h-6 text-emerald-500 animate-spin" />
-                    <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">Hydrating List Repositories...</span>
+                    <Loader2 className="w-6 h-6 text-primary animate-spin" />
+                    <span className="text-[10px] font-mono text-ink-mute uppercase tracking-widest">Hydrating List Repositories...</span>
                 </div>
             </div>
         );

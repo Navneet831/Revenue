@@ -6,11 +6,11 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Grew Analytics</title>
     </head>
-    <body class="bg-[#F8F4E6] text-slate-900 overflow-hidden">
+    <body class="bg-white text-slate-900 overflow-hidden">
         <div id="root">
-            <div id="app-boot-loader" style="position: fixed; inset: 0; background: #F8F4E6; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 999999; font-family: sans-serif;">
-                <div style="width: 40px; height: 40px; border: 3px solid #10b981; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div>
-                <p style="color: #94a3b8; font-size: 12px; margin-top: 20px; letter-spacing: 0.1em; text-transform: uppercase;">Establishing Matrix Connection...</p>
+            <div id="app-boot-loader" style="position: fixed; inset: 0; background: #ffffff; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 999999; font-family: sans-serif;">
+                <div style="width: 40px; height: 40px; border: 3px solid #3ecf8e; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                <p style="color: #707070; font-size: 12px; margin-top: 20px; letter-spacing: 0.1em; text-transform: uppercase;">Establishing Matrix Connection...</p>
                 <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
                 <script>
                     window.onerror = function(msg, url, lineNo, columnNo, error) {
@@ -28,23 +28,9 @@
                         div.style.zIndex = '1000000';
                         div.style.fontFamily = 'monospace';
                         div.innerText = 'BOOT ERROR: ' + msg + '\nSource: ' + url + ':' + lineNo;
-                        
-                        // User Requirement: Keep URL static if on auth callback
-                        if (window.location.pathname.includes('/auth/callback')) {
-                             div.style.background = '#0a0a0a';
-                             div.style.borderLeft = '4px solid #ef4444';
-                             div.innerText = '[AUTH_CONTEXT_STABLE] ' + div.innerText;
-                        }
-                        
                         document.body.appendChild(div);
                         return false;
                     };
-
-                    // Ensure we are always on the requested URL if it's the callback one
-                    if (window.location.href.indexOf('auth/callback') !== -1 && !window.location.hash) {
-                        // If hash is missing but we are on callback path, keep context
-                        console.log('Auth Callback Context Active');
-                    }
                 </script>
             </div>
         </div>

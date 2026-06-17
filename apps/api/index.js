@@ -8,11 +8,12 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import helmet from 'helmet';
 import { rateLimit } from 'express-rate-limit';
+import { execFileSync } from 'child_process';
 import Logger from '../../monitoring/logging/index.js';
 import Metrics from '../../monitoring/metrics/index.js';
 import revenueRoutes from './routes/revenueRoutes.js';
 import { RevenueRepository } from './repositories/revenueRepository.js';
-import { execFileSync } from 'child_process';
+import { FEATURES } from '@revenue/shared';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -59,67 +60,72 @@ app.get('/metrics', async (req, res) => {
     await Metrics(req, res);
 });
 
+// --- FEATURE FLAGS ---
+app.get('/api/features', (req, res) => {
+    res.json({
+        agentation: process.env.FEATURE_AGENTATION !== undefined
+            ? process.env.FEATURE_AGENTATION === 'true'
+            : FEATURES.agentation,
+        story: process.env.FEATURE_STORY !== undefined
+            ? process.env.FEATURE_STORY === 'true'
+            : FEATURES.story,
+        commitDrilldown: process.env.FEATURE_COMMIT_DRILLDOWN !== undefined
+            ? process.env.FEATURE_COMMIT_DRILLDOWN === 'true'
+            : FEATURES.commitDrilldown
+    });
+});
+
 // --- API DOMAIN ROUTES ---
 app.use(['/api/revenue', '/api/v1/revenue'], authenticateJWT, revenueRoutes);
 
-// Git history is internal metadata — authenticated users only, and the result is
-// cached so each request doesn't spawn a child process.
-let gitCommitsCache = null;
-app.get('/api/git/commits', authenticateJWT, (req, res) => {
-    try {
-        if (!gitCommitsCache || gitCommitsCache.expires < Date.now()) {
-            const log = execFileSync('git', ['--no-pager', 'log', '--oneline']).toString().trim();
-            const commits = log.split('\n').map((line, index) => {
-                const parts = line.split(' ');
-                return { index, hash: parts[0], msg: parts.slice(1).join(' ') };
-            });
-            const currentHash = execFileSync('git', ['rev-parse', '--short', 'HEAD']).toString().trim();
-            gitCommitsCache = { payload: { commits, currentHash }, expires: Date.now() + 60 * 1000 };
+// Git history endpoints — disabled in .exe production builds (HIDE_GIT_ENDPOINTS=true)
+// Kept in dev/server modes for internal tools.
+if (!process.env.HIDE_GIT_ENDPOINTS) {
+    let gitCommitsCache = null;
+    app.get('/api/git/commits', authenticateJWT, (req, res) => {
+        try {
+            if (!gitCommitsCache || gitCommitsCache.expires < Date.now()) {
+                const log = execFileSync('git', ['--no-pager', 'log', '--oneline']).toString().trim();
+                const commits = log.split('\n').map((line, index) => {
+                    const parts = line.split(' ');
+                    return { index, hash: parts[0], msg: parts.slice(1).join(' ') };
+                });
+                const currentHash = execFileSync('git', ['rev-parse', '--short', 'HEAD']).toString().trim();
+                gitCommitsCache = { payload: { commits, currentHash }, expires: Date.now() + 60 * 1000 };
+            }
+            res.json(gitCommitsCache.payload);
+        } catch (err) {
+            res.status(500).json({ error: 'Git history unavailable' });
         }
-        res.json(gitCommitsCache.payload);
-    } catch (err) {
-        res.status(500).json({ error: 'Git history unavailable' });
-    }
-});
+    });
 
-// Commit checkout — lets the drill-down jump the working tree to a past commit.
-// hash is validated as a git short/long SHA (hex) and passed as an argv element
-// (never through a shell) so it cannot be used for command injection.
-app.post('/api/git/checkout', authenticateJWT, (req, res) => {
-    const hash = (req.body && req.body.hash) || '';
-    if (!/^[0-9a-f]{7,40}$/i.test(hash)) {
-        return res.status(400).json({ error: 'Invalid commit hash' });
-    }
-    try {
-        execFileSync('git', ['checkout', hash]);
-        gitCommitsCache = null; // force a fresh "current" marker on next read
-        res.json({ ok: true, hash });
-    } catch (err) {
-        Logger.error('git_checkout_failed', err);
-        res.status(500).json({ error: 'Checkout failed. Commit local changes first.' });
-    }
-});
+    app.post('/api/git/checkout', authenticateJWT, (req, res) => {
+        const hash = (req.body && req.body.hash) || '';
+        if (!/^[0-9a-f]{7,40}$/i.test(hash)) {
+            return res.status(400).json({ error: 'Invalid commit hash' });
+        }
+        try {
+            execFileSync('git', ['checkout', hash]);
+            gitCommitsCache = null;
+            res.json({ ok: true, hash });
+        } catch (err) {
+            Logger.error('git_checkout_failed', err);
+            res.status(500).json({ error: 'Checkout failed. Commit local changes first.' });
+        }
+    });
+}
 
 // --- STATIC ASSET SERVING ---
 const distPath = path.join(__dirname, '..', 'web', 'dist');
 
-// Enforce single URL mandate: redirect root to /auth/callback
-app.get('/', (req, res) => {
-    res.redirect('/auth/callback');
-});
-
 app.use(express.static(distPath));
 
-// SPA fallback: any non-API GET serves the app shell. /auth/callback is just one of
-// these routes — the client consumes the auth tokens there and cleans the URL itself.
+// SPA fallback: serve the app shell for any non-API GET so client-side routing
+// works from any URL (including a bookmarked deep link). Auth was removed from
+// this platform, so there is no longer an /auth/callback redirect — the shell is
+// served directly at the root.
 app.use((req, res, next) => {
     if (req.method !== 'GET' || req.path.startsWith('/api') || req.path === '/metrics') return next();
-    
-    // Strict Single URL Mandate: Redirect everything to /auth/callback
-    if (req.path !== '/auth/callback') {
-        return res.redirect('/auth/callback');
-    }
-    
     res.sendFile(path.join(distPath, 'index.html'));
 });
 
@@ -127,12 +133,12 @@ const PORT = Number(process.env.PORT) || 8000;
 const HOST = process.env.HOST || '127.0.0.1';
 const server = app.listen(PORT, HOST, () => {
     const displayHost = HOST === '0.0.0.0' ? '127.0.0.1' : HOST;
-    Logger.info('server_started', { 
-        port: PORT, 
+    Logger.info('server_started', {
+        port: PORT,
         host: HOST,
-        mandated_url: `http://${displayHost}:${PORT}/auth/callback`
+        url: `http://${displayHost}:${PORT}/`
     });
-    console.log(`\n🚀 APPLICATION MANDATE: http://${displayHost}:${PORT}/auth/callback\n`);
+    console.log(`\n🚀 Revenue Analytics running at: http://${displayHost}:${PORT}/\n`);
 });
 
 // --- LIFECYCLE MANAGEMENT ---

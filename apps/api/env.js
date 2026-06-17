@@ -9,4 +9,7 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // .env lives at the monorepo root (apps/api -> ../../.env)
-dotenv.config({ path: path.join(__dirname, '../../.env') });
+dotenv.config({ 
+    path: path.join(__dirname, '../../.env'),
+    override: true 
+});

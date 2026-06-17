@@ -89,10 +89,11 @@ export const AnalyticsService = {
             skus.add(r.wp);
             custs.add(r.customer);
         }
+        const toLocalDate = (ms) => new Date(ms).toLocaleDateString('sv-SE');
         return {
-            latestDate: maxT !== -Infinity ? new Date(maxT).toISOString() : null,
-            minDate: minT !== Infinity ? new Date(minT).toISOString() : null,
-            maxDate: maxT !== -Infinity ? new Date(maxT).toISOString() : null,
+            latestDate: maxT !== -Infinity ? toLocalDate(maxT) : null,
+            minDate: minT !== Infinity ? toLocalDate(minT) : null,
+            maxDate: maxT !== -Infinity ? toLocalDate(maxT) : null,
             years: Array.from(years).sort((a, b) => b - a),
             segments: Array.from(segs).sort(),
             skus: Array.from(skus).sort(),

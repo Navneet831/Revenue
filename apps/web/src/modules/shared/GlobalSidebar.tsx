@@ -1,5 +1,5 @@
 import React from 'react';
-import { Terminal, Layers } from 'lucide-react';
+import { Terminal, Layers, BookOpen } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import { SolarModuleIcon, InternalIcon, RMIcon, ScrapIcon } from '../../assets/CustomIcons';
 
@@ -8,13 +8,14 @@ interface GlobalSidebarProps {
     onOpenStories?: () => void;
 }
 
-export const GlobalSidebar: React.FC<GlobalSidebarProps> = ({ onOpenHelp }) => {
+export const GlobalSidebar: React.FC<GlobalSidebarProps> = ({ onOpenHelp, onOpenStories }) => {
     const {
         toggleSidebar,
         allSegments,
         filters,
         updateFilters,
-        activeApp
+        activeApp,
+        features
     } = useStore();
 
     const filteredSegments = allSegments.filter((s) => {
@@ -63,13 +64,13 @@ export const GlobalSidebar: React.FC<GlobalSidebarProps> = ({ onOpenHelp }) => {
         <div className="flex h-full shrink-0 z-[100]">
             <aside
                 id="sidebar"
-                className="flex h-full w-14 flex-col bg-white border-r border-slate-200 shadow-sm relative transition-all duration-300"
+                className="flex h-full w-14 flex-col bg-canvas border-r border-hairline relative transition-all duration-300"
             >
                 {/* Logo Section */}
                 <div
                     onClick={toggleSidebar}
                     data-tooltip="Collapse / expand sidebar (Ctrl+B)"
-                    className="w-full flex items-center justify-center shrink-0 border-b border-slate-200 bg-white py-4 px-2 relative overflow-hidden group select-none cursor-pointer hover:bg-slate-50 transition-colors h-14"
+                    className="w-full flex items-center justify-center shrink-0 border-b border-hairline bg-canvas-soft py-4 px-2 relative overflow-hidden group select-none cursor-pointer hover:bg-canvas-deep transition-colors h-14"
                 >
                     <div className="w-6 h-6 shrink-0 flex items-center justify-center transition-all duration-300 group-hover:scale-110 relative">
                         <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" className="w-full h-full" style={{ shapeRendering: 'geometricPrecision' }}>
@@ -90,8 +91,8 @@ export const GlobalSidebar: React.FC<GlobalSidebarProps> = ({ onOpenHelp }) => {
                         const isScrap = sLower.includes('scrap');
 
                         const activeCls = isSelected
-                            ? 'text-white bg-emerald-600 shadow-md scale-110'
-                            : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50';
+                            ? 'text-[#1C1917] bg-[#D97706] shadow-sm'
+                            : 'text-[#78716C] hover:text-[#1C1917] hover:bg-[#FEF3C7]';
 
                         let IconComp = <Layers className="w-5 h-5" />;
                         if (isSolar) IconComp = <SolarModuleIcon className={isSelected ? "w-5 h-5 fill-current" : "w-5 h-5"} />;
@@ -114,8 +115,13 @@ export const GlobalSidebar: React.FC<GlobalSidebarProps> = ({ onOpenHelp }) => {
                 </div>
 
                 {/* Bottom Actions */}
-                <div className="shrink-0 flex flex-col items-center pb-4 gap-4 border-t border-slate-100 pt-4">
-                    <div onClick={onOpenHelp} className="p-2 rounded-lg text-slate-400 hover:text-slate-600 cursor-pointer transition-all" data-tooltip="Help">
+                <div className="shrink-0 flex flex-col items-center pb-4 gap-4 border-t border-hairline pt-4">
+                    {features.story && onOpenStories && (
+                        <div onClick={onOpenStories} className="p-2 rounded-md text-ink-faint hover:text-ink cursor-pointer transition-colors" data-tooltip="Executive Stories">
+                            <BookOpen className="w-5 h-5" />
+                        </div>
+                    )}
+                    <div onClick={onOpenHelp} className="p-2 rounded-md text-ink-faint hover:text-ink cursor-pointer transition-colors" data-tooltip="Help">
                         <Terminal className="w-5 h-5" />
                     </div>
                 </div>

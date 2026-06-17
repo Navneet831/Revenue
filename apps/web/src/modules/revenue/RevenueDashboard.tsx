@@ -36,7 +36,8 @@ export const RevenueDashboard: React.FC = () => {
         latestDate, setLatestDate, setGlobalMinMax,
         setGovStats, filters, updateFilters,
         setAllLists, govStats,
-        cardViews, setCardView, updateUIState, ui, insightsSeen
+        cardViews, setCardView, updateUIState, ui, insightsSeen,
+        features
     } = useStore();
 
     const queryClient = useQueryClient();
@@ -88,28 +89,28 @@ export const RevenueDashboard: React.FC = () => {
 
     return (
         <div className="flex flex-col min-h-full">
-            <header className="bg-white border-b border-slate-200 flex flex-col lg:flex-row justify-between items-start lg:items-center px-4 py-2 shrink-0 z-40 relative gap-3 min-w-0 w-full max-w-full">
+            <header className="bg-canvas border-b border-hairline flex flex-col lg:flex-row justify-between items-start lg:items-center px-4 py-2 shrink-0 z-40 relative gap-3 min-w-0 w-full max-w-full">
                 <div className="flex items-center gap-3 overflow-x-auto flex-1 min-w-0 no-scrollbar pb-1 lg:pb-0 w-full">
                     <FYShortcuts />
                     <div className="flex items-center gap-2 shrink-0">
-                        <div className="flex items-center bg-slate-50 rounded-md overflow-hidden border border-slate-200">
-                            <input type="date" value={filters.startDate || ''} onChange={(e) => updateFilters({ startDate: e.target.value })} className="bg-transparent text-slate-600 text-[10px] p-1.5 outline-none font-mono" />
+                        <div className="flex items-center bg-white rounded-md overflow-hidden border border-hairline shadow-sm">
+                            <input type="date" min="2022-12-26" value={filters.startDate || ''} onChange={(e) => updateFilters({ startDate: e.target.value })} className="bg-transparent text-ink-mute text-[12px] p-1.5 outline-none font-mono" />
                         </div>
-                        <span className="text-slate-400 text-xs font-bold">-</span>
-                        <div className="flex items-center bg-slate-50 rounded-md overflow-hidden border border-slate-200">
-                            <input type="date" value={filters.endDate || ''} onChange={(e) => updateFilters({ endDate: e.target.value })} className="bg-transparent text-slate-900 text-[10px] p-1.5 outline-none font-mono" />
+                        <span className="text-ink-faint text-xs font-medium">–</span>
+                        <div className="flex items-center bg-white rounded-md overflow-hidden border border-hairline shadow-sm">
+                            <input type="date" min="2022-12-26" value={filters.endDate || ''} onChange={(e) => updateFilters({ endDate: e.target.value })} className="bg-transparent text-ink text-[12px] p-1.5 outline-none font-mono" />
                         </div>
                     </div>
-                    <div className="hidden lg:block w-px h-4 bg-slate-200 shrink-0 mx-2" />
+                    <div className="hidden lg:block w-px h-4 bg-hairline shrink-0 mx-2" />
                     <Breadcrumbs />
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
-                    <div className="flex items-center bg-slate-50 rounded-full p-[3px] border border-slate-200">
+                    <div className="flex items-center bg-canvas-soft rounded-full p-[3px] border border-hairline">
                         {(['Amount', 'MW', 'Qty'] as const).map(m => (
-                            <button key={m} onClick={() => handleMetricChange(m)} className={`px-4 py-1 text-[10px] font-extrabold rounded-full transition-all uppercase ${filters.metric === m ? 'bg-white text-emerald-600 shadow-sm border border-slate-200' : 'text-slate-400 hover:text-slate-600'}`}>{m}</button>
+                            <button key={m} onClick={() => handleMetricChange(m)} className={`px-4 py-1 text-[12px] font-medium rounded-full transition-all uppercase ${filters.metric === m ? 'bg-white text-primary border border-hairline shadow-sm' : 'text-ink-mute hover:text-ink'}`}>{m}</button>
                         ))}
                     </div>
-                    <button onClick={() => updateUIState({ insightsOpen: !ui.insightsOpen })} className={`flex items-center justify-center transition-all ${!insightsSeen ? 'text-amber-500 scale-110' : 'text-slate-400 hover:text-amber-500'}`}>
+                    <button onClick={() => updateUIState({ insightsOpen: !ui.insightsOpen })} className={`flex items-center justify-center transition-all ${!insightsSeen ? 'text-primary scale-110' : 'text-ink-faint hover:text-primary'}`}>
                         <IntelligenceBoardIcon className="w-5 h-5" />
                     </button>
                 </div>
@@ -120,9 +121,9 @@ export const RevenueDashboard: React.FC = () => {
                     <div className="flex items-center gap-2 min-w-0">
                         <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
                         <span className="text-[10px] font-bold text-rose-600 uppercase tracking-widest shrink-0">Data Feed Degraded</span>
-                        <span className="text-[10px] text-slate-500 font-mono truncate">{error}</span>
+                        <span className="text-[10px] text-ink-mute font-mono truncate">{error}</span>
                     </div>
-                    <button onClick={() => refetch()} className="flex items-center gap-1.5 px-3 py-1 bg-white text-slate-600 hover:text-slate-900 border border-slate-200 rounded-md text-[10px] font-bold uppercase tracking-wider shrink-0 shadow-sm">
+                    <button onClick={() => refetch()} className="flex items-center gap-1.5 px-3 py-1.5 bg-[#3ecf8e] text-[#171717] hover:bg-[#24b47e] rounded-md text-[13px] font-medium shrink-0 transition-colors">
                         <RotateCcw className="w-3 h-3" /> Retry
                     </button>
                 </div>
@@ -135,9 +136,9 @@ export const RevenueDashboard: React.FC = () => {
             </div>
 
             <div className="flex-1 px-3 pb-3 flex flex-col gap-4 w-full">
-                <div id="w-master" className="w-full bg-white rounded-2xl border border-slate-200 flex flex-col overflow-hidden relative shrink-0 shadow-sm" style={{ height: '320px' }}>
+                <div id="w-master" className="w-full bg-white rounded-xl border border-hairline flex flex-col overflow-hidden relative shrink-0 shadow-sm" style={{ height: '320px' }}>
                     <div className="chart-noise-layer opacity-[0.02]" />
-                    <div className="p-1 px-3 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center z-50 shrink-0 h-9">
+                    <div className="p-1 px-3 border-b border-hairline bg-canvas-soft/40 flex justify-between items-center z-50 shrink-0 h-9">
                         <div className="flex items-center gap-2 overflow-hidden flex-1">
                             <div className="flex items-center shrink-0">
                                 <LayoutDashboard className="w-3.5 h-3.5 text-emerald-600 mr-2" />
@@ -147,9 +148,9 @@ export const RevenueDashboard: React.FC = () => {
                         </div>
                         <div className="flex items-center gap-3 shrink-0 ml-2">
                             {cardViews.master === 'visual' && (['Daily', 'Weekly', 'Monthly', 'Quarterly'] as const).map((tMode) => (
-                                <button key={tMode} onClick={() => updateFilters({ velocityMode: tMode })} className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider transition-all ${filters.velocityMode === tMode ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'text-slate-400 hover:text-slate-600'}`}>{tMode[0]}</button>
+                                <button key={tMode} onClick={() => updateFilters({ velocityMode: tMode })} className={`px-2 py-0.5 rounded-full text-[11px] font-medium transition-all ${filters.velocityMode === tMode ? 'bg-[#3ecf8e] text-[#171717]' : 'text-[#9a9a9a] hover:text-[#171717]'}`}>{tMode[0]}</button>
                             ))}
-                            <button data-tooltip="Toggle Matrix/Velocity View" onClick={() => setCardView('master', cardViews.master === 'visual' ? 'tabular' : 'visual')} className="p-1 px-2 bg-white text-slate-500 hover:text-slate-900 border border-slate-200 rounded-md shadow-sm transition-all">
+                            <button data-tooltip="Toggle Matrix/Velocity View" onClick={() => setCardView('master', cardViews.master === 'visual' ? 'tabular' : 'visual')} className="p-1 px-2 bg-white text-[#707070] hover:text-[#171717] border border-[#dfdfdf] rounded-md transition-colors">
                                 {cardViews.master === 'visual' ? <LayoutDashboard className="w-3.5 h-3.5" /> : <PieChart className="w-3.5 h-3.5" />}
                             </button>
                         </div>
@@ -170,26 +171,28 @@ export const RevenueDashboard: React.FC = () => {
                 </div>
             </div>
 
-            <footer className="shrink-0 mt-auto border-t border-slate-200 bg-white px-4 py-2 flex items-center justify-between gap-3 text-[10px] text-slate-400">
+            <footer className="shrink-0 mt-auto border-t border-hairline bg-canvas px-4 py-2 flex items-center justify-between gap-3 text-[13px] text-ink-mute">
                 <span className="font-medium tabular-nums">
                     Last updated on{' '}
-                    <span className="text-slate-600 font-semibold">
+                    <span className="text-ink-secondary font-semibold">
                         {latestDate
                             ? latestDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
                             : '—'}
                     </span>
                 </span>
-                <span className="hidden sm:inline font-mono tracking-tight text-slate-400 truncate">
+                <span className="hidden sm:inline font-mono tracking-tight text-ink-faint truncate">
                     Source: public.revenue · {(govStats.total || 0).toLocaleString('en-IN')} records · figures in ₹
                 </span>
                 <span className="font-medium whitespace-nowrap">© Grew Energy Private Limited</span>
             </footer>
 
-            <Suspense fallback={null}>
-                <SectionBoundary name="Executive Stories">
-                    <ExecutiveStories isOpen={ui.storiesOpen} onClose={() => updateUIState({ storiesOpen: false })} />
-                </SectionBoundary>
-            </Suspense>
+            {features.story && (
+                <Suspense fallback={null}>
+                    <SectionBoundary name="Executive Stories">
+                        <ExecutiveStories isOpen={ui.storiesOpen} onClose={() => updateUIState({ storiesOpen: false })} />
+                    </SectionBoundary>
+                </Suspense>
+            )}
             <Suspense fallback={null}>
                 <SectionBoundary name="Intelligence Board">
                     <InsightsPanel />

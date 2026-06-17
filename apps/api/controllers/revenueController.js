@@ -1,7 +1,7 @@
 import Logger from '../../../monitoring/logging/index.js';
 import * as Metrics from '../../../monitoring/metrics/index.js';
 import Cache from '../services/cache.js';
-import { pool } from '../repositories/revenueRepository.js';
+import { pool, RevenueRepository } from '../repositories/revenueRepository.js';
 import { AnalyticsService } from '../services/analyticsService.js';
 
 // Bootstrap metadata (dates, filter dimensions, record count) for the client.
@@ -57,24 +57,24 @@ export const getRevenueAnalytics = async (req, res) => {
 export const getRevenueSummary = async (req, res) => {
     const startTime = Date.now();
 
-    // Enable CORS
-    res.setHeader('Access-Control-Allow-Credentials', true);
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
-    res.setHeader(
-        'Access-Control-Allow-Headers',
-        'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
-    );
-
-    if (req.method === 'OPTIONS') {
-        res.status(200).end();
-        return;
-    }
-
     try {
-        // 1. Extract and sanitize filters
-        const startDate = req.query.startDate || '2024-04-01';
-        const endDate = req.query.endDate || '2025-03-31';
+        // 1. Extract and sanitize filters — fall back to actual DB min/max if not supplied
+        const MIN_DATE = '2022-12-26'; // Day AFTER company DOI (no data on/before 2022-12-25)
+        let startDate = req.query.startDate;
+        let endDate = req.query.endDate;
+
+        if (!startDate || !endDate) {
+            const range = await RevenueRepository.getDateRange();
+            // Use toLocaleDateString with sv-SE locale (YYYY-MM-DD) to avoid UTC offset
+            // issues that .toISOString() introduces when the server is not in UTC.
+            const fmt = (d) => new Date(d).toLocaleDateString('sv-SE');
+            startDate = startDate || fmt(range.min_date);
+            endDate   = endDate   || fmt(range.max_date);
+        }
+
+        // Enforce minimum date: startDate and endDate must both be > MIN_DATE
+        if (startDate <= MIN_DATE) startDate = MIN_DATE;
+        if (endDate <= MIN_DATE) endDate = MIN_DATE;
 
         let segments = req.query.segment
             ? Array.isArray(req.query.segment)
@@ -116,8 +116,13 @@ export const getRevenueSummary = async (req, res) => {
             return;
         }
 
+        // "Invoice date" is stored as an Excel serial bigint.
+        // Compare against the serial equivalent of the supplied date strings so
+        // the integer comparison can use an index rather than converting every row.
         let queryParams = [startDate, endDate];
-        let whereClauses = ['"Invoice date" >= $1 AND "Invoice date" <= $2'];
+        let whereClauses = [
+            `"Invoice date" BETWEEN ($1::date - DATE '1899-12-30') AND ($2::date - DATE '1899-12-30')`
+        ];
         let paramIndex = 3;
 
         if (segments.length > 0) {
@@ -160,7 +165,7 @@ export const getRevenueSummary = async (req, res) => {
             pool.query(`SELECT COALESCE("Sales Head", 'Direct/Unmapped') as name, COALESCE(SUM("Taxable Value"), 0) as val, COALESCE(SUM("MW"), 0) as mw, COALESCE(SUM("SalesQty"), 0) as qty FROM public.revenue WHERE ${whereSql} GROUP BY "Sales Head" ORDER BY val DESC`, queryParams),
             pool.query(`SELECT COALESCE("Cust_name", 'Unidentified') as name, COALESCE(SUM("Taxable Value"), 0) as val, COALESCE(SUM("MW"), 0) as mw, COALESCE(SUM("SalesQty"), 0) as qty FROM public.revenue WHERE ${whereSql} GROUP BY "Cust_name" ORDER BY val DESC LIMIT 20`, queryParams),
             pool.query(`SELECT COALESCE("Module WP"::text, 'Generic') as name, COALESCE(SUM("Taxable Value"), 0) as val, COALESCE(SUM("MW"), 0) as mw, COALESCE(SUM("SalesQty"), 0) as qty FROM public.revenue WHERE ${whereSql} GROUP BY "Module WP" ORDER BY val DESC`, queryParams),
-            pool.query(`SELECT TO_CHAR("Invoice date", 'Mon') as month_name, EXTRACT(MONTH FROM "Invoice date") as month_idx, COALESCE(SUM("Taxable Value"), 0) as val, COALESCE(SUM("MW"), 0) as mw, COALESCE(SUM("SalesQty"), 0) as qty FROM public.revenue WHERE ${whereSql} GROUP BY month_name, month_idx ORDER BY month_idx`, queryParams)
+            pool.query(`SELECT TO_CHAR((DATE '1899-12-30' + "Invoice date" * INTERVAL '1 day')::date, 'Mon') as month_name, EXTRACT(MONTH FROM (DATE '1899-12-30' + "Invoice date" * INTERVAL '1 day')::date) as month_idx, COALESCE(SUM("Taxable Value"), 0) as val, COALESCE(SUM("MW"), 0) as mw, COALESCE(SUM("SalesQty"), 0) as qty FROM public.revenue WHERE ${whereSql} GROUP BY month_name, month_idx ORDER BY month_idx`, queryParams)
         ]);
 
         const totals = kpiResult.rows[0];

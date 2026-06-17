@@ -12,7 +12,7 @@ const ChartCore = lazy(() => import('./VelocityChart/ChartCore'));
 const ZoomResetButton: React.FC<{ onReset: () => void }> = ({ onReset }) => (
     <button
         onClick={onReset}
-        className="absolute top-2 right-2 p-1.5 flex items-center justify-center rounded-xl bg-white text-black hover:bg-slate-50 transition-all cursor-pointer border border-slate-200 z-20 shadow-sm"
+        className="absolute top-2 right-2 p-1.5 flex items-center justify-center rounded-xl bg-white text-ink hover:bg-canvas transition-all cursor-pointer border border-hairline z-20 shadow-sm"
         data-tooltip="Reset Zoom Scale"
     >
         <RotateCcw className="w-3.5 h-3.5" />
@@ -21,7 +21,7 @@ const ZoomResetButton: React.FC<{ onReset: () => void }> = ({ onReset }) => (
 
 const ModeIndicator: React.FC<{ month: string; mode: string }> = ({ month, mode }) => (
     <div className="absolute top-1 left-1 z-10 pointer-events-none">
-        <span className="text-[8px] font-bold uppercase tracking-widest text-black bg-white/60 px-1.5 py-0.5 rounded border border-slate-100">
+        <span className="text-[8px] font-bold uppercase tracking-widest text-ink bg-canvas/80 px-1.5 py-0.5 rounded border border-hairline">
             {month} · {mode}
         </span>
     </div>
@@ -86,8 +86,8 @@ export const VelocityChart: React.FC = memo(() => {
     if (isLoading) {
         return (
             <div className="w-full h-full flex flex-col items-center justify-center bg-white gap-3">
-                <Loader2 className="w-6 h-6 text-emerald-500 animate-spin" />
-                <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">Streaming Velocity Data...</span>
+                <Loader2 className="w-6 h-6 text-primary animate-spin" />
+                <span className="text-[10px] font-mono text-ink-mute uppercase tracking-widest">Streaming Velocity Data...</span>
             </div>
         );
     }
@@ -219,7 +219,7 @@ export const VelocityChart: React.FC = memo(() => {
             {expandedId === 'w-master' && <ZoomResetButton onReset={resetZoom} />}
             {activeMatrixMonth && (mode === 'Weekly' || mode === 'Daily') && <ModeIndicator month={activeMatrixMonth} mode={mode} />}
             <div className="flex-1 min-h-0 relative w-full z-10 select-none mt-1 pb-1">
-                <Suspense fallback={<div className="w-full h-full flex items-center justify-center text-slate-500 font-mono text-[10px]">Loading Analytics...</div>}>
+                <Suspense fallback={<div className="w-full h-full flex items-center justify-center text-ink-mute font-mono text-[10px]">Loading Analytics...</div>}>
                     <ChartCore
                         ref={chartRef}
                         type={mode === 'Daily' ? 'line' : 'bar'}

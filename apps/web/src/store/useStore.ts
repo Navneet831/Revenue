@@ -30,6 +30,11 @@ export interface AppState {
     stats: AnalyticalOutput | null;
     insightsSeen: boolean;
     activeApp: 'REVENUE' | 'INVENTORY' | 'LOGISTICS';
+    features: {
+        agentation: boolean;
+        story: boolean;
+        commitDrilldown: boolean;
+    };
 
     // Actions
     setData: (data: RevenueRow[]) => void;
@@ -56,6 +61,7 @@ export interface AppState {
     setStats: (stats: AnalyticalOutput | null) => void;
     setInsightsSeen: (seen: boolean) => void;
     setActiveApp: (app: 'REVENUE' | 'INVENTORY' | 'LOGISTICS') => void;
+    setFeatures: (features: AppState['features']) => void;
 }
 
 const initialFilters = (minDate: string = '', maxDate: string = ''): FilterConfig => ({
@@ -100,14 +106,19 @@ export const useStore = create<AppState>((set) => ({
     stats: null,
     insightsSeen: true,
     activeApp: 'REVENUE',
+    features: {
+        agentation: false,
+        story: false,
+        commitDrilldown: true
+    },
 
     // Actions
     setData: (data) => set({ data }),
     setLatestDate: (latestDate) => set({ latestDate }),
     setGlobalMinMax: (min, max) =>
         set((state) => {
-            const minStr = min ? min.toISOString().split('T')[0] : '';
-            const maxStr = max ? max.toISOString().split('T')[0] : '';
+            const minStr = min ? min.toLocaleDateString('sv-SE') : '';
+            const maxStr = max ? max.toLocaleDateString('sv-SE') : '';
             return {
                 globalMinDate: min,
                 globalMaxDate: max,
@@ -146,8 +157,8 @@ export const useStore = create<AppState>((set) => ({
         })),
     resetFilters: () =>
         set((state) => {
-            const minStr = state.globalMinDate ? state.globalMinDate.toISOString().split('T')[0] : '';
-            const maxStr = state.globalMaxDate ? state.globalMaxDate.toISOString().split('T')[0] : '';
+            const minStr = state.globalMinDate ? state.globalMinDate.toLocaleDateString('sv-SE') : '';
+            const maxStr = state.globalMaxDate ? state.globalMaxDate.toLocaleDateString('sv-SE') : '';
             return {
                 filters: initialFilters(minStr, maxStr),
                 isCustomPeriodActive: false
@@ -167,5 +178,6 @@ export const useStore = create<AppState>((set) => ({
     setColorRegistry: (COLOR_REGISTRY) => set({ COLOR_REGISTRY }),
     setStats: (stats) => set({ stats }),
     setInsightsSeen: (insightsSeen) => set({ insightsSeen }),
-    setActiveApp: (activeApp) => set({ activeApp })
+    setActiveApp: (activeApp) => set({ activeApp }),
+    setFeatures: (features) => set({ features })
 }));

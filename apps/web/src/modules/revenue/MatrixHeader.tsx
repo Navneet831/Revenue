@@ -29,14 +29,14 @@ export const MatrixHeader: React.FC = () => {
     };
 
     return (
-        <div className="flex w-full shrink-0 border-b border-slate-200 bg-white/95 backdrop-blur select-none z-40">
-            <div className="shrink-0 flex items-center justify-center border-r border-slate-200 h-9" style={{ width: '80px' }}>
+        <div className="flex w-full shrink-0 border-b border-hairline bg-canvas-soft/60 backdrop-blur select-none z-40">
+            <div className="shrink-0 flex items-center justify-center border-r border-hairline h-9" style={{ width: '80px' }}>
                 <button
                     onClick={(e) => { e.stopPropagation(); updateFilters({ pendingOnly: !filters.pendingOnly }); }}
-                    className="p-1 inline-flex items-center justify-center bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded"
+                    className="p-1 inline-flex items-center justify-center bg-white hover:bg-canvas-deep border border-hairline rounded transition-colors"
                     data-tooltip="Toggle Dispatched vs Pending Pipeline"
                 >
-                    {filters.pendingOnly ? <CheckCircle className="w-3 h-3 text-amber-500" /> : <Truck className="w-3 h-3 text-slate-400" />}
+                    {filters.pendingOnly ? <CheckCircle className="w-3 h-3 text-primary" /> : <Truck className="w-3 h-3 text-ink-faint" />}
                 </button>
             </div>
             {stats.matrix.map((d: any, idx: number) => {
@@ -47,22 +47,22 @@ export const MatrixHeader: React.FC = () => {
                 const isQStart = idx % 3 === 0 && !isTotal;
                 const isQEnd = idx % 3 === 2 || isTotal;
 
-                const borderCls = isQEnd ? 'border-r border-slate-200' : '';
+                const borderCls = isQEnd ? 'border-r border-hairline' : '';
                 const totalCls = isTotal ? 'text-emerald-700 bg-emerald-50/50' : '';
                 const selCls = isSelectedMonth || isPartofSelectedQ
-                    ? 'text-black border-b-2 border-emerald-600 font-black bg-slate-100'
-                    : 'text-black/60 hover:text-black hover:bg-slate-50';
+                    ? 'text-[#1C1917] border-b-2 border-amber-600 font-black bg-amber-50/60'
+                    : 'text-[#78716C] hover:text-[#1C1917] hover:bg-[#FEF9F0]';
 
                 return (
                     <div
                         key={idx}
                         onClick={() => !isTotal && handleMonthToggle(d.month)}
-                        className={`relative flex-1 flex items-center justify-center h-9 text-[9px] uppercase font-bold tracking-widest whitespace-nowrap transition-colors ${borderCls} ${totalCls} ${selCls} ${!isTotal ? 'cursor-pointer' : ''}`}
+                        className={`relative flex-1 flex items-center justify-center h-9 text-[11px] uppercase font-bold tracking-widest whitespace-nowrap transition-colors ${borderCls} ${totalCls} ${selCls} ${!isTotal ? 'cursor-pointer' : ''}`}
                     >
                         {isQStart && (
                             <div
                                 onClick={(e) => { e.stopPropagation(); handleQuarterToggle(qIdxOfM); }}
-                                className={`absolute top-0 left-0 w-3.5 h-3.5 flex items-center justify-center text-[9px] font-black cursor-pointer rounded-br-md transition-all z-40 ${isPartofSelectedQ ? 'bg-emerald-500 text-white shadow-[0_0_8px_rgba(16,185,129,0.2)]' : 'bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600'}`}
+                                className={`absolute top-0 left-0 w-3.5 h-3.5 flex items-center justify-center text-[9px] font-black cursor-pointer rounded-br-md transition-all z-40 ${isPartofSelectedQ ? 'bg-primary text-white shadow-[0_0_8px_rgba(217,119,6,0.3)]' : 'bg-canvas-deep text-ink-mute hover:bg-canvas-deep hover:text-ink'}`}
                                 data-tooltip="Select Quarter"
                             >
                                 Q

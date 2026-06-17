@@ -18,8 +18,8 @@ export const RevenueMatrix: React.FC = memo(() => {
     if (isLoading) {
         return (
             <div className="w-full h-full flex flex-col items-center justify-center bg-white gap-3">
-                <Loader2 className="w-6 h-6 text-emerald-500 animate-spin" />
-                <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">Generating Ledger Matrix...</span>
+                <Loader2 className="w-6 h-6 text-primary animate-spin" />
+                <span className="text-[10px] font-mono text-ink-mute uppercase tracking-widest">Generating Ledger Matrix...</span>
             </div>
         );
     }
@@ -64,8 +64,8 @@ export const RevenueMatrix: React.FC = memo(() => {
     ];
 
     const renderDataRow = (label: string, key: 'valCr' | 'qty' | 'mw', formatter: (v: number | null) => string, isPrimary: boolean) => (
-        <tr key={key} className={`border-b border-slate-100 hover:bg-slate-50 h-10 ${isPrimary ? 'bg-emerald-50/50' : 'bg-white'}`}>
-            <td className={`p-1.5 px-2 border-r border-slate-200 text-[9px] font-bold uppercase tracking-wider whitespace-nowrap sticky left-0 z-30 ${isPrimary ? 'text-black bg-emerald-50/50 border-l-2 border-l-emerald-600' : 'text-black/60 bg-white'}`} style={{ width: '80px', minWidth: '80px' }}>
+        <tr key={key} className={`border-b border-hairline hover:bg-canvas h-12 ${isPrimary ? 'bg-emerald-50/50' : 'bg-white'}`}>
+            <td className={`px-3 border-r border-hairline text-[11px] font-extrabold uppercase tracking-widest whitespace-nowrap sticky left-0 z-30 ${isPrimary ? 'text-ink bg-emerald-50/50 border-l-2 border-l-emerald-600' : 'text-ink/60 bg-white'}`} style={{ width: '80px', minWidth: '80px' }}>
                 <span className="cursor-help" data-tooltip={ROW_FORMULA[key]}>{label}</span>
             </td>
             {stats.matrix.map((d: any, idx: number) => {
@@ -75,18 +75,18 @@ export const RevenueMatrix: React.FC = memo(() => {
                 const isPartofSelectedQ = filters.selectedQuarter === qIdxOfM && !isTotal;
                 const isQEnd = idx % 3 === 2 || isTotal;
 
-                const borderCls = isQEnd ? 'border-r border-slate-200' : '';
+                const borderCls = isQEnd ? 'border-r border-hairline' : '';
                 const textCls = isTotal
-                    ? `${isPrimary ? 'text-emerald-700' : 'text-emerald-700/60'} text-[11px] font-bold tracking-tight`
+                    ? `${isPrimary ? 'text-emerald-700' : 'text-emerald-700/60'} text-[13px] font-bold tracking-tight`
                     : isSelectedMonth || isPartofSelectedQ
-                        ? `${isPrimary ? 'text-black' : 'text-black/80'} text-[10px] font-bold tracking-tight`
-                        : `${isPrimary ? 'text-black' : 'text-black/70'} text-[10px] font-medium tracking-tight`;
+                        ? `${isPrimary ? 'text-ink' : 'text-ink/80'} text-[12px] font-bold tracking-tight`
+                        : `${isPrimary ? 'text-ink' : 'text-ink/70'} text-[12px] font-medium tracking-tight`;
 
                 return (
                     <td
                         key={idx}
                         data-tooltip={`${d.month} · ${ROW_FORMULA[key]}`}
-                        className={`p-1 px-2 font-mono text-right relative transition-all duration-200 whitespace-nowrap cursor-help ${borderCls} ${isSelectedMonth || isPartofSelectedQ ? 'bg-slate-100' : ''}`}
+                        className={`px-2 py-1 font-mono text-right relative transition-all duration-200 whitespace-nowrap cursor-help ${borderCls} ${isSelectedMonth || isPartofSelectedQ ? 'bg-canvas-deep/50' : ''}`}
                     >
                         <span className={`${textCls} relative z-10 pointer-events-none`}>
                             {privacyMode ? '••••' : formatter(d[key])}
@@ -98,8 +98,8 @@ export const RevenueMatrix: React.FC = memo(() => {
     );
 
     const renderBadgeRow = (label: string, key: 'mom' | 'qoq' | 'yoy') => (
-        <tr className="border-b border-slate-100 bg-slate-50/50 h-9">
-            <td className="p-1.5 px-2 border-r border-slate-200 text-[8px] text-slate-400 font-bold uppercase tracking-wider whitespace-nowrap bg-slate-50/50 sticky left-0 z-30" style={{ width: '80px', minWidth: '80px' }}>
+        <tr className="border-b border-hairline bg-canvas-soft/40 h-10">
+            <td className="px-3 border-r border-hairline text-[10px] text-ink-faint font-bold uppercase tracking-widest whitespace-nowrap bg-canvas-soft/40 sticky left-0 z-30" style={{ width: '80px', minWidth: '80px' }}>
                 <span className="cursor-help" data-tooltip={DELTA_FORMULA[key]}>{label}</span>
             </td>
             {stats.matrix.map((d: any, idx: number) => {
@@ -109,29 +109,29 @@ export const RevenueMatrix: React.FC = memo(() => {
                 const isPartofSelectedQ = filters.selectedQuarter === qIdxOfM && !isTotal;
                 const isQEnd = idx % 3 === 2 || isTotal;
 
-                const borderCls = isQEnd ? 'border-r border-slate-200' : '';
+                const borderCls = isQEnd ? 'border-r border-hairline' : '';
 
-                if (isTotal) return <td key={idx} className={`p-1 text-center whitespace-nowrap ${borderCls}`}>-</td>;
+                if (isTotal) return <td key={idx} className={`px-2 text-center whitespace-nowrap text-ink-faint text-[11px] font-mono ${borderCls}`}>—</td>;
 
                 const val = d[key];
                 if (val === null || val === undefined) {
                     return (
-                        <td key={idx} className={`p-1 px-2 text-right text-slate-400 text-[9px] font-mono whitespace-nowrap ${borderCls} ${isSelectedMonth || isPartofSelectedQ ? 'bg-slate-100/50' : ''}`}>
+                        <td key={idx} className={`px-2 text-right text-ink-faint text-[11px] font-mono whitespace-nowrap ${borderCls} ${isSelectedMonth || isPartofSelectedQ ? 'bg-canvas-deep/50' : ''}`}>
                             N/A
                         </td>
                     );
                 }
 
                 const isPos = val > 0;
-                const colorCls = isPos ? 'text-emerald-500' : val < 0 ? 'text-rose-500' : 'text-slate-400';
+                const colorCls = isPos ? 'text-emerald-500' : val < 0 ? 'text-rose-500' : 'text-ink-faint';
 
                 return (
                     <td
                         key={idx}
                         data-tooltip={`${d.month} · ${DELTA_FORMULA[key]}`}
-                        className={`p-1 px-2 font-mono text-right relative transition-all duration-200 whitespace-nowrap cursor-help ${borderCls} ${isSelectedMonth || isPartofSelectedQ ? 'bg-slate-100/50' : ''}`}
+                        className={`px-2 py-1 font-mono text-right relative transition-all duration-200 whitespace-nowrap cursor-help ${borderCls} ${isSelectedMonth || isPartofSelectedQ ? 'bg-canvas-deep/50' : ''}`}
                     >
-                        <span className={`relative z-10 ${colorCls} text-[9px] font-bold tracking-tight`}>
+                        <span className={`relative z-10 ${colorCls} text-[11px] font-bold tracking-tight`}>
                             {privacyMode ? '••' : `${isPos ? '+' : ''}${val.toFixed(1)}%`}
                         </span>
                     </td>
