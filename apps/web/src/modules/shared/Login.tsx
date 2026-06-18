@@ -18,17 +18,39 @@ export const Login: React.FC = () => {
             return;
         }
 
-        // Typewriter effect
-        const text = "Analytics";
-        let i = 0;
-        const typeTimer = setInterval(() => {
-            if (i < text.length) {
-                setTypewriterText(text.substring(0, i + 1));
-                i++;
+        // Typewriter loop: Energy -> Solar -> Analytics
+        const words = ["Energy", "Solar", "Analytics"];
+        let wordIndex = 0;
+        let charIndex = 0;
+        let isDeleting = false;
+        let typeTimer: ReturnType<typeof setTimeout>;
+
+        const typeTick = () => {
+            const currentWord = words[wordIndex];
+            
+            if (isDeleting) {
+                charIndex--;
             } else {
-                clearInterval(typeTimer);
+                charIndex++;
             }
-        }, 150);
+
+            setTypewriterText(currentWord.substring(0, charIndex));
+
+            let typeSpeed = isDeleting ? 60 : 150;
+
+            if (!isDeleting && charIndex === currentWord.length) {
+                typeSpeed = 1500; // Pause at the end of the word
+                isDeleting = true;
+            } else if (isDeleting && charIndex === 0) {
+                isDeleting = false;
+                wordIndex = (wordIndex + 1) % words.length;
+                typeSpeed = 500; // Pause before typing the next word
+            }
+
+            typeTimer = setTimeout(typeTick, typeSpeed);
+        };
+
+        typeTimer = setTimeout(typeTick, 150);
 
         // Auto-show UI after loader
         const uiTimer = setTimeout(() => {
@@ -36,7 +58,7 @@ export const Login: React.FC = () => {
         }, 1500);
 
         return () => {
-            clearInterval(typeTimer);
+            clearTimeout(typeTimer);
             clearTimeout(uiTimer);
         };
     }, []);
