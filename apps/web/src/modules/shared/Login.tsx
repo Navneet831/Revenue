@@ -1,21 +1,49 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '@/store/useStore';
 import { Mail, ShieldCheck, User, ShieldAlert } from 'lucide-react';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
 
 export const Login: React.FC = () => {
     const { setUser, setAuthenticated } = useStore();
     const [password, setPassword] = useState('');
     const [error, setError] = useState(false);
+    const [errorMsg, setErrorMsg] = useState('Access Denied. Invalid security token provided. Your attempt has been logged.');
     const [showUI, setShowUI] = useState(false);
     const [typewriterText, setTypewriterText] = useState('');
+    const [isOtpSent, setIsOtpSent] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
-        // Intercept OAuth callback
+        // Check for existing session
+        const checkSession = async () => {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session) {
+                setUser({ name: session.user?.email || 'Authorized User' });
+                setAuthenticated(true);
+            }
+        };
+
+        checkSession();
+
+        const { data: authListener } = supabaseClient.auth.onAuthStateChange(
+            async (event, session) => {
+                if (event === 'SIGNED_IN' && session) {
+                    setUser({ name: session.user?.email || 'Authorized User' });
+                    setAuthenticated(true);
+                } else if (event === 'SIGNED_OUT') {
+                    setUser(null);
+                    setAuthenticated(false);
+                }
+            }
+        );
+
+        // Intercept OAuth callback logic handled by Supabase SDK natively via onAuthStateChange
         if (window.location.pathname === '/auth/callback') {
-            setUser({ name: 'Google Workspace User' });
-            setAuthenticated(true);
             window.history.replaceState({}, document.title, '/');
-            return;
         }
 
         // Typewriter loop: Energy -> Solar -> Analytics
@@ -60,18 +88,66 @@ export const Login: React.FC = () => {
         return () => {
             clearTimeout(typeTimer);
             clearTimeout(uiTimer);
+            authListener.subscription.unsubscribe();
         };
     }, []);
 
-    const handleLogin = (e: React.FormEvent) => {
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
-        const p = password.toLowerCase();
-        if (p === 'grew' || p === 'admin' || p.includes('grew.one') || p.includes('admin') || p.includes('grew.energy')) {
-            setUser({ name: 'Executive User' });
-            setAuthenticated(true);
-        } else {
+        setError(false);
+        setIsLoading(true);
+
+        const email = password.toLowerCase().trim();
+
+        if (isOtpSent) {
+            // Very basic OTP mock or actually handle OTP if the user provided 6 digits
+            // We'll use magic links here for simplicity, so no OTP code verification needed in UI
+            // unless they want full OTP. The template used Magic Links.
+            setErrorMsg("Check your email for the secure access link.");
             setError(true);
-            setTimeout(() => setError(false), 3000);
+            setTimeout(() => setError(false), 5000);
+            setIsLoading(false);
+            return;
+        }
+
+        try {
+            const { error } = await supabaseClient.auth.signInWithOtp({
+                email,
+                options: {
+                    shouldCreateUser: false, // Enforce strict whitelist
+                    emailRedirectTo: window.location.origin + '/auth/callback'
+                }
+            });
+
+            if (error) throw error;
+
+            setIsOtpSent(true);
+            setErrorMsg("Secure link transmitted. Verify your identity via email.");
+            setError(true); // Reusing error state for success banner style momentarily or you can add a success state
+            setTimeout(() => setError(false), 5000);
+            
+        } catch (err: any) {
+            setErrorMsg(err.message || "Access Denied. Identity verification failed.");
+            setError(true);
+            setTimeout(() => setError(false), 4000);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleGoogleLogin = async () => {
+        try {
+            const { error } = await supabaseClient.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo: 'http://127.0.0.1:8000/auth/callback'
+                }
+            });
+            if (error) throw error;
+        } catch (err: any) {
+            setErrorMsg(err.message || "OAuth initialization failed.");
+            setError(true);
+            setTimeout(() => setError(false), 4000);
         }
     };
 
