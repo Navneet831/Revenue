@@ -1,5 +1,5 @@
 import React from 'react';
-import { Terminal, Layers, BookOpen, TableProperties, ShieldCheck } from 'lucide-react';
+import { Terminal, Layers, BookOpen, TableProperties, ShieldCheck, LogOut } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import { SolarModuleIcon, InternalIcon, RMIcon, ScrapIcon } from '../../assets/CustomIcons';
 
@@ -18,7 +18,9 @@ export const GlobalSidebar: React.FC<GlobalSidebarProps> = ({ onOpenHelp, onOpen
         features,
         unviewedStories,
         activeMainView,
-        setActiveMainView
+        setActiveMainView,
+        setUser,
+        setAuthenticated
     } = useStore();
 
     const filteredSegments = allSegments.filter((s) => {
@@ -62,11 +64,18 @@ export const GlobalSidebar: React.FC<GlobalSidebarProps> = ({ onOpenHelp, onOpen
     };
 
     const handleLogoClick = () => {
-        if (features.story && unviewedStories && onOpenStories) {
+        if (activeMainView !== 'DASHBOARD') {
+            setActiveMainView('DASHBOARD');
+        } else if (features.story && unviewedStories && onOpenStories) {
             onOpenStories();
         } else {
             toggleSidebar();
         }
+    };
+
+    const handleLogout = () => {
+        setUser(null);
+        setAuthenticated(false);
     };
 
     return (
@@ -78,10 +87,10 @@ export const GlobalSidebar: React.FC<GlobalSidebarProps> = ({ onOpenHelp, onOpen
                 {/* Logo Section with Story Ring */}
                 <div
                     onClick={handleLogoClick}
-                    data-tooltip={features.story && unviewedStories ? "View Executive Stories" : "Collapse / expand sidebar (Ctrl+B)"}
+                    data-tooltip={features.story && unviewedStories && activeMainView === 'DASHBOARD' ? "View Executive Stories" : "Revenue Dashboard (Ctrl+B)"}
                     className="w-full flex items-center justify-center shrink-0 border-b border-hairline bg-canvas-soft py-4 px-2 relative overflow-hidden group select-none cursor-pointer hover:bg-canvas-deep transition-colors h-14"
                 >
-                    <div className={`w-10 h-10 shrink-0 flex items-center justify-center transition-all duration-300 group-hover:scale-110 relative rounded-full ${features.story && unviewedStories ? 'p-[2px] bg-gradient-to-tr from-emerald-400 via-teal-500 to-emerald-600 animate-pulse' : ''}`}>
+                    <div className={`w-10 h-10 shrink-0 flex items-center justify-center transition-all duration-300 group-hover:scale-110 relative rounded-full ${features.story && unviewedStories && activeMainView === 'DASHBOARD' ? 'p-[2px] bg-gradient-to-tr from-emerald-400 via-teal-500 to-emerald-600 animate-pulse' : ''}`}>
                         <div className="w-full h-full bg-canvas rounded-full flex items-center justify-center overflow-hidden">
                             <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" className="w-7 h-7" style={{ shapeRendering: 'geometricPrecision' }}>
                                 <polygon points="4,17.5 88.5,17.5 47.5,95.5 42.5,47.5" fill="#17A38A" />
@@ -93,7 +102,7 @@ export const GlobalSidebar: React.FC<GlobalSidebarProps> = ({ onOpenHelp, onOpen
 
                 {/* App Specific items (Segments) */}
                 <div className="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar bg-transparent flex flex-col items-center py-6 w-full gap-3">
-                    {activeApp === 'REVENUE' && sortedSegments.map((s) => {
+                    {activeApp === 'REVENUE' && activeMainView === 'DASHBOARD' && sortedSegments.map((s) => {
                         const isSelected = filters.segment.includes(s);
                         const sLower = s.toLowerCase();
                         const isSolar = sLower.includes('solar module') && !sLower.includes('internal');
@@ -128,14 +137,6 @@ export const GlobalSidebar: React.FC<GlobalSidebarProps> = ({ onOpenHelp, onOpen
                 {/* Bottom Actions */}
                 <div className="shrink-0 flex flex-col items-center pb-4 gap-4 border-t border-hairline pt-4 bg-canvas/50">
                     <div 
-                        onClick={() => setActiveMainView('DASHBOARD')} 
-                        className={`p-2 rounded-md cursor-pointer transition-colors ${activeMainView === 'DASHBOARD' ? 'text-emerald-600 bg-emerald-50' : 'text-ink-faint hover:text-ink'}`} 
-                        data-tooltip="Revenue Dashboard"
-                    >
-                        <Layers className="w-5 h-5" />
-                    </div>
-
-                    <div 
                         onClick={() => setActiveMainView('LEDGER')} 
                         className={`p-2 rounded-md cursor-pointer transition-colors ${activeMainView === 'LEDGER' ? 'text-emerald-600 bg-emerald-50' : 'text-ink-faint hover:text-ink'}`} 
                         data-tooltip="Transaction Ledger"
@@ -149,6 +150,16 @@ export const GlobalSidebar: React.FC<GlobalSidebarProps> = ({ onOpenHelp, onOpen
                         data-tooltip="Audit Control"
                     >
                         <ShieldCheck className="w-5 h-5" />
+                    </div>
+
+                    <div className="w-8 border-t border-hairline my-1" />
+
+                    <div 
+                        onClick={handleLogout} 
+                        className="p-2 rounded-md cursor-pointer transition-colors text-ink-faint hover:text-rose-500 hover:bg-rose-50" 
+                        data-tooltip="Logout / Terminate Session"
+                    >
+                        <LogOut className="w-5 h-5" />
                     </div>
                 </div>
             </aside>

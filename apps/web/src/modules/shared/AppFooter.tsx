@@ -23,11 +23,6 @@ export const AppFooter: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-6">
-                {features.enable_auth && isAuthenticated && user && (
-                    <span className="flex items-center gap-2 bg-slate-50 px-2 py-0.5 rounded border border-slate-100">
-                        Agent: <span className="text-emerald-600">{user.name}</span>
-                    </span>
-                )}
                 <span className="text-slate-300 font-bold tracking-tighter uppercase">© Grew Energy Private Limited</span>
             </div>
         </div>
