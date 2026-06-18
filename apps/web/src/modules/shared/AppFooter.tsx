@@ -28,7 +28,7 @@ export const AppFooter: React.FC = () => {
                         Agent: <span className="text-emerald-600">{user.name}</span>
                     </span>
                 )}
-                <span className="text-slate-300 font-bold tracking-tighter uppercase">(C) Grew Energy Pvt Ltd.</span>
+                <span className="text-slate-300 font-bold tracking-tighter uppercase">© Grew Energy Private Limited</span>
             </div>
         </div>
     );
