@@ -5,7 +5,7 @@ export function useVelocityChartConfig(mode: string, filters: any, privacyMode: 
         responsive: true,
         maintainAspectRatio: false,
         onClick: handleChartClick,
-        layout: { padding: { top: 20, right: 0, left: 0, bottom: 20 } },
+        layout: { padding: { top: 20, right: 0, left: 0, bottom: 5 } },
         interaction: { mode: 'index' as const, intersect: false },
         animation: {
             duration: 400,
