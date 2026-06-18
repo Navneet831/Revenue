@@ -71,7 +71,10 @@ app.get('/api/features', (req, res) => {
             : FEATURES.story,
         commitDrilldown: process.env.FEATURE_COMMIT_DRILLDOWN !== undefined
             ? process.env.FEATURE_COMMIT_DRILLDOWN === 'true'
-            : FEATURES.commitDrilldown
+            : FEATURES.commitDrilldown,
+        enable_auth: process.env.FEATURE_ENABLE_AUTH !== undefined
+            ? process.env.FEATURE_ENABLE_AUTH === 'true'
+            : FEATURES.enable_auth
     });
 });
 

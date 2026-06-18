@@ -2,6 +2,7 @@ export const FEATURES = {
     agentation: false,
     story: true,
     commitDrilldown: false,
+    enable_auth: true,
 };
 
 /**
