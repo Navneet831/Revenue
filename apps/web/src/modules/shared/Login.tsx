@@ -13,15 +13,24 @@ export const Login: React.FC = () => {
         // Typewriter effect
         const text = "Analytics";
         let i = 0;
-        const timer = setInterval(() => {
+        const typeTimer = setInterval(() => {
             if (i < text.length) {
                 setTypewriterText(text.substring(0, i + 1));
                 i++;
             } else {
-                clearInterval(timer);
+                clearInterval(typeTimer);
             }
         }, 150);
-        return () => clearInterval(timer);
+
+        // Auto-show UI after loader
+        const uiTimer = setTimeout(() => {
+            setShowUI(true);
+        }, 1500);
+
+        return () => {
+            clearInterval(typeTimer);
+            clearTimeout(uiTimer);
+        };
     }, []);
 
     const handleLogin = (e: React.FormEvent) => {
