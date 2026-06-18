@@ -32,7 +32,7 @@ export interface AppState {
     activeApp: 'REVENUE' | 'INVENTORY' | 'LOGISTICS';
     activeMainView: 'DASHBOARD' | 'LEDGER' | 'AUDIT';
     unviewedStories: boolean;
-    user: { name: string } | null;
+    user: { name: string; features?: Record<string, boolean> } | null;
     isAuthenticated: boolean;
     features: {
         agentation: boolean;
@@ -67,7 +67,7 @@ export interface AppState {
     setInsightsSeen: (seen: boolean) => void;
     setUnviewedStories: (unviewed: boolean) => void;
     setActiveMainView: (view: 'DASHBOARD' | 'LEDGER' | 'AUDIT') => void;
-    setUser: (user: { name: string } | null) => void;
+    setUser: (user: { name: string; features?: Record<string, boolean> } | null) => void;
     setAuthenticated: (auth: boolean) => void;
     setActiveApp: (app: 'REVENUE' | 'INVENTORY' | 'LOGISTICS') => void;
     setFeatures: (features: AppState['features']) => void;

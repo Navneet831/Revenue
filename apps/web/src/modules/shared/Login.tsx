@@ -23,28 +23,28 @@ export const Login: React.FC = () => {
         if (!email) return;
 
         try {
+            // Give a small delay in case the Postgres trigger is still inserting the new user row
+            await new Promise(resolve => setTimeout(resolve, 500));
+
             const { data, error } = await supabase
                 .from('access_whitelist')
-                .select('email')
-                .ilike('email', email);
+                .select('email, features')
+                .ilike('email', email)
+                .single();
 
-            if (error) {
-                console.error("Whitelist check failed (table missing?):", error);
+            if (error || !data) {
+                console.warn(`Unauthorized or pending access attempt by: ${email}`);
                 await supabase.auth.signOut();
-                showNotification('error', 'System Configuration Error: access_whitelist table is missing or inaccessible in Supabase.');
+                showNotification('error', `ACCESS DENIED. The email address (${email}) could not be verified.`);
                 setShowUI(true);
                 return;
             }
 
-            if (!data || data.length === 0) {
-                console.warn(`Unauthorized access attempt by: ${email}`);
-                await supabase.auth.signOut();
-                showNotification('error', `ACCESS DENIED. The email address (${email}) is not authorized.`);
-                setShowUI(true);
-                return;
-            }
-
-            setUser({ name: email });
+            // Set user and their specific features
+            setUser({ 
+                name: email, 
+                features: data.features || { dashboard: true, ledger: true, audit: true } 
+            });
             setAuthenticated(true);
         } catch (err: any) {
             console.error('Critical verification error:', err);
