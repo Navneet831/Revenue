@@ -61,7 +61,7 @@ export const KpiGrid: React.FC = () => {
         : `ANCHOR · ${toDateLabel} ${metricSuffix}`;
 
     return (
-        <div className="flex w-full gap-3 pb-2 overflow-x-auto no-scrollbar" data-lenis-prevent="true">
+        <div className="flex flex-1 gap-3 pb-2 overflow-x-auto no-scrollbar min-w-0" data-lenis-prevent="true">
             <KpiCard
                 id="w-kpi-today"
                 title={periodLabel}
@@ -108,16 +108,6 @@ export const KpiGrid: React.FC = () => {
                 detailOpen={activeKpiDetail === 'ytd'}
                 onToggleDetail={() => handleToggleDetail('ytd')}
                 breakdown={kpi.ytdBreakdown}
-            />
-
-            <KpiCard
-                id="w-kpi-pending"
-                title={`PENDING ${metricSuffix}`}
-                value={kpi.pending}
-                iconName="truck"
-                isInteractive={true}
-                onToggleDetail={handlePendingToggle}
-                breakdown={kpi.pendingBreakdown}
             />
         </div>
     );

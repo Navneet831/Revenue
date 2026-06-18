@@ -30,10 +30,15 @@ export interface AppState {
     stats: AnalyticalOutput | null;
     insightsSeen: boolean;
     activeApp: 'REVENUE' | 'INVENTORY' | 'LOGISTICS';
+    activeMainView: 'DASHBOARD' | 'LEDGER' | 'AUDIT';
+    unviewedStories: boolean;
+    user: { name: string } | null;
+    isAuthenticated: boolean;
     features: {
         agentation: boolean;
         story: boolean;
         commitDrilldown: boolean;
+        enable_auth: boolean;
     };
 
     // Actions
@@ -60,6 +65,10 @@ export interface AppState {
     setColorRegistry: (registry: AppState['COLOR_REGISTRY']) => void;
     setStats: (stats: AnalyticalOutput | null) => void;
     setInsightsSeen: (seen: boolean) => void;
+    setUnviewedStories: (unviewed: boolean) => void;
+    setActiveMainView: (view: 'DASHBOARD' | 'LEDGER' | 'AUDIT') => void;
+    setUser: (user: { name: string } | null) => void;
+    setAuthenticated: (auth: boolean) => void;
     setActiveApp: (app: 'REVENUE' | 'INVENTORY' | 'LOGISTICS') => void;
     setFeatures: (features: AppState['features']) => void;
 }
@@ -106,10 +115,15 @@ export const useStore = create<AppState>((set) => ({
     stats: null,
     insightsSeen: true,
     activeApp: 'REVENUE',
+    activeMainView: 'DASHBOARD',
+    unviewedStories: true,
+    user: null,
+    isAuthenticated: false,
     features: {
         agentation: false,
         story: false,
-        commitDrilldown: true
+        commitDrilldown: true,
+        enable_auth: false
     },
 
     // Actions
@@ -178,6 +192,10 @@ export const useStore = create<AppState>((set) => ({
     setColorRegistry: (COLOR_REGISTRY) => set({ COLOR_REGISTRY }),
     setStats: (stats) => set({ stats }),
     setInsightsSeen: (insightsSeen) => set({ insightsSeen }),
+    setUnviewedStories: (unviewedStories) => set({ unviewedStories }),
+    setActiveMainView: (activeMainView) => set({ activeMainView }),
+    setUser: (user) => set({ user }),
+    setAuthenticated: (isAuthenticated) => set({ isAuthenticated }),
     setActiveApp: (activeApp) => set({ activeApp }),
     setFeatures: (features) => set({ features })
 }));

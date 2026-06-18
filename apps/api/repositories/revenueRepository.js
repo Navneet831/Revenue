@@ -52,9 +52,13 @@ export class RevenueRepository {
         // Filter to company DOI (2022-12-25) onward to reduce payload size and load time.
         const query = `
             SELECT ${EXCEL_DATE_EXPR} AS "Invoice date",
-                   "Taxable Value", "MW", "SalesQty",
-                   "Segment", "Sales Head", "Cust_name", "Module WP",
-                   "Revenue", "UnitPrice"
+                   "Invoice No", "Invoice Type", "Cust_code", "Cust_name",
+                   "Segment", "Sales Head", "Module WP", "Material Code",
+                   "Mat Desc", "HSN CODE/SAC Code", "SalesQty", "UnitPrice",
+                   "Taxable Value", "CGST Amount", "SGST Amount", "IGST Amount",
+                   "Net Value", "UOM", "Plant", "Storage Location", "Vehicle No.",
+                   "S.O.Number", "Incoterms", "Invoice Status", "Revenue", "Eway Expiry",
+                   "MW"
             FROM public.revenue
             WHERE ${MIN_DATE_EXPR}`;
         const start = Date.now();

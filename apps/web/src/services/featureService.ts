@@ -4,6 +4,7 @@ export interface AppFeatures {
     agentation: boolean;
     story: boolean;
     commitDrilldown: boolean;
+    enable_auth: boolean;
 }
 
 export class FeatureService {
@@ -17,7 +18,8 @@ export class FeatureService {
             return {
                 agentation: false,
                 story: false,
-                commitDrilldown: true
+                commitDrilldown: true,
+                enable_auth: false
             };
         }
     }

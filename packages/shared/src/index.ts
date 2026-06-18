@@ -172,6 +172,24 @@ export interface KeyMap {
     unitprice: string;
     custname: string;
     wp: string;
+    invoiceNo: string;
+    invoiceType: string;
+    custCode: string;
+    materialCode: string;
+    matDesc: string;
+    hsn: string;
+    cgst: string;
+    sgst: string;
+    igst: string;
+    netValue: string;
+    uom: string;
+    plant: string;
+    sloc: string;
+    vehicleNo: string;
+    soNumber: string;
+    incoterms: string;
+    invoiceStatus: string;
+    ewayExpiry: string;
 }
 
 export interface RevenueRow {
@@ -191,6 +209,24 @@ export interface RevenueRow {
     wp: string;
     revenueStatus: string;
     isPending: boolean;
+    invoiceNo: string;
+    invoiceType: string;
+    custCode: string;
+    materialCode: string;
+    matDesc: string;
+    hsn: string;
+    cgst: number;
+    sgst: number;
+    igst: number;
+    netValue: number;
+    uom: string;
+    plant: string;
+    sloc: string;
+    vehicleNo: string;
+    soNumber: string;
+    incoterms: string;
+    invoiceStatus: string;
+    ewayExpiry: string;
 }
 
 export interface FilterConfig {
@@ -283,6 +319,7 @@ export interface AnalyticalOutput {
     kpiQty: number;
     realization: number;
     isOnlySolar: boolean;
+    dailySeries?: Array<{ date: string; val: number; mw: number; qty: number }>;
 }
 
 export const CONFIG: ConfigType = {
@@ -452,7 +489,25 @@ export class DataSanitizer {
             mw: find('mw') || 'MW',
             unitprice: find('unitprice') || 'UnitPrice',
             custname: find('custname') || find('custname') || 'Cust_name',
-            wp: find('modulewp') || find('wp') || 'Module WP'
+            wp: find('modulewp') || find('wp') || 'Module WP',
+            invoiceNo: find('invoiceno') || find('invoice') || 'Invoice No',
+            invoiceType: find('invoicetype') || 'Invoice Type',
+            custCode: find('custcode') || 'Cust_code',
+            materialCode: find('materialcode') || 'Material Code',
+            matDesc: find('matdesc') || 'Mat Desc',
+            hsn: find('hsncode') || find('hsn') || 'HSN CODE/SAC Code',
+            cgst: find('cgstamount') || 'CGST Amount',
+            sgst: find('sgstamount') || 'SGST Amount',
+            igst: find('igstamount') || 'IGST Amount',
+            netValue: find('netvalue') || 'Net Value',
+            uom: find('uom') || 'UOM',
+            plant: find('plant') || 'Plant',
+            sloc: find('storagelocation') || find('sloc') || 'Storage Location',
+            vehicleNo: find('vehicleno') || 'Vehicle No.',
+            soNumber: find('sonumber') || 'S.O.Number',
+            incoterms: find('incoterms') || 'Incoterms',
+            invoiceStatus: find('invoicestatus') || 'Invoice Status',
+            ewayExpiry: find('ewayexpiry') || 'Eway Expiry'
         };
     }
 
@@ -511,7 +566,25 @@ export class DataSanitizer {
                 customer: String(row[km.custname] || 'Unidentified'),
                 wp: wpStr,
                 revenueStatus: revenueRaw,
-                isPending: isPending
+                isPending: isPending,
+                invoiceNo: String(row[km.invoiceNo] || ''),
+                invoiceType: String(row[km.invoiceType] || ''),
+                custCode: String(row[km.custCode] || ''),
+                materialCode: String(row[km.materialCode] || ''),
+                matDesc: String(row[km.matDesc] || ''),
+                hsn: String(row[km.hsn] || ''),
+                cgst: Number(row[km.cgst]) || 0,
+                sgst: Number(row[km.sgst]) || 0,
+                igst: Number(row[km.igst]) || 0,
+                netValue: Number(row[km.netValue]) || 0,
+                uom: String(row[km.uom] || ''),
+                plant: String(row[km.plant] || ''),
+                sloc: String(row[km.sloc] || ''),
+                vehicleNo: String(row[km.vehicleNo] || ''),
+                soNumber: String(row[km.soNumber] || ''),
+                incoterms: String(row[km.incoterms] || ''),
+                invoiceStatus: String(row[km.invoiceStatus] || ''),
+                ewayExpiry: String(row[km.ewayExpiry] || '')
             };
         } catch (e) {
             console.error('[DataSanitizer] Fatal error during row sanitization:', e);
