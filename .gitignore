@@ -28,7 +28,6 @@ __pycache__/
 *$py.class
 *.so
 .Python
-env/
 venv/
 .venv/
 develop-eggs/
@@ -79,7 +78,10 @@ check_duckdb_date.py
 check_pg_date.py
 test-results/
 coverage/
+
+# Local environment files
 .env*
+.env
 
 # graphify knowledge-graph artifacts (regenerate with: python -m graphify update apps)
 graphify-out/
