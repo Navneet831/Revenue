@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useStore } from '@/store/useStore';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { AnalyticsApi, analyticsKey } from '@/services/analyticsService';
 
 const META_KEY = ['revenue-meta'];
@@ -13,8 +13,23 @@ const META_KEY = ['revenue-meta'];
  */
 export function useSectionData(_sectionName: string) {
     const { stats, activeApp, filters } = useStore();
+    const queryClient = useQueryClient();
 
     const ready = activeApp === 'REVENUE' && !!filters.startDate && !!filters.endDate;
+
+    // HMR support: invalidate cache on hot reload so fresh data loads on file change
+    useEffect(() => {
+        const handleHMR = () => {
+            queryClient.invalidateQueries({ queryKey: META_KEY });
+            queryClient.invalidateQueries({ queryKey: ['revenue-analytics'] });
+        };
+
+        // Listen for Vite HMR updates
+        if (import.meta.hot) {
+            import.meta.hot.on('vite:beforeUpdate', handleHMR);
+            return () => import.meta.hot?.off('vite:beforeUpdate', handleHMR);
+        }
+    }, [queryClient]);
 
     // Shared bootstrap query (deduped with RevenueDashboard) — its failure means
     // the whole feed is down, which must degrade sections rather than spin forever.
