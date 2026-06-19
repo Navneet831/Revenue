@@ -12,6 +12,24 @@ export interface RevenueRawRecord {
     unitprice: number;
     custname: string;
     wp: string;
+    invoiceNo: string;
+    invoiceType: string;
+    custCode: string;
+    materialCode: string;
+    matDesc: string;
+    hsn: string;
+    cgst: number;
+    sgst: number;
+    igst: number;
+    netValue: number;
+    uom: string;
+    plant: string;
+    sloc: string;
+    vehicleNo: string;
+    soNumber: string;
+    incoterms: string;
+    invoiceStatus: string;
+    ewayExpiry: string;
 }
 
 /**

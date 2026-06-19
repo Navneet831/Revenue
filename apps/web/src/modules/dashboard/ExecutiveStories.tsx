@@ -4,7 +4,7 @@ import { useStore } from '@/store/useStore';
 import { Insight, Format } from '@revenue/shared';
 
 export const ExecutiveStories: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
-    const { stats } = useStore();
+    const { stats, setUnviewedStories } = useStore();
     const [currentIndex, setCurrentIndex] = useState(0);
     const [progress, setProgress] = useState(0);
     const timerRef = useRef<any>(null);
@@ -12,6 +12,11 @@ export const ExecutiveStories: React.FC<{ isOpen: boolean; onClose: () => void }
 
     const stories = (stats?.storyInsights || []); // Top 5 McKinsey Insights
 
+    useEffect(() => {
+        if (isOpen) {
+            setUnviewedStories(false);
+        }
+    }, [isOpen, setUnviewedStories]);
     useEffect(() => {
         const handleEsc = (e: KeyboardEvent) => {
             if (e.key === 'Escape' && isOpen) onClose();

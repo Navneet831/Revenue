@@ -121,7 +121,23 @@ export const AnalyticsService = {
         if (stats.kpi && stats.kpi.periodActiveKeys instanceof Set) {
             stats.kpi.periodActiveKeys = Array.from(stats.kpi.periodActiveKeys);
         }
+
+        // Aggregate rawFiltered by date → compact daily totals for the sidebar panel.
+        const dailyMap = new Map();
+        for (const r of stats.rawFiltered || []) {
+            const dateStr = r.date.toLocaleDateString('sv-SE'); // YYYY-MM-DD
+            const existing = dailyMap.get(dateStr) || { val: 0, mw: 0, qty: 0 };
+            dailyMap.set(dateStr, {
+                val: existing.val + (r.val || 0),
+                mw: existing.mw + (r.mw || 0),
+                qty: existing.qty + (r.qty || 0),
+            });
+        }
+        const dailySeries = Array.from(dailyMap.entries())
+            .sort((a, b) => b[0].localeCompare(a[0]))
+            .map(([date, agg]) => ({ date, ...agg }));
+
         const { rawFiltered, ...slim } = stats;
-        return { ...slim, storyInsights };
+        return { ...slim, storyInsights, dailySeries };
     }
 };

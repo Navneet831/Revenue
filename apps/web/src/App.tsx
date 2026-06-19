@@ -6,10 +6,14 @@ import { SectionBoundary } from './modules/shared/SectionBoundary';
 import { ModulePlaceholder } from './modules/shared/ModulePlaceholder';
 import { MODULE_REGISTRY } from './modules/registry';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
-import { HelpModal } from './modules/shared/HelpModal';
 import { GlobalTooltip } from './modules/shared/GlobalTooltip';
 import { CommitDrilldown } from './modules/shared/CommitDrilldown';
 import { FeatureService } from './services/featureService';
+import { AppFooter } from './modules/shared/AppFooter';
+import { AuditView } from './modules/shared/AuditView';
+import { TransactionLedger } from './modules/shared/TransactionLedger';
+import { Login } from './modules/shared/Login';
+import { ExecutiveStories } from './modules/dashboard/ExecutiveStories';
 
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean; error: Error | null }> {
     constructor(props: any) {
@@ -33,8 +37,6 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
     }
 }
 
-// Agent-feedback toolbar (bottom-right) — enabled per user request.
-// Click the toolbar, then click any element to annotate it and copy structured output.
 const AgentationToolbar = React.lazy(() => import('agentation').then((m) => ({ default: m.Agentation })));
 
 const ModuleLoading: React.FC<{ label: string }> = ({ label }) => (
@@ -44,16 +46,16 @@ const ModuleLoading: React.FC<{ label: string }> = ({ label }) => (
     </div>
 );
 
-/**
- * APPLICATION SHELL
- * Owns identity (auth/logout), global navigation, and module mounting.
- * Domain logic lives inside the bounded contexts listed in MODULE_REGISTRY —
- * the shell mounts exactly one active context and isolates its failures.
- */
 export const App: React.FC = () => {
-    const { updateUIState, activeApp, setFeatures, features } = useStore();
-
-    const [helpOpen, setHelpOpen] = useState(false);
+    const { 
+        updateUIState, 
+        activeApp, 
+        setFeatures, 
+        features, 
+        isAuthenticated, 
+        activeMainView,
+        ui
+    } = useStore();
 
     useEffect(() => {
         const boot = async () => {
@@ -71,7 +73,14 @@ export const App: React.FC = () => {
         boot();
     }, [setFeatures]);
 
-    useKeyboardShortcuts(() => setHelpOpen(true));
+    useKeyboardShortcuts(() => {
+        // If they use the shortcut, maybe toggle to audit or open stories
+        updateUIState({ storiesOpen: true });
+    });
+
+    if (features.enable_auth && !isAuthenticated) {
+        return <Login />;
+    }
 
     const activeModule = MODULE_REGISTRY[activeApp];
 
@@ -80,10 +89,14 @@ export const App: React.FC = () => {
             <div className="w-screen h-screen relative flex flex-col bg-white overflow-hidden">
                 <div id="core-app" className="flex-1 flex w-full relative overflow-hidden font-sans antialiased text-[11px] font-medium tracking-wide text-slate-900">
                     <div className="flex h-full w-full relative select-none overflow-hidden">
-                        <GlobalSidebar onOpenHelp={() => setHelpOpen(true)} onOpenStories={() => updateUIState({ storiesOpen: true })} />
+                        <GlobalSidebar onOpenStories={() => updateUIState({ storiesOpen: true })} />
 
-                        <main className="flex-1 flex flex-col min-w-0 bg-white relative z-20 overflow-y-auto">
-                            {activeModule?.Component ? (
+                        <main className="flex-1 flex flex-col min-w-0 bg-white relative z-20 overflow-hidden">
+                            {activeMainView === 'AUDIT' ? (
+                                <AuditView />
+                            ) : activeMainView === 'LEDGER' ? (
+                                <TransactionLedger />
+                            ) : activeModule?.Component ? (
                                 <SectionBoundary name={activeModule.label} className="m-4 flex-1">
                                     <Suspense fallback={<ModuleLoading label={activeModule.label} />}>
                                         <activeModule.Component />
@@ -96,9 +109,13 @@ export const App: React.FC = () => {
                     </div>
 
                     <GlobalTooltip />
-                    <HelpModal isOpen={helpOpen} onClose={() => setHelpOpen(false)} />
+                    {features.story && ui.storiesOpen && (
+                        <ExecutiveStories isOpen={ui.storiesOpen} onClose={() => updateUIState({ storiesOpen: false })} />
+                    )}
                     {features.commitDrilldown && <CommitDrilldown />}
                 </div>
+
+                <AppFooter />
 
                 {features.agentation && AgentationToolbar && (
                     <Suspense fallback={null}>

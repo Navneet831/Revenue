@@ -1,0 +1,173 @@
+import React, { memo, useMemo, useState } from 'react';
+import { useStore } from '@/store/useStore';
+import { ChevronDown, ChevronRight } from 'lucide-react';
+
+const CURRENCY_DIVIDER = 10_000_000;
+
+function fmtCompact(val: number, qty: number, mw: number, metric: string, privacy: boolean): string {
+    if (privacy) return '••••';
+    if (metric === 'Amount') {
+        const cr = val / CURRENCY_DIVIDER;
+        return cr >= 100
+            ? cr.toFixed(0)
+            : cr >= 10
+            ? cr.toFixed(1)
+            : cr.toFixed(2);
+    }
+    if (metric === 'MW') {
+        return mw >= 100 ? mw.toFixed(0) : mw >= 10 ? mw.toFixed(1) : mw.toFixed(2);
+    }
+    return qty >= 1000
+        ? Math.round(qty).toLocaleString('en-IN')
+        : String(Math.round(qty));
+}
+
+function fmtDate(dateStr: string): string {
+    const [, m, d] = dateStr.split('-');
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `${parseInt(d, 10)} ${months[parseInt(m, 10) - 1]}`;
+}
+
+export const DailySalesPanel: React.FC = memo(() => {
+    const { stats, filters, privacyMode } = useStore();
+    const [expandedWeeks, setExpandedWeeks] = useState<Record<string, boolean>>({});
+    const [isConsolidated, setIsConsolidated] = useState(false);
+
+    const series = stats?.dailySeries;
+
+    const metric = filters.metric || 'Amount';
+    const unitLabel = metric === 'Amount' ? '₹ Cr' : metric === 'MW' ? 'MW' : 'Qty';
+
+    const toggleWeek = (weekKey: string) => {
+        if (isConsolidated) return;
+        setExpandedWeeks(prev => ({
+            ...prev,
+            [weekKey]: !prev[weekKey]
+        }));
+    };
+
+    // Group by week (day of month: 1-7 is Week 1)
+    const weeklyData = useMemo(() => {
+        if (!series || series.length === 0) return [];
+
+        const groups: Record<string, { val: number; mw: number; qty: number; start: string; end: string; weekNum: number; days: any[] }> = {};
+
+        series.forEach((d) => {
+            const date = new Date(d.date);
+            const dayOfMonth = date.getDate();
+            const weekNum = Math.min(Math.ceil(dayOfMonth / 7), 5);
+            const monthStr = d.date.slice(0, 7); // YYYY-MM
+            const weekKey = `${monthStr}-W${weekNum}`;
+
+            if (!groups[weekKey]) {
+                groups[weekKey] = { val: 0, mw: 0, qty: 0, start: d.date, end: d.date, weekNum, days: [] };
+            }
+            groups[weekKey].val += d.val;
+            groups[weekKey].mw += d.mw;
+            groups[weekKey].qty += d.qty;
+            if (d.date < groups[weekKey].start) groups[weekKey].start = d.date;
+            if (d.date > groups[weekKey].end) groups[weekKey].end = d.date;
+            groups[weekKey].days.push(d);
+        });
+
+        const sorted = Object.values(groups).sort((a, b) => b.start.localeCompare(a.start));
+        sorted.forEach(w => {
+            w.days.sort((a, b) => b.date.localeCompare(a.date));
+        });
+        return sorted;
+    }, [series]);
+
+    // For consolidated view, we could also group across the year if they want 52 weeks,
+    // but the data here is filtered by the date range selector anyway.
+    // "consolidated week wise sales in a year without any date"
+    // The current data already respects the active filter.
+    // We'll just show the Week Num + Month (if year view is selected, there could be multiple Week 1s).
+    // Let's refine the label if consolidated.
+    const getWeekLabel = (w: any) => {
+        if (isConsolidated) {
+            const m = parseInt(w.start.split('-')[1], 10);
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            return `W${w.weekNum} ${months[m - 1]}`;
+        }
+        return `Week ${w.weekNum}`;
+    };
+
+    if (!series || series.length === 0) return null;
+
+    return (
+        <div
+            className="shrink-0 flex flex-col bg-white border border-hairline rounded-2xl overflow-hidden shadow-sm h-full"
+            style={{ width: '162px' }}
+        >
+            {/* column headers */}
+            <div className="flex items-center justify-between px-2.5 pt-2 pb-1 shrink-0 bg-canvas-soft/20 border-b border-hairline">
+                <span 
+                    onClick={() => setIsConsolidated(!isConsolidated)}
+                    className="text-[9px] font-bold text-ink-faint uppercase tracking-widest cursor-pointer hover:text-emerald-600 transition-colors"
+                    data-tooltip="Toggle Consolidated View"
+                >
+                    {isConsolidated ? "Consolidated" : "Daily Sales"}
+                </span>
+                <span className="text-[9px] font-bold text-primary/70 uppercase tracking-widest">{unitLabel}</span>
+            </div>
+
+            {/* scrollable rows */}
+            <div className="flex-1 overflow-y-auto min-h-0 no-scrollbar pb-4">
+                {weeklyData.map((w: any) => {
+                    const isExpanded = !isConsolidated && expandedWeeks[w.start] !== false; // Default to expanded unless consolidated
+                    return (
+                        <div key={`${w.start}-${w.weekNum}`} className="flex flex-col">
+                            {/* Week Header */}
+                            <div 
+                                onClick={() => toggleWeek(w.start)}
+                                className={`flex items-center justify-between px-2.5 py-2 bg-canvas-soft/40 border-b border-hairline/60 ${isConsolidated ? '' : 'cursor-pointer hover:bg-canvas-soft transition-colors'} group`}
+                            >
+                                <div className="flex items-center gap-1.5 min-w-0">
+                                    {!isConsolidated && (
+                                        <div className="shrink-0">
+                                            {isExpanded ? (
+                                                <ChevronDown className="w-3 h-3 text-ink-faint group-hover:text-ink transition-colors" />
+                                            ) : (
+                                                <ChevronRight className="w-3 h-3 text-ink-faint group-hover:text-ink transition-colors" />
+                                            )}
+                                        </div>
+                                    )}
+                                    <div className="flex flex-col min-w-0">
+                                        <span className="text-[9px] font-black text-ink-secondary tracking-tighter uppercase leading-none truncate">
+                                            {getWeekLabel(w)}
+                                        </span>
+                                        {!isConsolidated && (
+                                            <span className="text-[7px] text-ink-faint font-mono tracking-tighter mt-0.5 truncate">
+                                                {fmtDate(w.start)} - {fmtDate(w.end)}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                                <span className="text-[10px] font-black font-mono text-emerald-600 tabular-nums shrink-0 ml-1">
+                                    {fmtCompact(w.val, w.qty, w.mw, metric, privacyMode)}
+                                </span>
+                            </div>
+                            {/* Days */}
+                            {isExpanded && !isConsolidated && w.days.map((d: any) => {
+                                const isSunday = new Date(d.date).getDay() === 0;
+                                return (
+                                    <div
+                                        key={d.date}
+                                        className="flex items-center justify-between px-2.5 py-1 hover:bg-canvas-soft/30 transition-colors"
+                                    >
+                                        <span className={`text-[10px] font-mono tabular-nums ${isSunday ? 'text-ink-faint/60' : 'text-ink-mute'}`}>
+                                            {fmtDate(d.date)}
+                                        </span>
+                                        <span className={`text-[10px] font-bold font-mono tabular-nums ${isSunday ? 'text-ink-faint/60' : 'text-ink-secondary'}`}>
+                                            {fmtCompact(d.val, d.qty, d.mw, metric, privacyMode)}
+                                        </span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+});

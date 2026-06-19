@@ -7,6 +7,7 @@ import { useSectionData } from '@/hooks/useSectionData';
 import { IntelligenceBoardIcon } from '@/assets/CustomIcons';
 import { LayoutDashboard, PieChart, AlertTriangle, RotateCcw } from 'lucide-react';
 import { KpiGrid } from './KpiGrid';
+import { DailySalesPanel } from './DailySalesPanel';
 import { RevenueMatrix } from './RevenueMatrix';
 import { MatrixHeader } from './MatrixHeader';
 import { DetailLists } from './DetailLists';
@@ -135,56 +136,46 @@ export const RevenueDashboard: React.FC = () => {
                 </SectionBoundary>
             </div>
 
-            <div className="flex-1 px-3 pb-3 flex flex-col gap-4 w-full">
-                <div id="w-master" className="w-full bg-white rounded-xl border border-hairline flex flex-col overflow-hidden relative shrink-0 shadow-sm" style={{ height: '320px' }}>
-                    <div className="chart-noise-layer opacity-[0.02]" />
-                    <div className="p-1 px-3 border-b border-hairline bg-canvas-soft/40 flex justify-between items-center z-50 shrink-0 h-9">
-                        <div className="flex items-center gap-2 overflow-hidden flex-1">
-                            <div className="flex items-center shrink-0">
-                                <LayoutDashboard className="w-3.5 h-3.5 text-emerald-600 mr-2" />
-                                <span className="text-[10px] font-bold text-black uppercase tracking-tight whitespace-nowrap">{cardViews.master === 'visual' ? 'Velocity' : 'Matrix'}</span>
+            <div className="flex-1 px-3 pb-3 flex flex-row gap-4 w-full min-h-0">
+                <div className="flex-1 flex flex-col gap-4 min-w-0">
+                    <div id="w-master" className="w-full bg-white rounded-xl border border-hairline flex flex-col overflow-hidden relative shrink-0 shadow-sm" style={{ height: '320px' }}>
+                        <div className="chart-noise-layer opacity-[0.02]" />
+                        <div className="p-1 px-3 border-b border-hairline bg-canvas-soft/40 flex justify-between items-center z-50 shrink-0 h-9">
+                            <div className="flex items-center gap-2 overflow-hidden flex-1">
+                                <div className="flex items-center shrink-0">
+                                    <LayoutDashboard className="w-3.5 h-3.5 text-emerald-600 mr-2" />
+                                    <span className="text-[10px] font-bold text-black uppercase tracking-tight whitespace-nowrap">{cardViews.master === 'visual' ? 'Velocity' : 'Matrix'}</span>
+                                </div>
+                                <SkuLegend />
                             </div>
-                            <SkuLegend />
+                            <div className="flex items-center gap-3 shrink-0 ml-2">
+                                {cardViews.master === 'visual' && (['Daily', 'Weekly', 'Monthly', 'Quarterly'] as const).map((tMode) => (
+                                    <button key={tMode} onClick={() => updateFilters({ velocityMode: tMode })} className={`px-2 py-0.5 rounded-full text-[11px] font-medium transition-all ${filters.velocityMode === tMode ? 'bg-[#3ecf8e] text-[#171717]' : 'text-[#9a9a9a] hover:text-[#171717]'}`}>{tMode[0]}</button>
+                                ))}
+                                <button data-tooltip="Toggle Matrix/Velocity View" onClick={() => setCardView('master', cardViews.master === 'visual' ? 'tabular' : 'visual')} className="p-1 px-2 bg-white text-[#707070] hover:text-[#171717] border border-[#dfdfdf] rounded-md transition-colors">
+                                    {cardViews.master === 'visual' ? <LayoutDashboard className="w-3.5 h-3.5" /> : <PieChart className="w-3.5 h-3.5" />}
+                                </button>
+                            </div>
                         </div>
-                        <div className="flex items-center gap-3 shrink-0 ml-2">
-                            {cardViews.master === 'visual' && (['Daily', 'Weekly', 'Monthly', 'Quarterly'] as const).map((tMode) => (
-                                <button key={tMode} onClick={() => updateFilters({ velocityMode: tMode })} className={`px-2 py-0.5 rounded-full text-[11px] font-medium transition-all ${filters.velocityMode === tMode ? 'bg-[#3ecf8e] text-[#171717]' : 'text-[#9a9a9a] hover:text-[#171717]'}`}>{tMode[0]}</button>
-                            ))}
-                            <button data-tooltip="Toggle Matrix/Velocity View" onClick={() => setCardView('master', cardViews.master === 'visual' ? 'tabular' : 'visual')} className="p-1 px-2 bg-white text-[#707070] hover:text-[#171717] border border-[#dfdfdf] rounded-md transition-colors">
-                                {cardViews.master === 'visual' ? <LayoutDashboard className="w-3.5 h-3.5" /> : <PieChart className="w-3.5 h-3.5" />}
-                            </button>
+                        <div className="flex-1 flex flex-col min-h-0">
+                            <MatrixHeader />
+                            <div className="flex-1 relative min-h-0">
+                                <SectionBoundary name="Velocity Engine" className="h-full">
+                                    {cardViews.master === 'visual' ? <VelocityChart /> : <RevenueMatrix />}
+                                </SectionBoundary>
+                            </div>
                         </div>
                     </div>
-                    <div className="flex-1 flex flex-col min-h-0">
-                        <MatrixHeader />
-                        <div className="flex-1 relative min-h-0">
-                            <SectionBoundary name="Velocity Engine" className="h-full">
-                                {cardViews.master === 'visual' ? <VelocityChart /> : <RevenueMatrix />}
-                            </SectionBoundary>
-                        </div>
+                    <div className="w-full min-h-0">
+                        <SectionBoundary name="Detail Lists">
+                            <DetailLists />
+                        </SectionBoundary>
                     </div>
                 </div>
-                <div className="w-full min-h-0">
-                    <SectionBoundary name="Detail Lists">
-                        <DetailLists />
-                    </SectionBoundary>
+                <div className="shrink-0 flex flex-col">
+                    <DailySalesPanel />
                 </div>
             </div>
-
-            <footer className="shrink-0 mt-auto border-t border-hairline bg-canvas px-4 py-2 flex items-center justify-between gap-3 text-[13px] text-ink-mute">
-                <span className="font-medium tabular-nums">
-                    Last updated on{' '}
-                    <span className="text-ink-secondary font-semibold">
-                        {latestDate
-                            ? latestDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
-                            : '—'}
-                    </span>
-                </span>
-                <span className="hidden sm:inline font-mono tracking-tight text-ink-faint truncate">
-                    Source: public.revenue · {(govStats.total || 0).toLocaleString('en-IN')} records · figures in ₹
-                </span>
-                <span className="font-medium whitespace-nowrap">© Grew Energy Private Limited</span>
-            </footer>
 
             {features.story && (
                 <Suspense fallback={null}>
