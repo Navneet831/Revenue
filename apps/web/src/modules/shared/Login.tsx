@@ -112,7 +112,7 @@ export const Login: React.FC = () => {
                     // Access is controlled by the whitelist table — not by pre-existence in auth.users.
                     // shouldCreateUser: false was silently dropping magic links for unregistered emails.
                     shouldCreateUser: true,
-                    emailRedirectTo: window.location.origin + '/auth/callback',
+                    emailRedirectTo: 'http://127.0.0.1:8000/auth/callback',
                 }
             });
             if (error) throw error;
@@ -141,7 +141,7 @@ export const Login: React.FC = () => {
         try {
             const { error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
-                options: { redirectTo: window.location.origin + '/auth/callback' }
+                options: { redirectTo: 'http://127.0.0.1:8000/auth/callback' }
             });
             if (error) throw error;
         } catch (err: any) {
