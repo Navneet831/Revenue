@@ -137,7 +137,6 @@ export const AnalyticsService = {
             .sort((a, b) => b[0].localeCompare(a[0]))
             .map(([date, agg]) => ({ date, ...agg }));
 
-        const { rawFiltered, ...slim } = stats;
-        return { ...slim, storyInsights, dailySeries };
+        return { ...stats, storyInsights, dailySeries };
     }
 };

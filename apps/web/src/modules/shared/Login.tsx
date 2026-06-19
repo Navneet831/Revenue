@@ -4,7 +4,7 @@ import { Mail, User, ShieldAlert, CheckCircle2, RefreshCcw } from 'lucide-react'
 import { supabase } from '@revenue/services/supabaseClient';
 
 export const Login: React.FC = () => {
-    const { setUser, setAuthenticated } = useStore();
+    const { setUser, setAuthenticated, setFeatures } = useStore();
     const [email, setEmail] = useState('');
     const [linkSent, setLinkSent] = useState(false);
     const [sentTo, setSentTo] = useState('');
@@ -40,11 +40,30 @@ export const Login: React.FC = () => {
                 return;
             }
 
-            // Set user and their specific features
-            setUser({ 
-                name: email, 
-                features: data.features || { dashboard: true, ledger: true, audit: true } 
+            // Raw JSONB from access_whitelist — key names are the canonical source of truth.
+            // If the column is null (pre-existing row), fall back to basic view-only access.
+            const uf: Record<string, boolean> = data.features || {
+                dashboard: true, ledger: true, audit: true,
+            };
+
+            // A feature is active only if its key is explicitly present AND true.
+            // Missing key = false (no implicit grant).
+            const userHas = (key: string): boolean => !!uf[key];
+
+            setUser({ name: email, features: uf });
+
+            // Merge user flags into the global feature flags so every gate in the
+            // app uses a single source of truth. Global flag must also be true —
+            // the features table controls whether a capability exists at all;
+            // the whitelist controls per-user access to it.
+            const global = useStore.getState().features;
+            setFeatures({
+                enable_auth:     global.enable_auth,
+                story:           global.story           && userHas('story'),
+                agentation:      global.agentation      && userHas('Agentation'),
+                commitDrilldown: global.commitDrilldown && userHas('Commit Drilldown'),
             });
+
             setAuthenticated(true);
         } catch (err: any) {
             console.error('Critical verification error:', err);
@@ -55,15 +74,6 @@ export const Login: React.FC = () => {
     };
 
     useEffect(() => {
-        // Restore session on mount
-        const checkSession = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session) {
-                await verifyWhitelistAndSetUser(session);
-            }
-        };
-        checkSession();
-
         const { data: authListener } = supabase.auth.onAuthStateChange(
             async (event, session) => {
                 if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session) {
@@ -141,7 +151,12 @@ export const Login: React.FC = () => {
         try {
             const { error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
-                options: { redirectTo: 'http://127.0.0.1:8000/auth/callback' }
+                options: { 
+                    redirectTo: 'http://127.0.0.1:8000/auth/callback',
+                    queryParams: {
+                        prompt: 'select_account'
+                    }
+                }
             });
             if (error) throw error;
         } catch (err: any) {

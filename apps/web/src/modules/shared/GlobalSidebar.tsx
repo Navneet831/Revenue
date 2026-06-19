@@ -1,6 +1,7 @@
 import React from 'react';
 import { Terminal, Layers, BookOpen, TableProperties, ShieldCheck, LogOut } from 'lucide-react';
 import { useStore } from '@revenue/store/useStore';
+import { supabase } from '@revenue/services/supabaseClient';
 import { SolarModuleIcon, InternalIcon, RMIcon, ScrapIcon } from '../../assets/CustomIcons';
 
 interface GlobalSidebarProps {
@@ -20,7 +21,8 @@ export const GlobalSidebar: React.FC<GlobalSidebarProps> = ({ onOpenHelp, onOpen
         activeMainView,
         setActiveMainView,
         setUser,
-        setAuthenticated
+        setAuthenticated,
+        user
     } = useStore();
 
     const filteredSegments = allSegments.filter((s) => {
@@ -73,7 +75,8 @@ export const GlobalSidebar: React.FC<GlobalSidebarProps> = ({ onOpenHelp, onOpen
         }
     };
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
+        await supabase.auth.signOut();
         setUser(null);
         setAuthenticated(false);
     };
@@ -101,7 +104,7 @@ export const GlobalSidebar: React.FC<GlobalSidebarProps> = ({ onOpenHelp, onOpen
                 </div>
 
                 {/* App Specific items (Segments) */}
-                <div className="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar bg-transparent flex flex-col items-center py-6 w-full gap-3">
+                <div className="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar bg-transparent flex flex-col items-center py-3 w-full gap-2">
                     {activeApp === 'REVENUE' && activeMainView === 'DASHBOARD' && sortedSegments.map((s) => {
                         const isSelected = filters.segment.includes(s);
                         const sLower = s.toLowerCase();
@@ -125,7 +128,7 @@ export const GlobalSidebar: React.FC<GlobalSidebarProps> = ({ onOpenHelp, onOpen
                                 key={s}
                                 onClick={(e) => handleSegmentClick(s, e)}
                                 role="button"
-                                className={`flex items-center justify-center p-2.5 rounded-xl transition-all duration-200 outline-none cursor-pointer ${activeCls}`}
+                                className={`flex items-center justify-center p-2 rounded-xl transition-all duration-200 outline-none cursor-pointer ${activeCls}`}
                                 data-tooltip={s}
                             >
                                 {IconComp}
@@ -135,28 +138,32 @@ export const GlobalSidebar: React.FC<GlobalSidebarProps> = ({ onOpenHelp, onOpen
                 </div>
 
                 {/* Bottom Actions */}
-                <div className="shrink-0 flex flex-col items-center pb-4 gap-4 border-t border-hairline pt-4 bg-canvas/50">
-                    <div 
-                        onClick={() => setActiveMainView('LEDGER')} 
-                        className={`p-2 rounded-md cursor-pointer transition-colors ${activeMainView === 'LEDGER' ? 'text-emerald-600 bg-emerald-50' : 'text-ink-faint hover:text-ink'}`} 
-                        data-tooltip="Transaction Ledger"
-                    >
-                        <TableProperties className="w-5 h-5" />
-                    </div>
+                <div className="shrink-0 flex flex-col items-center pb-3 gap-2 border-t border-hairline pt-3 bg-canvas/50">
+                    {(!user || user.features?.ledger === true) && (
+                        <div 
+                            onClick={() => setActiveMainView('LEDGER')} 
+                            className={`p-1.5 rounded-md cursor-pointer transition-colors ${activeMainView === 'LEDGER' ? 'text-emerald-600 bg-emerald-50' : 'text-ink-faint hover:text-ink'}`} 
+                            data-tooltip="Transaction Ledger"
+                        >
+                            <TableProperties className="w-5 h-5" />
+                        </div>
+                    )}
 
-                    <div 
-                        onClick={() => setActiveMainView('AUDIT')} 
-                        className={`p-2 rounded-md cursor-pointer transition-colors ${activeMainView === 'AUDIT' ? 'text-amber-600 bg-amber-50' : 'text-ink-faint hover:text-ink'}`} 
-                        data-tooltip="Audit Control"
-                    >
-                        <ShieldCheck className="w-5 h-5" />
-                    </div>
+                    {(!user || user.features?.audit === true) && (
+                        <div 
+                            onClick={() => setActiveMainView('AUDIT')} 
+                            className={`p-1.5 rounded-md cursor-pointer transition-colors ${activeMainView === 'AUDIT' ? 'text-amber-600 bg-amber-50' : 'text-ink-faint hover:text-ink'}`} 
+                            data-tooltip="Audit Control"
+                        >
+                            <ShieldCheck className="w-5 h-5" />
+                        </div>
+                    )}
 
-                    <div className="w-8 border-t border-hairline my-1" />
+                    <div className="w-8 border-t border-hairline my-0.5" />
 
                     <div 
                         onClick={handleLogout} 
-                        className="p-2 rounded-md cursor-pointer transition-colors text-ink-faint hover:text-rose-500 hover:bg-rose-50" 
+                        className="p-1.5 rounded-md cursor-pointer transition-colors text-ink-faint hover:text-rose-500 hover:bg-rose-50" 
                         data-tooltip="Logout / Terminate Session"
                     >
                         <LogOut className="w-5 h-5" />

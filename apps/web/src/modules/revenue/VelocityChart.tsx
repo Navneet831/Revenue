@@ -67,16 +67,35 @@ export const VelocityChart: React.FC = memo(() => {
                     });
                 }
             } else if (mode === 'Weekly') {
-                const wIdx = clickedLabel.includes('W') ? parseInt(clickedLabel.replace('W', '')) : idx + 1;
-                updateFilters({
-                    selectedWeek: filters.selectedWeek === wIdx ? null : wIdx,
-                    selectedDay: null
-                });
+                if (clickedLabel.includes(' ')) {
+                    const [mName, wStr] = clickedLabel.split(' ');
+                    const wIdx = parseInt(wStr.replace('W', ''));
+                    updateFilters({
+                        matrixMonth: mName,
+                        selectedWeek: wIdx,
+                        selectedDay: null
+                    });
+                } else {
+                    const wIdx = clickedLabel.includes('W') ? parseInt(clickedLabel.replace('W', '')) : idx + 1;
+                    updateFilters({
+                        selectedWeek: filters.selectedWeek === wIdx ? null : wIdx,
+                        selectedDay: null
+                    });
+                }
             } else if (mode === 'Daily') {
-                const dIdx = parseInt(clickedLabel);
-                updateFilters({
-                    selectedDay: filters.selectedDay === dIdx ? null : dIdx
-                });
+                if (clickedLabel.includes(' ')) {
+                    const [mName, dStr] = clickedLabel.split(' ');
+                    const dIdx = parseInt(dStr);
+                    updateFilters({
+                        matrixMonth: mName,
+                        selectedDay: dIdx
+                    });
+                } else {
+                    const dIdx = parseInt(clickedLabel);
+                    updateFilters({
+                        selectedDay: filters.selectedDay === dIdx ? null : dIdx
+                    });
+                }
             }
         }
     };
@@ -142,29 +161,64 @@ export const VelocityChart: React.FC = memo(() => {
                 });
             }
         });
-    } else if (mode === 'Weekly' && buckets.chart.weekly && activeMatrixMonth) {
-        const weekObj = (buckets.chart.weekly as any)[activeMatrixMonth] || {};
-        const weeks = Object.keys(weekObj).map(Number).sort((a, b) => a - b);
-        labels = weeks.map((w) => `W${w}`);
-        weeks.forEach((w, wIdx) => {
-            const dataObj = weekObj[w] || {};
-            Object.entries(dataObj as any).forEach(([seriesKey, val]: any) => {
-                validKeys.add(seriesKey);
-                if (!datasetsMap[seriesKey]) datasetsMap[seriesKey] = Array(weeks.length).fill(0);
-                datasetsMap[seriesKey][wIdx] = val;
+    } else if (mode === 'Weekly' && buckets.chart.weekly) {
+        if (activeMatrixMonth) {
+            const weekObj = (buckets.chart.weekly as any)[activeMatrixMonth] || {};
+            const weeks = Object.keys(weekObj).map(Number).sort((a, b) => a - b);
+            labels = weeks.map((w) => `W${w}`);
+            weeks.forEach((w, wIdx) => {
+                const dataObj = weekObj[w] || {};
+                Object.entries(dataObj as any).forEach(([seriesKey, val]: any) => {
+                    validKeys.add(seriesKey);
+                    if (!datasetsMap[seriesKey]) datasetsMap[seriesKey] = Array(weeks.length).fill(0);
+                    datasetsMap[seriesKey][wIdx] = val;
+                });
             });
-        });
-    } else if (mode === 'Daily' && buckets.chart.daily && activeMatrixMonth) {
-        const days = (buckets.chart.daily as any)[activeMatrixMonth] || [];
-        labels = days.map((_: any, dIdx: number) => String(dIdx + 1));
-        days.forEach((dataObj: any, dIdx: number) => {
-            if (!dataObj) return;
-            Object.entries(dataObj as any).forEach(([seriesKey, val]: any) => {
-                validKeys.add(seriesKey);
-                if (!datasetsMap[seriesKey]) datasetsMap[seriesKey] = Array(days.length).fill(0);
-                datasetsMap[seriesKey][dIdx] = val;
+        } else {
+            // Consolidated Year view: sum of all week 1s, week 2s, etc. across all months
+            labels = ['W1', 'W2', 'W3', 'W4', 'W5'];
+            const weeks = [1, 2, 3, 4, 5];
+            weeks.forEach((w, wIdx) => {
+                CONFIG.FISCAL_MONTHS.forEach((mName) => {
+                    const weekObj = (buckets.chart.weekly as any)[mName] || {};
+                    const dataObj = weekObj[w] || {};
+                    Object.entries(dataObj as any).forEach(([seriesKey, val]: any) => {
+                        validKeys.add(seriesKey);
+                        if (!datasetsMap[seriesKey]) datasetsMap[seriesKey] = Array(5).fill(0);
+                        datasetsMap[seriesKey][wIdx] += val;
+                    });
+                });
             });
-        });
+        }
+    } else if (mode === 'Daily' && buckets.chart.daily) {
+        if (activeMatrixMonth) {
+            const days = (buckets.chart.daily as any)[activeMatrixMonth] || [];
+            labels = days.map((_: any, dIdx: number) => String(dIdx + 1));
+            days.forEach((dataObj: any, dIdx: number) => {
+                if (!dataObj) return;
+                Object.entries(dataObj as any).forEach(([seriesKey, val]: any) => {
+                    validKeys.add(seriesKey);
+                    if (!datasetsMap[seriesKey]) datasetsMap[seriesKey] = Array(days.length).fill(0);
+                    datasetsMap[seriesKey][dIdx] = val;
+                });
+            });
+        } else {
+            // Consolidated Year view: sum of all day 1s, day 2s, etc. across all months
+            labels = Array.from({ length: 31 }, (_, i) => String(i + 1));
+            const dayIndices = Array.from({ length: 31 }, (_, i) => i);
+            dayIndices.forEach((dIdx) => {
+                CONFIG.FISCAL_MONTHS.forEach((mName) => {
+                    const days = (buckets.chart.daily as any)[mName] || [];
+                    const dataObj = days[dIdx];
+                    if (!dataObj) return;
+                    Object.entries(dataObj as any).forEach(([seriesKey, val]: any) => {
+                        validKeys.add(seriesKey);
+                        if (!datasetsMap[seriesKey]) datasetsMap[seriesKey] = Array(31).fill(0);
+                        datasetsMap[seriesKey][dIdx] += val;
+                    });
+                });
+            });
+        }
     }
 
     const datasets: any[] = Array.from(validKeys)
@@ -217,7 +271,7 @@ export const VelocityChart: React.FC = memo(() => {
         <div className="h-full w-full relative bg-white flex flex-col min-h-0">
             <div className="chart-noise-layer opacity-[0.02]" />
             {expandedId === 'w-master' && <ZoomResetButton onReset={resetZoom} />}
-            {activeMatrixMonth && (mode === 'Weekly' || mode === 'Daily') && <ModeIndicator month={activeMatrixMonth} mode={mode} />}
+            {(mode === 'Weekly' || mode === 'Daily') && <ModeIndicator month={activeMatrixMonth || 'Full Year'} mode={mode} />}
             <div className="flex-1 min-h-0 relative w-full z-10 select-none mt-1 pb-1">
                 <Suspense fallback={<div className="w-full h-full flex items-center justify-center text-ink-mute font-mono text-[10px]">Loading Analytics...</div>}>
                     <ChartCore

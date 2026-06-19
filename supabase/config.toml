@@ -1,0 +1,16 @@
+project_id = "zqbciwvyxgjoprsetbgw"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[auth]
+enabled = true
+site_url = "http://127.0.0.1:8000"
+additional_redirect_urls = []
+
+[functions.revenue-data]
+verify_jwt = true

@@ -54,7 +54,8 @@ export const App: React.FC = () => {
         features, 
         isAuthenticated, 
         activeMainView,
-        ui
+        ui,
+        user
     } = useStore();
 
     useEffect(() => {
@@ -91,10 +92,10 @@ export const App: React.FC = () => {
                     <div className="flex h-full w-full relative select-none overflow-hidden">
                         <GlobalSidebar onOpenStories={() => updateUIState({ storiesOpen: true })} />
 
-                        <main className="flex-1 flex flex-col min-w-0 bg-white relative z-20 overflow-hidden">
-                            {activeMainView === 'AUDIT' ? (
+                        <main className="flex-1 flex flex-col min-w-0 bg-white relative z-20 overflow-y-auto">
+                            {activeMainView === 'AUDIT' && (!user || user.features?.audit === true) ? (
                                 <AuditView />
-                            ) : activeMainView === 'LEDGER' ? (
+                            ) : activeMainView === 'LEDGER' && (!user || user.features?.ledger === true) ? (
                                 <TransactionLedger />
                             ) : activeModule?.Component ? (
                                 <SectionBoundary name={activeModule.label} className="m-4 flex-1">

@@ -42,7 +42,7 @@ export const DetailLists: React.FC<DetailListsProps> = ({ onToggleExpand, expand
     if (!isReady || !stats) return null;
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-3 w-full" style={{ minHeight: '320px' }}>
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-3 w-full h-full" style={{ minHeight: '320px' }}>
             {/* Widget 2: Sales Head — cols 1-4 */}
             <div className="md:col-span-4 flex flex-col">
                 <ListCard

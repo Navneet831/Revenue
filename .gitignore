@@ -10,12 +10,12 @@ package-lock.json
 .env.development.local
 .env.test.local
 .env.production.local
-*.env
 # Build outputs
 dist/
 build/
 .next/
 out/
+dist_staging/
 # Logs
 npm-debug.log*
 yarn-debug.log*
@@ -111,4 +111,6 @@ out/
 *.temp
 *.log
 debug.log
-.gemini/
+.gemini
+.claude
+.antigravitycli/

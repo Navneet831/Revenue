@@ -130,13 +130,13 @@ export const RevenueDashboard: React.FC = () => {
                 </div>
             )}
 
-            <div className="p-3 shrink-0">
+            <div className="px-3 pt-3 shrink-0">
                 <SectionBoundary name="KPI Governance">
                     <KpiGrid />
                 </SectionBoundary>
             </div>
 
-            <div className="flex-1 px-3 pb-3 flex flex-row gap-4 w-full min-h-0">
+            <div className="flex-1 p-3 flex flex-row gap-4 w-full min-h-0 animate-in fade-in duration-300">
                 <div className="flex-1 flex flex-col gap-4 min-w-0">
                     <div id="w-master" className="w-full bg-white rounded-xl border border-hairline flex flex-col overflow-hidden relative shrink-0 shadow-sm" style={{ height: '320px' }}>
                         <div className="chart-noise-layer opacity-[0.02]" />
@@ -166,15 +166,13 @@ export const RevenueDashboard: React.FC = () => {
                             </div>
                         </div>
                     </div>
-                    <div className="w-full min-h-0">
+                    <div className="w-full min-h-0 flex-1 flex flex-col">
                         <SectionBoundary name="Detail Lists">
                             <DetailLists />
                         </SectionBoundary>
                     </div>
                 </div>
-                <div className="shrink-0 flex flex-col">
-                    <DailySalesPanel />
-                </div>
+                <DailySalesPanel />
             </div>
 
             {features.story && (

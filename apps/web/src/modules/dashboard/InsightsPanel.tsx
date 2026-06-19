@@ -4,7 +4,7 @@ import { useStore } from '@revenue/store/useStore';
 import { IntelligenceBoardIcon } from '../../assets/CustomIcons';
 
 export const InsightsPanel: React.FC = () => {
-    const { stats, ui, updateUIState, insightsSeen, setInsightsSeen } = useStore();
+    const { stats, ui, updateUIState, insightsSeen, setInsightsSeen, features } = useStore();
 
     const handleClose = () => {
         updateUIState({ insightsOpen: false });
@@ -64,15 +64,17 @@ export const InsightsPanel: React.FC = () => {
                     </div>
                     
                     <div className="flex items-center gap-2">
-                        {/* Executive Story Trigger inside Panel */}
-                        <button 
-                            onClick={() => updateUIState({ storiesOpen: true })}
-                            className="p-1.5 px-3 bg-emerald-50 border border-emerald-100 rounded-lg text-emerald-600 hover:bg-emerald-100 transition-all flex items-center gap-2 cursor-pointer group shadow-sm"
-                            title="Play Data Story"
-                        >
-                            <PlayCircle className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                            <span className="text-[9px] font-black uppercase tracking-widest">Story</span>
-                        </button>
+                        {/* Executive Story Trigger — only shown when user has story permission */}
+                        {features.story && (
+                            <button
+                                onClick={() => updateUIState({ storiesOpen: true })}
+                                className="p-1.5 px-3 bg-emerald-50 border border-emerald-100 rounded-lg text-emerald-600 hover:bg-emerald-100 transition-all flex items-center gap-2 cursor-pointer group shadow-sm"
+                                title="Play Data Story"
+                            >
+                                <PlayCircle className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                                <span className="text-[9px] font-black uppercase tracking-widest">Story</span>
+                            </button>
+                        )}
 
                         <button
                             onClick={handleClose}

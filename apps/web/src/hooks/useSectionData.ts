@@ -57,6 +57,9 @@ export function useSectionData(_sectionName: string) {
     useEffect(() => {
         if (data && useStore.getState().stats !== data) {
             useStore.getState().setStats(data);
+            if (data.rawFiltered) {
+                useStore.getState().setData(data.rawFiltered);
+            }
         }
     }, [data]);
 

@@ -1,7 +1,7 @@
 import Logger from '../../../monitoring/logging/index.js';
 import * as Metrics from '../../../monitoring/metrics/index.js';
 import Cache from '../services/cache.js';
-import { pool, RevenueRepository } from '../repositories/revenueRepository.js';
+import { RevenueRepository } from '../repositories/revenueRepository.js';
 import { AnalyticsService } from '../services/analyticsService.js';
 
 // Bootstrap metadata (dates, filter dimensions, record count) for the client.
@@ -116,73 +116,147 @@ export const getRevenueSummary = async (req, res) => {
             return;
         }
 
-        // "Invoice date" is stored as an Excel serial bigint.
-        // Compare against the serial equivalent of the supplied date strings so
-        // the integer comparison can use an index rather than converting every row.
-        let queryParams = [startDate, endDate];
-        let whereClauses = [
-            `"Invoice date" BETWEEN ($1::date - DATE '1899-12-30') AND ($2::date - DATE '1899-12-30')`
-        ];
-        let paramIndex = 3;
+        // Fetch all rows from Repository (which retrieves from Supabase Edge Function)
+        const allRows = await RevenueRepository.findAll();
 
-        if (segments.length > 0) {
-            const placeholders = segments.map(() => `$${paramIndex++}`).join(', ');
-            whereClauses.push(`"Segment" IN (${placeholders})`);
-            queryParams.push(...segments);
-        }
+        const startMs = new Date(startDate).getTime();
+        const endMs = new Date(endDate).getTime();
 
-        if (salesHeads.length > 0) {
-            const placeholders = salesHeads.map(() => `$${paramIndex++}`).join(', ');
-            whereClauses.push(`("Sales Head" IN (${placeholders}) OR "Sales Head" IS NULL)`);
-            queryParams.push(...salesHeads);
-        }
+        // Filter rows based on start date, end date, and other query filters
+        const baseRows = allRows.filter(row => {
+            const date = row["Invoice date"];
+            if (!date) return false;
+            const dateMs = date.getTime();
+            if (dateMs < startMs || dateMs > endMs) return false;
 
-        if (customers.length > 0) {
-            const placeholders = customers.map(() => `$${paramIndex++}`).join(', ');
-            whereClauses.push(`"Cust_name" IN (${placeholders})`);
-            queryParams.push(...customers);
-        }
+            if (segments.length > 0 && !segments.includes(row["Segment"])) return false;
+            
+            if (salesHeads.length > 0) {
+                const sh = row["Sales Head"];
+                if (!salesHeads.includes(sh) && !(salesHeads.includes('Direct/Unmapped') && !sh)) {
+                    return false;
+                }
+            }
 
-        if (excluded.length > 0) {
-            const placeholders = excluded.map(() => `$${paramIndex++}`).join(', ');
-            whereClauses.push(`COALESCE("Module WP"::text, 'Generic') NOT IN (${placeholders})`);
-            queryParams.push(...excluded);
-        }
+            if (customers.length > 0 && !customers.includes(row["Cust_name"])) return false;
 
-        // base = date + segment/salesHead/customer/excludeWp (NO pending dimension).
-        // view = base + pending predicate. Default view EXCLUDES pending (matches the
-        // engine's `!isPending` default); pendingOnly shows ONLY pending.
-        const baseSql = whereClauses.join(' AND ');
-        const pendingPred = pendingOnly
-            ? `LOWER("Revenue") LIKE '%pending%'`
-            : `LOWER("Revenue") NOT LIKE '%pending%'`;
-        const whereSql = `${baseSql} AND ${pendingPred}`;
+            if (excluded.length > 0) {
+                const wp = row["Module WP"] || 'Generic';
+                if (excluded.includes(String(wp))) return false;
+            }
 
-        const [kpiResult, pendingResult, segmentResult, salesHeadResult, customerResult, wpResult, monthlyResult] = await Promise.all([
-            pool.query(`SELECT COALESCE(SUM("Taxable Value"), 0) as total_val, COALESCE(SUM("MW"), 0) as total_mw, COALESCE(SUM("SalesQty"), 0) as total_qty FROM public.revenue WHERE ${whereSql}`, queryParams),
-            pool.query(`SELECT COALESCE(SUM(CASE WHEN LOWER("Revenue") LIKE '%pending%' THEN "Taxable Value" ELSE 0 END), 0) as pending_val FROM public.revenue WHERE ${baseSql}`, queryParams),
-            pool.query(`SELECT "Segment" as name, COALESCE(SUM("Taxable Value"), 0) as val, COALESCE(SUM("MW"), 0) as mw, COALESCE(SUM("SalesQty"), 0) as qty FROM public.revenue WHERE ${whereSql} GROUP BY "Segment" ORDER BY val DESC`, queryParams),
-            pool.query(`SELECT COALESCE("Sales Head", 'Direct/Unmapped') as name, COALESCE(SUM("Taxable Value"), 0) as val, COALESCE(SUM("MW"), 0) as mw, COALESCE(SUM("SalesQty"), 0) as qty FROM public.revenue WHERE ${whereSql} GROUP BY "Sales Head" ORDER BY val DESC`, queryParams),
-            pool.query(`SELECT COALESCE("Cust_name", 'Unidentified') as name, COALESCE(SUM("Taxable Value"), 0) as val, COALESCE(SUM("MW"), 0) as mw, COALESCE(SUM("SalesQty"), 0) as qty FROM public.revenue WHERE ${whereSql} GROUP BY "Cust_name" ORDER BY val DESC LIMIT 20`, queryParams),
-            pool.query(`SELECT COALESCE("Module WP"::text, 'Generic') as name, COALESCE(SUM("Taxable Value"), 0) as val, COALESCE(SUM("MW"), 0) as mw, COALESCE(SUM("SalesQty"), 0) as qty FROM public.revenue WHERE ${whereSql} GROUP BY "Module WP" ORDER BY val DESC`, queryParams),
-            pool.query(`SELECT TO_CHAR((DATE '1899-12-30' + "Invoice date" * INTERVAL '1 day')::date, 'Mon') as month_name, EXTRACT(MONTH FROM (DATE '1899-12-30' + "Invoice date" * INTERVAL '1 day')::date) as month_idx, COALESCE(SUM("Taxable Value"), 0) as val, COALESCE(SUM("MW"), 0) as mw, COALESCE(SUM("SalesQty"), 0) as qty FROM public.revenue WHERE ${whereSql} GROUP BY month_name, month_idx ORDER BY month_idx`, queryParams)
-        ]);
+            return true;
+        });
 
-        const totals = kpiResult.rows[0];
+        const isPendingRow = (row) => {
+            const rev = String(row["Revenue"] || '').toLowerCase();
+            return rev.includes('pending');
+        };
+
+        const viewRows = baseRows.filter(row => {
+            const pending = isPendingRow(row);
+            return pendingOnly ? pending : !pending;
+        });
+
+        // Compute KPIs
+        let total_val = 0;
+        let total_mw = 0;
+        let total_qty = 0;
+        viewRows.forEach(row => {
+            total_val += parseFloat(row["Taxable Value"] || 0);
+            total_mw += parseFloat(row["MW"] || 0);
+            total_qty += parseFloat(row["SalesQty"] || 0);
+        });
+
+        let pending_val = 0;
+        baseRows.forEach(row => {
+            if (isPendingRow(row)) {
+                pending_val += parseFloat(row["Taxable Value"] || 0);
+            }
+        });
+
+        // Compute Breakdowns
+        const segmentMap = {};
+        const salesHeadMap = {};
+        const customerMap = {};
+        const wpMap = {};
+        const monthlyMap = {};
+
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+        viewRows.forEach(row => {
+            const val = parseFloat(row["Taxable Value"] || 0);
+            const mw = parseFloat(row["MW"] || 0);
+            const qty = parseFloat(row["SalesQty"] || 0);
+
+            // Segment
+            const seg = row["Segment"] || '';
+            if (seg) {
+                if (!segmentMap[seg]) segmentMap[seg] = { val: 0, mw: 0, qty: 0 };
+                segmentMap[seg].val += val;
+                segmentMap[seg].mw += mw;
+                segmentMap[seg].qty += qty;
+            }
+
+            // Sales Head
+            const sh = row["Sales Head"] || 'Direct/Unmapped';
+            if (!salesHeadMap[sh]) salesHeadMap[sh] = { val: 0, mw: 0, qty: 0 };
+            salesHeadMap[sh].val += val;
+            salesHeadMap[sh].mw += mw;
+            salesHeadMap[sh].qty += qty;
+
+            // Customer
+            const cust = row["Cust_name"] || 'Unidentified';
+            if (!customerMap[cust]) customerMap[cust] = { val: 0, mw: 0, qty: 0 };
+            customerMap[cust].val += val;
+            customerMap[cust].mw += mw;
+            customerMap[cust].qty += qty;
+
+            // WP
+            const wp = row["Module WP"] || 'Generic';
+            if (!wpMap[wp]) wpMap[wp] = { val: 0, mw: 0, qty: 0 };
+            wpMap[wp].val += val;
+            wpMap[wp].mw += mw;
+            wpMap[wp].qty += qty;
+
+            // Monthly
+            const date = row["Invoice date"];
+            if (date) {
+                const monthIdx = date.getMonth(); // 0-11
+                const monthName = months[monthIdx];
+                if (!monthlyMap[monthIdx]) monthlyMap[monthIdx] = { monthName, monthIdx: monthIdx + 1, val: 0, mw: 0, qty: 0 };
+                monthlyMap[monthIdx].val += val;
+                monthlyMap[monthIdx].mw += mw;
+                monthlyMap[monthIdx].qty += qty;
+            }
+        });
+
+        const segmentResult = Object.entries(segmentMap).map(([name, r]) => ({ name, ...r })).sort((a, b) => b.val - a.val);
+        const salesHeadResult = Object.entries(salesHeadMap).map(([name, r]) => ({ name, ...r })).sort((a, b) => b.val - a.val);
+        const customerResult = Object.entries(customerMap).map(([name, r]) => ({ name, ...r })).sort((a, b) => b.val - a.val).slice(0, 20);
+        const wpResult = Object.entries(wpMap).map(([name, r]) => ({ name, ...r })).sort((a, b) => b.val - a.val);
+        const monthlyResult = Object.values(monthlyMap).sort((a, b) => a.monthIdx - b.monthIdx);
+
         const payload = {
             totals: {
-                value: parseFloat(totals.total_val),
-                mw: parseFloat(totals.total_mw),
-                qty: parseFloat(totals.total_qty),
-                pendingValue: parseFloat(pendingResult.rows[0].pending_val)
+                value: total_val,
+                mw: total_mw,
+                qty: total_qty,
+                pendingValue: pending_val
             },
             breakdowns: {
-                segment: segmentResult.rows.map(r => ({ name: r.name, val: parseFloat(r.val), mw: parseFloat(r.mw), qty: parseFloat(r.qty) })),
-                salesHead: salesHeadResult.rows.map(r => ({ name: r.name, val: parseFloat(r.val), mw: parseFloat(r.mw), qty: parseFloat(r.qty) })),
-                customer: customerResult.rows.map(r => ({ name: r.name, val: parseFloat(r.val), mw: parseFloat(r.mw), qty: parseFloat(r.qty) })),
-                wp: wpResult.rows.map(r => ({ name: r.name, val: parseFloat(r.val), mw: parseFloat(r.mw), qty: parseFloat(r.qty) }))
+                segment: segmentResult,
+                salesHead: salesHeadResult,
+                customer: customerResult,
+                wp: wpResult
             },
-            monthlyTrend: monthlyResult.rows.map(r => ({ month: r.month_name, monthIdx: parseInt(r.month_idx), val: parseFloat(r.val), mw: parseFloat(r.mw), qty: parseFloat(r.qty) }))
+            monthlyTrend: monthlyResult.map(r => ({
+                month: r.monthName,
+                monthIdx: r.monthIdx,
+                val: r.val,
+                mw: r.mw,
+                qty: r.qty
+            }))
         };
 
         await Cache.set(cacheKey, payload, 300);

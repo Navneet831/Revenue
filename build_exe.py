@@ -36,6 +36,16 @@ DEV_PRUNE = [
     'nodemon',
     # internal caches & cruft
     '.cache', '.bin',
+    # non-runtime file types & directories (avoids Windows path length issues)
+    '*.d.ts', '*.ts', '*.tsx', '*.map', '*.md',
+    'test', 'tests', '__tests__', 'docs', 'examples',
+    '*.png', '*.jpg', '*.jpeg', '*.gif',
+    # frontend/client-only dependencies (not needed by backend API)
+    '@sentry', '@sentry-internal', '@tanstack', '@supabase',
+    'react', 'react-dom', 'react-chartjs-2', 'react-flatpickr', 'react-window',
+    'ag-grid-community', 'ag-grid-react', 'chart.js', 'chartjs-plugin-zoom',
+    'flatpickr', 'hammerjs', 'idb-keyval', 'lucide-react', 'zustand',
+    'agentation', 'autoprefixer', 'postcss', 'tailwindcss',
 ]
 
 
@@ -231,8 +241,9 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    console=True,
+    console=False,
     icon=['{ICON.as_posix()}'],
+    uac_admin=False,
 )
 coll = COLLECT(
     exe,

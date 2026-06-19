@@ -8,6 +8,10 @@ export default defineConfig({
     resolve: {
         alias: {
             '@': path.resolve(__dirname, './src'),
+            '@revenue/store': path.resolve(__dirname, './src/store'),
+            '@revenue/services': path.resolve(__dirname, './src/services'),
+            '@revenue/hooks': path.resolve(__dirname, './src/hooks'),
+            '@revenue/assets': path.resolve(__dirname, './src/assets'),
         },
     },
     // Production build output consumed by Express server.js

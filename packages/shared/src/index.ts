@@ -321,6 +321,7 @@ export interface AnalyticalOutput {
     realization: number;
     isOnlySolar: boolean;
     dailySeries?: Array<{ date: string; val: number; mw: number; qty: number }>;
+    ytdWeekly?: Array<{ val: number; mw: number; qty: number; weekNum: number }>;
 }
 
 export const CONFIG: ConfigType = {
@@ -720,7 +721,7 @@ export class RevenueComputeEngine {
 
         const curFY = DataSanitizer.parseFY(latestDate.getMonth(), latestDate.getFullYear());
         const currentSelectedFYStartYear = f.startDate
-            ? parseInt(new Date(f.startDate).getFullYear().toString())
+            ? parseInt(DataSanitizer.getFYStart(f.startDate).split('-')[0])
             : parseInt(curFY.split('-')[0]);
         const curFYStartYear = currentSelectedFYStartYear;
 
@@ -1167,6 +1168,43 @@ export class RevenueComputeEngine {
             });
         }
 
+        // Calculate YTD weekly totals (sum of all weeks in the current selected fiscal year up to filter's endDate/filterEndTime)
+        const ytdStartTime = new Date(curFYStartYear, 3, 1).getTime(); // April 1st
+        const ytdEndTime = filterEndTime;
+        const ytdRecords = this.indexer.getRange(ytdStartTime, ytdEndTime);
+
+        const ytdWeeklyGroups: Record<number, { val: number; mw: number; qty: number; weekNum: number }> = {
+            1: { val: 0, mw: 0, qty: 0, weekNum: 1 },
+            2: { val: 0, mw: 0, qty: 0, weekNum: 2 },
+            3: { val: 0, mw: 0, qty: 0, weekNum: 3 },
+            4: { val: 0, mw: 0, qty: 0, weekNum: 4 },
+            5: { val: 0, mw: 0, qty: 0, weekNum: 5 }
+        };
+
+        for (let j = 0; j < ytdRecords.length; j++) {
+            const r = ytdRecords[j];
+
+            if (segmentFilterSet.size > 0 && !segmentFilterSet.has(r.segment)) continue;
+
+            const isTargetState = f.pendingOnly ? r.isPending : !r.isPending;
+            if (!isTargetState) continue;
+
+            const plotKey = r.wp;
+            if (shFilterSet.size > 0 && !shFilterSet.has(r.salesHead)) continue;
+            if (custFilterSet.size > 0 && !custFilterSet.has(r.customer)) continue;
+            if (skuFilterSet.size > 0 && !skuFilterSet.has(r.wp)) continue;
+
+            const isExcluded = excludedSet.has(plotKey);
+            if (!isExcluded) {
+                if (r.week >= 1 && r.week <= 5) {
+                    ytdWeeklyGroups[r.week].val += r.val || 0;
+                    ytdWeeklyGroups[r.week].mw += r.mw || 0;
+                    ytdWeeklyGroups[r.week].qty += r.qty || 0;
+                }
+            }
+        }
+        const ytdWeekly = Object.values(ytdWeeklyGroups).sort((a, b) => a.weekNum - b.weekNum);
+
         return {
             kpi: kpi,
             prevYearMtd: prevYearMtd,
@@ -1189,7 +1227,8 @@ export class RevenueComputeEngine {
             kpiMW: kpiMW,
             kpiQty: kpiQty,
             realization: tMW > 0 ? tVal / CONFIG.CURRENCY_DIVIDER / tMW : 0,
-            isOnlySolar: isOnlySolar
+            isOnlySolar: isOnlySolar,
+            ytdWeekly: ytdWeekly
         };
     }
 }

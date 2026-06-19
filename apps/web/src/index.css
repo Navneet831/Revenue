@@ -563,3 +563,51 @@ span.flatpickr-weekday {
         width 0.6s cubic-bezier(0.4, 0, 0.2, 1),
         background 0.3s ease;
 }
+
+/* --- AG GRID EXCEL SPREADSHEET THEME OVERRIDES --- */
+.ag-theme-alpine {
+    --ag-header-background-color: #f1f5f9 !important; /* Excel-like grey header background */
+    --ag-header-foreground-color: #0f172a !important; /* Dark slate text */
+    --ag-border-color: #cbd5e1 !important; /* Cell borders like Excel */
+    --ag-row-border-color: #cbd5e1 !important;
+    --ag-odd-row-background-color: #ffffff !important;
+    --ag-font-size: 11px !important;
+    --ag-font-family: 'JetBrains Mono', 'Segoe UI', system-ui, sans-serif !important;
+    --ag-grid-size: 4px !important; /* Compact spreadsheet spacing */
+}
+
+/* Enable vertical lines for Excel look */
+.ag-theme-alpine .ag-cell {
+    border-right: 1px solid #cbd5e1 !important;
+}
+.ag-theme-alpine .ag-header-cell {
+    border-right: 1px solid #cbd5e1 !important;
+}
+.ag-theme-alpine .ag-header {
+    border-bottom: 2px solid #94a3b8 !important;
+}
+
+/* Excel-like menu buttons */
+.ag-theme-alpine .ag-header-cell-menu-button {
+    opacity: 0.65 !important;
+    margin-left: 4px !important;
+    transition: opacity 0.2s, background-color 0.2s;
+    border-radius: 4px;
+    padding: 2px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+.ag-theme-alpine .ag-header-cell-menu-button:hover {
+    opacity: 1 !important;
+    background-color: rgba(15, 23, 42, 0.08) !important;
+}
+
+/* Excel active filtered / sorted column highlights */
+.ag-theme-alpine .ag-header-cell-filtered {
+    background-color: rgba(16, 185, 129, 0.04) !important;
+}
+.ag-theme-alpine .ag-header-cell-sorted {
+    background-color: rgba(59, 130, 246, 0.02) !important;
+}
+

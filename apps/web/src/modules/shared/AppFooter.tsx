@@ -23,7 +23,7 @@ export const AppFooter: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-6">
-                <span className="text-slate-300 font-bold tracking-tighter uppercase">© Grew Energy Private Limited</span>
+                <span className="text-slate-400 font-bold tracking-tighter uppercase">© Grew Energy Private Limited</span>
             </div>
         </div>
     );

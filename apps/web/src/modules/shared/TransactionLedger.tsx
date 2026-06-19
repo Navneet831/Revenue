@@ -1,16 +1,46 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { AgGridReact } from 'ag-grid-react';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-alpine.css';
 import { useStore } from '@revenue/store/useStore';
-import { X, Download, Filter } from 'lucide-react';
-import { ColDef } from 'ag-grid-community';
+import { X, Download } from 'lucide-react';
+import { ColDef, GridReadyEvent } from 'ag-grid-community';
 
 export const TransactionLedger: React.FC = () => {
-    const { data, privacyMode } = useStore();
+    const { data, privacyMode, setActiveMainView } = useStore();
+    const [gridApi, setGridApi] = useState<any>(null);
+
+    const onGridReady = useCallback((params: GridReadyEvent) => {
+        setGridApi(params.api);
+    }, []);
+
+    const handleExport = useCallback(() => {
+        if (!gridApi) return;
+        const dateStr = new Date().toISOString().split('T')[0];
+        gridApi.exportDataAsCsv({
+            fileName: `GrewAnalytics_Revenue_Ledger_${dateStr}.csv`
+        });
+    }, [gridApi]);
+
+    // Custom Excel-like dropdown icon for the filter/column menu button
+    const icons = useMemo(() => ({
+        menu: `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" style="color: #475569;"><path d="m6 9 6 6 6-6"/></svg>`
+    }), []);
 
     const columnDefs = useMemo<ColDef[]>(() => [
-        { field: 'date', headerName: 'Date', sortable: true, filter: 'agDateColumnFilter', flex: 1, minWidth: 110 },
+        { 
+            field: 'date', 
+            headerName: 'Date', 
+            sortable: true, 
+            filter: 'agDateColumnFilter', 
+            flex: 1, 
+            minWidth: 110,
+            valueFormatter: (params) => {
+                if (!params.value) return '';
+                const d = new Date(params.value);
+                return isNaN(d.getTime()) ? params.value : d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+            }
+        },
         { field: 'invoiceNo', headerName: 'Invoice #', sortable: true, filter: 'agTextColumnFilter', flex: 1, minWidth: 120 },
         { field: 'invoiceType', headerName: 'Type', sortable: true, filter: 'agTextColumnFilter', flex: 0.8, minWidth: 100 },
         { field: 'customer', headerName: 'Customer', sortable: true, filter: 'agTextColumnFilter', flex: 1.5, minWidth: 200 },
@@ -85,7 +115,8 @@ export const TransactionLedger: React.FC = () => {
         floatingFilter: true,
         sortable: true,
         filter: true,
-        flex: 1
+        flex: 1,
+        unSortIcon: true
     }), []);
 
     return (
@@ -98,8 +129,19 @@ export const TransactionLedger: React.FC = () => {
                     <span className="text-[10px] text-slate-400 border-l border-slate-700 pl-3 ml-1">{data.length} Records Loaded</span>
                 </div>
                 <div className="flex items-center gap-4">
-                    <button className="flex items-center gap-2 text-[10px] font-bold hover:text-emerald-400 transition-colors">
+                    <button 
+                        onClick={handleExport}
+                        className="flex items-center gap-2 text-[10px] font-bold hover:text-emerald-400 transition-colors cursor-pointer"
+                    >
                         <Download className="w-3.5 h-3.5" /> Export Excel
+                    </button>
+                    <div className="w-px h-4 bg-slate-700 mx-1" />
+                    <button 
+                        onClick={() => setActiveMainView('DASHBOARD')}
+                        className="p-1 text-slate-400 hover:text-white hover:bg-slate-800 rounded-md transition-colors cursor-pointer"
+                        data-tooltip="Close Ledger"
+                    >
+                        <X className="w-4 h-4" />
                     </button>
                 </div>
             </div>
@@ -112,11 +154,13 @@ export const TransactionLedger: React.FC = () => {
                     defaultColDef={defaultColDef}
                     pagination={true}
                     paginationPageSize={100}
-                    rowHeight={32}
-                    headerHeight={36}
+                    rowHeight={28}
+                    headerHeight={32}
                     animateRows={true}
                     enableCellTextSelection={true}
-                    suppressMenuHide={false}
+                    suppressMenuHide={true}
+                    onGridReady={onGridReady}
+                    icons={icons}
                 />
             </div>
         </div>

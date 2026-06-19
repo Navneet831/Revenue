@@ -125,6 +125,7 @@ def main():
     env = build_env(data_root, exe_dir)
 
     try:
+        creationflags = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
         proc = subprocess.Popen(
             [node_exe, 'index.js'],
             cwd=str(backend_dir),
@@ -133,6 +134,7 @@ def main():
             stderr=subprocess.STDOUT,
             text=True,
             bufsize=1,
+            creationflags=creationflags,
         )
     except FileNotFoundError:
         print(f"ERROR: Node.js not found ({node_exe}). Install Node.js or re-run build_exe.py.")
@@ -151,10 +153,6 @@ def main():
         sys.exit(1)
 
     url = 'http://127.0.0.1:8000'
-    print(f"\nBackend ready  →  {url}")
-    print("Opening browser...\n")
-    webbrowser.open(url)
-    print("Press Ctrl+C to stop the server.\n")
 
     def shutdown(sig=None, frame=None):
         print("\nShutting down...")
@@ -166,16 +164,47 @@ def main():
         print("Done.")
         sys.exit(0)
 
-    signal.signal(signal.SIGINT,  shutdown)
-    signal.signal(signal.SIGTERM, shutdown)
-
+    # Use native OS WebView as the primary container
     try:
-        proc.wait()
-        print(f"\nBackend exited (code {proc.returncode}).")
-        input("Press Enter to exit...")
-        sys.exit(proc.returncode or 1)
-    except KeyboardInterrupt:
-        shutdown()
+        import webview
+        
+        # Resolve application icon path
+        app_icon = str(data_root / 'Logo.ico')
+        
+        # Initialize native Window
+        window = webview.create_window(
+            title='Grew Energy | Analytics', 
+            url=url, 
+            width=1280, 
+            height=800,
+            min_size=(1024, 768),
+            background_color='#0b101e'
+        )
+        
+        # When desktop window is closed, shut down the Node backend
+        window.events.closed += shutdown
+        
+        start_kwargs = {
+            'private_mode': False,
+        }
+        if os.path.exists(app_icon):
+            start_kwargs['icon'] = app_icon
+            
+        # Launch WebView
+        webview.start(**start_kwargs)
+        
+    except Exception as e:
+        # Failsafe: fall back to default system browser if webview is unavailable
+        print(f"WebView initialization failed: {e}. Falling back to default browser.")
+        webbrowser.open(url)
+        
+        signal.signal(signal.SIGINT,  shutdown)
+        signal.signal(signal.SIGTERM, shutdown)
+        
+        try:
+            proc.wait()
+        except KeyboardInterrupt:
+            shutdown()
 
 
 if __name__ == '__main__':

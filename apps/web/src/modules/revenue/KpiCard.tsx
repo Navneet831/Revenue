@@ -15,6 +15,8 @@ interface KpiCardProps {
     isInteractive?: boolean;
     detailOpen?: boolean;
     onToggleDetail?: () => void;
+    selectedWeek?: number | null;
+    onSelectWeek?: (weekNum: number) => void;
 }
 
 export const KpiCard: React.FC<KpiCardProps> = memo(({
@@ -25,9 +27,12 @@ export const KpiCard: React.FC<KpiCardProps> = memo(({
     compareLabel,
     compareValue,
     breakdown,
+    consolidated,
     isInteractive = false,
     detailOpen = false,
-    onToggleDetail
+    onToggleDetail,
+    selectedWeek,
+    onSelectWeek
 }) => {
     const { privacyMode, stats, filters, latestDate } = useStore();
 
@@ -107,6 +112,53 @@ export const KpiCard: React.FC<KpiCardProps> = memo(({
         );
     };
 
+    const renderWeekSubCards = () => {
+        if (!consolidated || consolidated.length === 0) return null;
+        const maxVal = Math.max(...consolidated.map(w => w.val), 1);
+        return (
+            <div className="mt-auto flex flex-row gap-1 z-10 relative w-full h-[38px]">
+                {consolidated.map(({ val, weekNum }) => {
+                    const barPct = Math.round((val / maxVal) * 100);
+                    const formatted = MetricFormatter.formatValue(val, filters.metric, privacyMode);
+                    const isSelected = selectedWeek === weekNum;
+                    const weekFormulas: Record<number, string> = {
+                        1: 'Days 1–7',
+                        2: 'Days 8–14',
+                        3: 'Days 15–21',
+                        4: 'Days 22–28',
+                        5: 'Days 29–31'
+                    };
+                    const formula = weekFormulas[weekNum] || '';
+                    return (
+                        <div
+                            key={weekNum}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onSelectWeek?.(weekNum);
+                            }}
+                            className={`flex-1 flex flex-col justify-between items-center bg-canvas-soft rounded-md py-1 px-0.5 border relative overflow-hidden h-full cursor-pointer transition-all ${
+                                isSelected ? 'border-primary ring-1 ring-primary/20 bg-primary/5' : 'border-hairline hover:bg-canvas-deep'
+                            }`}
+                            data-tooltip={privacyMode ? '••••••' : `Week ${weekNum} (${formula}): ${formatted}${isSelected ? ' (Selected)' : ''}`}
+                        >
+                            {/* Fill bar behind the column */}
+                            <div
+                                className="absolute inset-x-0 bottom-0 bg-primary/8 transition-all rounded-b-md pointer-events-none"
+                                style={{ height: `${barPct}%` }}
+                            />
+                            <span className="text-[6.5px] font-black text-ink-mute uppercase tracking-widest z-10 leading-none mt-0.5 opacity-80">
+                                W{weekNum}
+                            </span>
+                            <span className="text-[10px] font-bold font-mono text-ink tracking-tighter tabular-nums z-10 leading-none truncate max-w-full text-center pb-0.5">
+                                {privacyMode ? '••' : formatted}
+                            </span>
+                        </div>
+                    );
+                })}
+            </div>
+        );
+    };
+
     const renderBreakdownStrip = () => {
         let propStrips: React.ReactNode[] = [];
         let total = 0;
@@ -153,31 +205,46 @@ export const KpiCard: React.FC<KpiCardProps> = memo(({
     return (
         <div
             id={id}
-            className={`kpi-module min-w-[210px] flex-shrink-0 flex-1 min-h-[110px] h-auto bg-gradient-to-br from-white to-canvas/60 border border-hairline rounded-2xl flex flex-col relative group overflow-hidden transition-all duration-300 ${
+            className={`kpi-module ${id === 'w-kpi-weeks' ? 'min-w-[340px] flex-[1.6]' : 'min-w-[210px] flex-1'} flex-shrink-0 h-[120px] bg-gradient-to-br from-white to-canvas/60 border border-hairline rounded-2xl flex flex-col relative group overflow-hidden transition-all duration-300 ${
                 isInteractive ? 'cursor-pointer hover:border-primary/30 hover:shadow-md' : ''
             } ${detailOpen ? 'border-primary/40 ring-1 ring-primary/10 shadow-lg' : 'shadow-sm'}`}
             onClick={() => isInteractive && onToggleDetail && onToggleDetail()}
         >
             {renderBreakdownStrip()}
 
-            <div className="px-4 pt-3 pb-5 flex flex-col h-full w-full gap-2 relative z-10">
-                <div className="flex items-start justify-between z-30 w-full">
+            <div className="px-4 pt-2.5 pb-4 flex flex-col h-full w-full gap-1.5 relative z-10">
+                <div className="flex items-center justify-between z-30 w-full relative h-7">
                     <span className="text-[10px] font-bold text-ink-mute uppercase tracking-widest transition-colors mt-1">
                         {title}
                     </span>
+
+                    {id === 'w-kpi-weeks' && (
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <span 
+                                className="text-[14px] font-bold font-mono text-black leading-none pointer-events-auto cursor-help"
+                                data-tooltip="Total YTD Sales"
+                            >
+                                {formatVal(value)}
+                            </span>
+                        </div>
+                    )}
+
                     <div className="flex items-start gap-3 ml-auto shrink-0">
                         {getBadge()}
                     </div>
                 </div>
 
-                <div className="flex flex-col z-10 w-full">
-                    <span
-                        className="text-2xl lg:text-[26px] font-bold font-mono text-black leading-tight tracking-tighter truncate cursor-help tabular-nums"
-                        data-tooltip={getLogicTooltip()}
-                    >
-                        {formatVal(value)}
-                    </span>
+                <div className="flex flex-col z-10 w-full flex-1">
+                    {id !== 'w-kpi-weeks' && (
+                        <span
+                            className="text-2xl lg:text-[26px] font-bold font-mono text-black leading-tight tracking-tighter truncate cursor-help tabular-nums"
+                            data-tooltip={getLogicTooltip()}
+                        >
+                            {formatVal(value)}
+                        </span>
+                    )}
                     {renderDetails()}
+                    {renderWeekSubCards()}
                 </div>
             </div>
 
