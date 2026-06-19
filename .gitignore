@@ -111,3 +111,4 @@ out/
 *.temp
 *.log
 debug.log
+.gemini/
