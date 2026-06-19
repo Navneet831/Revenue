@@ -1,6 +1,6 @@
 import React from 'react';
 import { Terminal, Layers, BookOpen, TableProperties, ShieldCheck, LogOut } from 'lucide-react';
-import { useStore } from '@/store/useStore';
+import { useStore } from '@revenue/store/useStore';
 import { SolarModuleIcon, InternalIcon, RMIcon, ScrapIcon } from '../../assets/CustomIcons';
 
 interface GlobalSidebarProps {

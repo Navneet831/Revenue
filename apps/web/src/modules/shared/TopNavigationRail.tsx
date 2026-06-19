@@ -1,5 +1,5 @@
 import React from 'react';
-import { useStore } from '@/store/useStore';
+import { useStore } from '@revenue/store/useStore';
 
 export const TopNavigationRail: React.FC = () => {
     const { ui, updateUIState } = useStore();

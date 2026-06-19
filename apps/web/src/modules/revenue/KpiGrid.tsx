@@ -1,7 +1,7 @@
 import React from 'react';
 import { KpiCard } from './KpiCard';
-import { useStore } from '@/store/useStore';
-import { useSectionData } from '@/hooks/useSectionData';
+import { useStore } from '@revenue/store/useStore';
+import { useSectionData } from '@revenue/hooks/useSectionData';
 import { AlertCircle, Loader2 } from 'lucide-react';
 
 export const KpiGrid: React.FC = () => {

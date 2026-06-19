@@ -1,7 +1,7 @@
 import React, { useRef, Suspense, lazy, memo } from 'react';
 import { RotateCcw, Loader2, AlertCircle } from 'lucide-react';
-import { useStore } from '@/store/useStore';
-import { useSectionData } from '@/hooks/useSectionData';
+import { useStore } from '@revenue/store/useStore';
+import { useSectionData } from '@revenue/hooks/useSectionData';
 import { CONFIG, ColorEngine } from '@revenue/shared';
 import { QUARTER_NAMES } from './VelocityChart/constants';
 import { createTopLabelsPlugin, createRightLabelsPlugin } from './VelocityChart/plugins';

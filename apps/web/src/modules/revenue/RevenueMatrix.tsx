@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
-import { useStore } from '@/store/useStore';
-import { useSectionData } from '@/hooks/useSectionData';
+import { useStore } from '@revenue/store/useStore';
+import { useSectionData } from '@revenue/hooks/useSectionData';
 import { CONFIG } from '@revenue/shared';
 import { Loader2, AlertCircle } from 'lucide-react';
 

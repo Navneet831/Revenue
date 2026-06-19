@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react';
-import { useStore } from '@/store/useStore';
+import { useStore } from '@revenue/store/useStore';
 
 /**
  * CARD EXPAND / FULLSCREEN HOOK

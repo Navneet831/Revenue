@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { AlertTriangle, Briefcase, ShieldCheck, X, PlayCircle } from 'lucide-react';
-import { useStore } from '@/store/useStore';
+import { useStore } from '@revenue/store/useStore';
 import { IntelligenceBoardIcon } from '../../assets/CustomIcons';
 
 export const InsightsPanel: React.FC = () => {

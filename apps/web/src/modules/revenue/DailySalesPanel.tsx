@@ -1,5 +1,5 @@
 import React, { memo, useMemo, useState } from 'react';
-import { useStore } from '@/store/useStore';
+import { useStore } from '@revenue/store/useStore';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 
 const CURRENCY_DIVIDER = 10_000_000;

@@ -1,6 +1,6 @@
 import React from 'react';
 import { LayoutGrid } from 'lucide-react';
-import { useStore } from '@/store/useStore';
+import { useStore } from '@revenue/store/useStore';
 import { MODULE_REGISTRY, ModuleId } from '../registry';
 
 /** Shown when a registered bounded context has no shipped entry point yet. */

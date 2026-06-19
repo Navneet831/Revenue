@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useStore } from '@/store/useStore';
+import { useStore } from '@revenue/store/useStore';
 import { Mail, User, ShieldAlert, CheckCircle2, RefreshCcw } from 'lucide-react';
-import { supabase } from '@/services/supabaseClient';
+import { supabase } from '@revenue/services/supabaseClient';
 
 export const Login: React.FC = () => {
     const { setUser, setAuthenticated } = useStore();

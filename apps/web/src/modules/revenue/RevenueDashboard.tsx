@@ -1,10 +1,10 @@
 import React, { useEffect, Suspense } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useStore } from '@/store/useStore';
+import { useStore } from '@revenue/store/useStore';
 import { DataSanitizer, CONFIG, ColorEngine } from '@revenue/shared';
-import { AnalyticsApi } from '@/services/analyticsService';
-import { useSectionData } from '@/hooks/useSectionData';
-import { IntelligenceBoardIcon } from '@/assets/CustomIcons';
+import { AnalyticsApi } from '@revenue/services/analyticsService';
+import { useSectionData } from '@revenue/hooks/useSectionData';
+import { IntelligenceBoardIcon } from '@revenue/assets/CustomIcons';
 import { LayoutDashboard, PieChart, AlertTriangle, RotateCcw } from 'lucide-react';
 import { KpiGrid } from './KpiGrid';
 import { DailySalesPanel } from './DailySalesPanel';

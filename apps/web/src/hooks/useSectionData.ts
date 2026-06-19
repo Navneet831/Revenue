@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
-import { useStore } from '@/store/useStore';
+import { useStore } from '@revenue/store/useStore';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { AnalyticsApi, analyticsKey } from '@/services/analyticsService';
+import { AnalyticsApi, analyticsKey } from '@revenue/services/analyticsService';
 
 const META_KEY = ['revenue-meta'];
 

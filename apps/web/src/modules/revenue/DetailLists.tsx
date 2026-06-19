@@ -1,7 +1,7 @@
 import React from 'react';
 import { Briefcase, Users, Box, Loader2, AlertCircle } from 'lucide-react';
-import { useStore } from '@/store/useStore';
-import { useSectionData } from '@/hooks/useSectionData';
+import { useStore } from '@revenue/store/useStore';
+import { useSectionData } from '@revenue/hooks/useSectionData';
 import { ListCard } from './DetailLists/ListCard';
 
 interface DetailListsProps {

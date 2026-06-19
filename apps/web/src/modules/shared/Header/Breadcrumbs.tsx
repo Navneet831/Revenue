@@ -1,6 +1,6 @@
 import React from 'react';
 import { X } from 'lucide-react';
-import { useStore } from '@/store/useStore';
+import { useStore } from '@revenue/store/useStore';
 
 // Static class maps — dynamic `border-${clr}-600` patterns are invisible to
 // Tailwind's scanner and get dropped from production bundles.

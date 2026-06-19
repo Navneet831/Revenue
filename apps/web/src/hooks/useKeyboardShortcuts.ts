@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
-import { useStore } from '@/store/useStore';
-import { CacheService } from '@/services/cacheService';
+import { useStore } from '@revenue/store/useStore';
+import { CacheService } from '@revenue/services/cacheService';
 
 /**
  * EXECUTIVE KEYBOARD SHORTCUTS HOOK

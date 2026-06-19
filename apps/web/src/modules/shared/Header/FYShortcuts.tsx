@@ -1,5 +1,5 @@
 import React from 'react';
-import { useStore } from '@/store/useStore';
+import { useStore } from '@revenue/store/useStore';
 import { CONFIG } from '@revenue/shared';
 
 export const FYShortcuts: React.FC = () => {

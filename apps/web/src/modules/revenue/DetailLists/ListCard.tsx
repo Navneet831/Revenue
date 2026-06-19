@@ -1,6 +1,6 @@
 import React, { useRef, Suspense, lazy } from 'react';
 import { PieChart, Table2, Maximize2, Minimize2 } from 'lucide-react';
-import { useStore } from '@/store/useStore';
+import { useStore } from '@revenue/store/useStore';
 import { MetricFormatter, CONFIG, ColorEngine } from '@revenue/shared';
 import { createRightLabelsPlugin } from './plugins';
 

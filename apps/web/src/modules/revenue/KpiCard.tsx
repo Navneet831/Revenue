@@ -1,16 +1,17 @@
 import React, { memo } from 'react';
-import { CalendarDays, Calendar, PieChart, TrendingUp, Truck } from 'lucide-react';
-import { useStore } from '@/store/useStore';
+import { CalendarDays, Calendar, PieChart, TrendingUp, Truck, Layers } from 'lucide-react';
+import { useStore } from '@revenue/store/useStore';
 import { MetricFormatter, CONFIG, ColorEngine } from '@revenue/shared';
 
 interface KpiCardProps {
     id: string;
     title: string;
     value: number;
-    iconName: 'calendar-days' | 'calendar' | 'pie-chart' | 'trending-up' | 'truck';
+    iconName: 'calendar-days' | 'calendar' | 'pie-chart' | 'trending-up' | 'truck' | 'layers';
     compareLabel?: string;
     compareValue?: number;
     breakdown?: Record<string, number>;
+    consolidated?: { val: number; weekNum: number }[];
     isInteractive?: boolean;
     detailOpen?: boolean;
     onToggleDetail?: () => void;
@@ -37,6 +38,7 @@ export const KpiCard: React.FC<KpiCardProps> = memo(({
             case 'pie-chart': return <PieChart className={className} />;
             case 'trending-up': return <TrendingUp className={className} />;
             case 'truck': return <Truck className={className} />;
+            case 'layers': return <Layers className={className} />;
             default: return null;
         }
     };
