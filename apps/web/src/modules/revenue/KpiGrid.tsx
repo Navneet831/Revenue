@@ -98,6 +98,16 @@ export const KpiGrid: React.FC = () => {
         return obj;
     }, [consolidatedWeeks, filters.metric]);
 
+    // Week-wise metric value: sum of all weeks, metric-aware
+    const weekWiseTotal = React.useMemo(() => {
+        const metric = filters.metric || 'Amount';
+        return consolidatedWeeks.reduce((acc, w) => {
+            if (metric === 'Amount') return acc + w.val;
+            if (metric === 'MW') return acc + w.mw;
+            return acc + w.qty;
+        }, 0);
+    }, [consolidatedWeeks, filters.metric]);
+
     return (
         <div className="flex flex-1 gap-3 pb-2 overflow-x-auto no-scrollbar min-w-0" data-lenis-prevent="true">
             <KpiCard
@@ -146,6 +156,18 @@ export const KpiGrid: React.FC = () => {
                 detailOpen={activeKpiDetail === 'ytd'}
                 onToggleDetail={() => handleToggleDetail('ytd')}
                 breakdown={kpi.ytdBreakdown}
+            />
+
+            <KpiCard
+                id="w-kpi-weeks"
+                title={`WEEKS WISE ${metricSuffix}`}
+                value={weekWiseTotal}
+                iconName="layers"
+                isInteractive={false}
+                consolidated={consolidatedWeeks.map(w => ({
+                    val: filters.metric === 'Amount' ? w.val : filters.metric === 'MW' ? w.mw : w.qty,
+                    weekNum: w.weekNum
+                }))}
             />
 
         </div>
