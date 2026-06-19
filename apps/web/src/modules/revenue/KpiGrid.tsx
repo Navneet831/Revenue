@@ -41,6 +41,25 @@ export const KpiGrid: React.FC = () => {
     if (!isReady || !stats || !stats.kpi) return null;
     const { kpi } = stats;
 
+    // Consolidated: collapse entire date range into 5 week-position buckets (Week 1–5).
+    const consolidatedWeeks = React.useMemo(() => {
+        // Defensive guard: only process if stats and dailySeries exist
+        if (!stats || !stats.dailySeries) return [];
+
+        const series = stats.dailySeries;
+        if (series.length === 0) return [];
+        const groups: Record<number, { val: number; mw: number; qty: number; weekNum: number }> = {};
+        series.forEach((d) => {
+            const dayOfMonth = new Date(d.date).getDate();
+            const weekNum = Math.min(Math.ceil(dayOfMonth / 7), 5);
+            if (!groups[weekNum]) groups[weekNum] = { val: 0, mw: 0, qty: 0, weekNum };
+            groups[weekNum].val += d.val;
+            groups[weekNum].mw += d.mw;
+            groups[weekNum].qty += d.qty;
+        });
+        return Object.values(groups).sort((a, b) => a.weekNum - b.weekNum);
+    }, [stats]);
+
     const handleToggleDetail = (id: string) => {
         setActiveKpiDetail(activeKpiDetail === id ? null : id);
     };
@@ -59,6 +78,25 @@ export const KpiGrid: React.FC = () => {
     const periodLabel = isCustomPeriodActive
         ? `PERIOD ${metricSuffix}`
         : `ANCHOR · ${toDateLabel} ${metricSuffix}`;
+
+    const totalConsolidated = React.useMemo(() => {
+        const metric = filters.metric || 'Amount';
+        return consolidatedWeeks.reduce((acc, w) => {
+            if (metric === 'Amount') return acc + w.val;
+            if (metric === 'MW') return acc + w.mw;
+            return acc + w.qty;
+        }, 0);
+    }, [consolidatedWeeks, filters.metric]);
+
+    const consolidatedBreakdown = React.useMemo(() => {
+        const obj: Record<string, number> = {};
+        consolidatedWeeks.forEach(w => {
+            const label = `Week ${w.weekNum}`;
+            const metric = filters.metric || 'Amount';
+            obj[label] = metric === 'Amount' ? w.val : metric === 'MW' ? w.mw : w.qty;
+        });
+        return obj;
+    }, [consolidatedWeeks, filters.metric]);
 
     return (
         <div className="flex flex-1 gap-3 pb-2 overflow-x-auto no-scrollbar min-w-0" data-lenis-prevent="true">
@@ -109,6 +147,7 @@ export const KpiGrid: React.FC = () => {
                 onToggleDetail={() => handleToggleDetail('ytd')}
                 breakdown={kpi.ytdBreakdown}
             />
+
         </div>
     );
 };
