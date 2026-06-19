@@ -14,6 +14,7 @@ import Metrics from '../../monitoring/metrics/index.js';
 import revenueRoutes from './routes/revenueRoutes.js';
 import { RevenueRepository } from './repositories/revenueRepository.js';
 import { FEATURES } from '@revenue/shared';
+import { FeatureService } from './services/featureService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -32,7 +33,14 @@ app.use(helmet({ contentSecurityPolicy: false, hsts: false }));
 // CORS: only the origins we explicitly trust (comma-separated CORS_ORIGINS env override)
 const allowedOrigins = (process.env.CORS_ORIGINS || 'http://127.0.0.1:5173,http://localhost:5173,http://127.0.0.1:8000,http://localhost:8000')
     .split(',')
-    .map((o) => o.trim());
+    .map((o) => {
+        try {
+            const url = new URL(o.trim());
+            return url.origin;
+        } catch {
+            return o.trim();
+        }
+    });
 app.use(cors({ origin: allowedOrigins }));
 app.use(express.json());
 
@@ -61,21 +69,20 @@ app.get('/metrics', async (req, res) => {
 });
 
 // --- FEATURE FLAGS ---
-app.get('/api/features', (req, res) => {
-    res.json({
-        agentation: process.env.FEATURE_AGENTATION !== undefined
-            ? process.env.FEATURE_AGENTATION === 'true'
-            : FEATURES.agentation,
-        story: process.env.FEATURE_STORY !== undefined
-            ? process.env.FEATURE_STORY === 'true'
-            : FEATURES.story,
-        commitDrilldown: process.env.FEATURE_COMMIT_DRILLDOWN !== undefined
-            ? process.env.FEATURE_COMMIT_DRILLDOWN === 'true'
-            : FEATURES.commitDrilldown,
-        enable_auth: process.env.FEATURE_ENABLE_AUTH !== undefined
-            ? process.env.FEATURE_ENABLE_AUTH === 'true'
-            : FEATURES.enable_auth
-    });
+app.get('/api/features', async (req, res) => {
+    try {
+        const email = req.query.email || 'navneet.chaudhary831@gmail.com';
+        const features = await FeatureService.getFeaturesForUser(email);
+        res.json(features);
+    } catch (err) {
+        Logger.error('features_route_failed', err);
+        res.json({
+            agentation: false,
+            story: true,
+            commitDrilldown: false,
+            enable_auth: false
+        });
+    }
 });
 
 // --- API DOMAIN ROUTES ---
