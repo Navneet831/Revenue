@@ -4,7 +4,7 @@ import { Mail, User, ShieldAlert, CheckCircle2, RefreshCcw } from 'lucide-react'
 import { supabase } from '@revenue/services/supabaseClient';
 
 export const Login: React.FC = () => {
-    const { setUser, setAuthenticated, setFeatures } = useStore();
+    const { authError, setAuthError } = useStore();
     const [email, setEmail] = useState('');
     const [linkSent, setLinkSent] = useState(false);
     const [sentTo, setSentTo] = useState('');
@@ -18,73 +18,16 @@ export const Login: React.FC = () => {
         setTimeout(() => setNotification(null), durationMs);
     };
 
-    const verifyWhitelistAndSetUser = async (session: any) => {
-        const email = session.user?.email;
-        if (!email) return;
-
-        try {
-            // Give a small delay in case the Postgres trigger is still inserting the new user row
-            await new Promise(resolve => setTimeout(resolve, 500));
-
-            const { data, error } = await supabase
-                .from('access_whitelist')
-                .select('email, features')
-                .ilike('email', email)
-                .single();
-
-            if (error || !data) {
-                console.warn(`Unauthorized or pending access attempt by: ${email}`);
-                await supabase.auth.signOut();
-                showNotification('error', `ACCESS DENIED. The email address (${email}) could not be verified.`);
-                setShowUI(true);
-                return;
-            }
-
-            // Raw JSONB from access_whitelist — key names are the canonical source of truth.
-            // If the column is null (pre-existing row), fall back to basic view-only access.
-            const uf: Record<string, boolean> = data.features || {
-                dashboard: true, ledger: true, audit: true,
-            };
-
-            // A feature is active only if its key is explicitly present AND true.
-            // Missing key = false (no implicit grant).
-            const userHas = (key: string): boolean => !!uf[key];
-
-            setUser({ name: email, features: uf });
-
-            // Merge user flags into the global feature flags so every gate in the
-            // app uses a single source of truth. Global flag must also be true —
-            // the features table controls whether a capability exists at all;
-            // the whitelist controls per-user access to it.
-            const global = useStore.getState().features;
-            setFeatures({
-                enable_auth:     global.enable_auth,
-                story:           global.story           && userHas('story'),
-                agentation:      global.agentation      && userHas('Agentation'),
-                commitDrilldown: global.commitDrilldown && userHas('Commit Drilldown'),
-            });
-
-            setAuthenticated(true);
-        } catch (err: any) {
-            console.error('Critical verification error:', err);
-            await supabase.auth.signOut();
-            showNotification('error', 'Critical security verification failed.');
+    // Surface auth errors set by App.tsx's centralised auth handler
+    useEffect(() => {
+        if (authError) {
+            showNotification('error', authError);
+            setAuthError(null);
             setShowUI(true);
         }
-    };
+    }, [authError]);
 
     useEffect(() => {
-        const { data: authListener } = supabase.auth.onAuthStateChange(
-            async (event, session) => {
-                if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session) {
-                    await verifyWhitelistAndSetUser(session);
-                } else if (event === 'SIGNED_OUT') {
-                    setUser(null);
-                    setAuthenticated(false);
-                }
-            }
-        );
-
         if (window.location.pathname === '/auth/callback') {
             window.history.replaceState({}, document.title, '/');
         }
@@ -108,7 +51,6 @@ export const Login: React.FC = () => {
         return () => {
             clearTimeout(typeTimer);
             clearTimeout(uiTimer);
-            authListener.subscription.unsubscribe();
         };
     }, []);
 

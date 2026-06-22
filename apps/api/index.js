@@ -14,7 +14,6 @@ import Metrics from '../../monitoring/metrics/index.js';
 import revenueRoutes from './routes/revenueRoutes.js';
 import { RevenueRepository } from './repositories/revenueRepository.js';
 import { FEATURES } from '@revenue/shared';
-import { FeatureService } from './services/featureService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -33,14 +32,7 @@ app.use(helmet({ contentSecurityPolicy: false, hsts: false }));
 // CORS: only the origins we explicitly trust (comma-separated CORS_ORIGINS env override)
 const allowedOrigins = (process.env.CORS_ORIGINS || 'http://127.0.0.1:5173,http://localhost:5173,http://127.0.0.1:8000,http://localhost:8000')
     .split(',')
-    .map((o) => {
-        try {
-            const url = new URL(o.trim());
-            return url.origin;
-        } catch {
-            return o.trim();
-        }
-    });
+    .map((o) => o.trim());
 app.use(cors({ origin: allowedOrigins }));
 app.use(express.json());
 
@@ -69,20 +61,33 @@ app.get('/metrics', async (req, res) => {
 });
 
 // --- FEATURE FLAGS ---
-app.get('/api/features', async (req, res) => {
-    try {
-        const email = req.query.email || 'navneet.chaudhary831@gmail.com';
-        const features = await FeatureService.getFeaturesForUser(email);
-        res.json(features);
-    } catch (err) {
-        Logger.error('features_route_failed', err);
-        res.json({
-            agentation: false,
-            story: true,
-            commitDrilldown: false,
-            enable_auth: false
-        });
-    }
+app.get('/api/features', (req, res) => {
+    res.json({
+        agentation: process.env.FEATURE_AGENTATION !== undefined
+            ? process.env.FEATURE_AGENTATION === 'true'
+            : FEATURES.agentation,
+        story: process.env.FEATURE_STORY !== undefined
+            ? process.env.FEATURE_STORY === 'true'
+            : FEATURES.story,
+        commitDrilldown: process.env.FEATURE_COMMIT_DRILLDOWN !== undefined
+            ? process.env.FEATURE_COMMIT_DRILLDOWN === 'true'
+            : FEATURES.commitDrilldown,
+        enable_auth: process.env.FEATURE_ENABLE_AUTH !== undefined
+            ? process.env.FEATURE_ENABLE_AUTH === 'true'
+            : true,
+        devTab: process.env.FEATURE_DEV_TAB !== undefined
+            ? process.env.FEATURE_DEV_TAB === 'true'
+            : true,
+        ledger: process.env.FEATURE_LEDGER !== undefined
+            ? process.env.FEATURE_LEDGER === 'true'
+            : true,
+        audit: process.env.FEATURE_AUDIT !== undefined
+            ? process.env.FEATURE_AUDIT === 'true'
+            : true,
+        grewGpt: process.env.FEATURE_GREW_GPT !== undefined
+            ? process.env.FEATURE_GREW_GPT === 'true'
+            : true,
+    });
 });
 
 // --- API DOMAIN ROUTES ---
@@ -116,6 +121,19 @@ if (!process.env.HIDE_GIT_ENDPOINTS) {
         }
         try {
             execFileSync('git', ['checkout', hash]);
+            try {
+                // Restore Commit Drill-down related files from main so the UI & API remain functional to navigate back and forth
+                execFileSync('git', [
+                    'checkout',
+                    'main',
+                    '--',
+                    'apps/web/src/modules/shared/CommitDrilldown.tsx',
+                    'apps/api/index.js',
+                    'apps/web/src/App.tsx'
+                ]);
+            } catch (restoreErr) {
+                Logger.error('git_restore_drilldown_failed', restoreErr);
+            }
             gitCommitsCache = null;
             res.json({ ok: true, hash });
         } catch (err) {

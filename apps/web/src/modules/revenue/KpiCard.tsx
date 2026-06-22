@@ -17,6 +17,7 @@ interface KpiCardProps {
     onToggleDetail?: () => void;
     selectedWeek?: number | null;
     onSelectWeek?: (weekNum: number) => void;
+    momentum?: { avg: number; proj: number };
 }
 
 export const KpiCard: React.FC<KpiCardProps> = memo(({
@@ -32,7 +33,8 @@ export const KpiCard: React.FC<KpiCardProps> = memo(({
     detailOpen = false,
     onToggleDetail,
     selectedWeek,
-    onSelectWeek
+    onSelectWeek,
+    momentum
 }) => {
     const { privacyMode, stats, filters, latestDate } = useStore();
 
@@ -53,6 +55,94 @@ export const KpiCard: React.FC<KpiCardProps> = memo(({
         return MetricFormatter.formatValue(v, filters.metric, privacyMode);
     };
 
+    const getMomentumTooltip = () => {
+        if (!momentum || !stats?.kpi) return '';
+        const mtdVal = stats.kpi.mtd || 0;
+        const projVal = momentum.proj || 0;
+        const diffPct = mtdVal > 0 ? ((projVal - mtdVal) / mtdVal) * 100 : 0;
+        
+        const formattedProj = formatVal(projVal);
+        const formattedMtd = formatVal(mtdVal);
+        const formattedAvg = formatVal(momentum.avg);
+        const anchorDate = stats.kpiAnchorDate ? new Date(stats.kpiAnchorDate) : new Date();
+        const curYear = anchorDate.getFullYear();
+        const curMonth = anchorDate.getMonth();
+        const curMonthDays = new Date(curYear, curMonth + 1, 0).getDate();
+        
+        return [
+            `• 7D Daily Average: ${formattedAvg}/day`,
+            `• Monthly Projection: ${formattedProj} (calculated as ${formattedAvg}/day × ${curMonthDays} days)`,
+            `• Current MTD Sales: ${formattedMtd}`,
+            `• Variance vs MTD: ${diffPct >= 0 ? '+' : ''}${diffPct.toFixed(1)}%`
+        ].join('\n');
+    };
+
+    const renderMomentumMicroKpi = () => {
+        if (!momentum || !stats?.kpi) return null;
+        
+        const mtdVal = stats.kpi.mtd || 0;
+        const projVal = momentum.proj || 0;
+        const isPos = projVal > mtdVal;
+        const diffPct = mtdVal > 0 ? ((projVal - mtdVal) / mtdVal) * 100 : 0;
+        
+        const colorCls = isPos ? 'text-emerald-400' : 'text-rose-400';
+        const statusText = isPos ? 'ACCELERATION' : 'DECELERATION';
+        const arrow = isPos ? '↑' : '↓';
+        
+        return (
+            <div 
+                className="flex flex-col items-end leading-none cursor-pointer hover:opacity-80 transition-all"
+                data-tooltip={getMomentumTooltip()}
+            >
+                <span className={`${colorCls} text-[14px] font-bold font-mono tracking-tighter`}>
+                    {arrow}{Math.abs(diffPct).toFixed(1)}%
+                </span>
+                <span className="text-ink-faint font-sans text-[9px] font-bold uppercase tracking-widest mt-1 opacity-70">
+                    {statusText}
+                </span>
+            </div>
+        );
+    };
+
+    const getBadgeTooltip = () => {
+        if (compareValue === undefined || compareValue === null || compareValue === 0) return '';
+        
+        const anchorDate = stats?.kpiAnchorDate || new Date(filters.endDate || latestDate || new Date());
+        const yr = anchorDate.getFullYear();
+        const mIdx = filters.matrixMonth ? CONFIG.CALENDAR_MONTHS.indexOf(filters.matrixMonth) : anchorDate.getMonth();
+        
+        if (compareLabel === 'MoM') {
+            const curDate = new Date(yr, mIdx, 1);
+            const prevDate = new Date(yr, mIdx - 1, 1);
+            const curMonthName = curDate.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+            const prevMonthName = prevDate.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+            const day = anchorDate.getDate();
+            return `Calculation: (Current Period Sales ${curMonthName} MTD up to day ${day} vs Previous Period Sales ${prevMonthName} MTD up to day ${day})`;
+        }
+        
+        if (compareLabel === 'QoQ') {
+            const qIdx = filters.selectedQuarter != null 
+                ? filters.selectedQuarter 
+                : Math.floor((anchorDate.getMonth() >= 3 ? anchorDate.getMonth() - 3 : anchorDate.getMonth() + 9) / 3);
+            const qNames = ['Q1 (Apr-Jun)', 'Q2 (Jul-Sep)', 'Q3 (Oct-Dec)', 'Q4 (Jan-Mar)'];
+            const qName = qNames[qIdx];
+            const startY = anchorDate.getMonth() >= 3 ? yr : yr - 1;
+            const curFY = `FY${String(startY).slice(-2)}`;
+            const prevFY = `FY${String(startY - 1).slice(-2)}`;
+            return `Calculation: (${qName} ${curFY} vs same Quarter of last year ${qName} ${prevFY})`;
+        }
+        
+        if (compareLabel === 'YoY') {
+            const startY = anchorDate.getMonth() >= 3 ? yr : yr - 1;
+            const curFY = `FY${String(startY).slice(-2)}`;
+            const prevFY = `FY${String(startY - 1).slice(-2)}`;
+            const toMonthName = anchorDate.toLocaleDateString('en-GB', { month: 'short' });
+            return `Calculation: (YTD Apr-${toMonthName} ${curFY} vs same period of last year YTD Apr-${toMonthName} ${prevFY})`;
+        }
+        
+        return '';
+    };
+
     const getBadge = () => {
         if (compareValue === undefined || compareValue === null || compareValue === 0) return null;
         const pct = ((value - compareValue) / compareValue) * 100;
@@ -63,6 +153,7 @@ export const KpiCard: React.FC<KpiCardProps> = memo(({
             <div 
                 className={`flex flex-col items-end leading-none cursor-pointer hover:opacity-80 transition-all ${detailOpen ? 'bg-emerald-400/10 p-1.5 px-2 rounded-lg border border-emerald-400/30' : ''}`}
                 onClick={(e) => { e.stopPropagation(); onToggleDetail?.(); }}
+                data-tooltip={getBadgeTooltip()}
             >
                 <span className={`${colorCls} text-[14px] font-bold font-mono tracking-tighter`}>
                     {isPos ? '↑' : pct < 0 ? '↓' : ''}{Math.abs(pct).toFixed(1)}%
@@ -82,21 +173,25 @@ export const KpiCard: React.FC<KpiCardProps> = memo(({
 
         const anchorDate = stats?.kpiAnchorDate || new Date(filters.endDate || latestDate || new Date());
         const yr = anchorDate.getFullYear();
-        const prevYr = yr - 1;
-        const yrShort = String(yr).slice(-2);
-        const prevYrShort = String(prevYr).slice(-2);
+        const mIdx = filters.matrixMonth ? CONFIG.CALENDAR_MONTHS.indexOf(filters.matrixMonth) : anchorDate.getMonth();
 
         let explanation = '';
         if (compareLabel === 'MoM') {
-            const mIdx = filters.matrixMonth ? CONFIG.CALENDAR_MONTHS.indexOf(filters.matrixMonth) : anchorDate.getMonth();
-            const fullM = CONFIG.FULL_MONTHS[mIdx];
-            explanation = `${fullM} ${yrShort} vs ${fullM} ${prevYrShort}`;
+            const curDate = new Date(yr, mIdx, 1);
+            const prevDate = new Date(yr, mIdx - 1, 1);
+            const curMName = curDate.toLocaleDateString('en-GB', { month: 'short' });
+            const prevMName = prevDate.toLocaleDateString('en-GB', { month: 'short' });
+            const curMYear = String(curDate.getFullYear()).slice(-2);
+            const prevMYear = String(prevDate.getFullYear()).slice(-2);
+            explanation = `${curMName} ${curMYear} vs ${prevMName} ${prevMYear}`;
         } else if (compareLabel === 'QoQ') {
             const qIdx = filters.selectedQuarter != null ? filters.selectedQuarter : Math.floor((anchorDate.getMonth() >= 3 ? anchorDate.getMonth() - 3 : anchorDate.getMonth() + 9) / 3);
             const qNames = ['Q1 (Apr-Jun)', 'Q2 (Jul-Sep)', 'Q3 (Oct-Dec)', 'Q4 (Jan-Mar)'];
-            explanation = `${qNames[qIdx]} ${yrShort} vs ${qNames[qIdx]} ${prevYrShort}`;
+            const startY = anchorDate.getMonth() >= 3 ? yr : yr - 1;
+            explanation = `${qNames[qIdx]} FY${String(startY).slice(-2)} vs ${qNames[qIdx]} FY${String(startY - 1).slice(-2)}`;
         } else if (compareLabel === 'YoY') {
-            explanation = `FY ${yrShort} vs FY ${prevYrShort}`;
+            const startY = anchorDate.getMonth() >= 3 ? yr : yr - 1;
+            explanation = `FY${String(startY).slice(-2)} vs FY${String(startY - 1).slice(-2)}`;
         }
 
         return (
@@ -231,6 +326,7 @@ export const KpiCard: React.FC<KpiCardProps> = memo(({
 
                     <div className="flex items-start gap-3 ml-auto shrink-0">
                         {getBadge()}
+                        {renderMomentumMicroKpi()}
                     </div>
                 </div>
 
@@ -243,6 +339,7 @@ export const KpiCard: React.FC<KpiCardProps> = memo(({
                             {formatVal(value)}
                         </span>
                     )}
+
                     {renderDetails()}
                     {renderWeekSubCards()}
                 </div>

@@ -1,6 +1,7 @@
 import React, { memo, useMemo, useState } from 'react';
 import { useStore } from '@revenue/store/useStore';
 import { ChevronDown, ChevronRight } from 'lucide-react';
+import { CONFIG } from '@revenue/shared';
 
 const CURRENCY_DIVIDER = 10_000_000;
 
@@ -29,7 +30,7 @@ function fmtDate(dateStr: string): string {
 }
 
 export const DailySalesPanel: React.FC = memo(() => {
-    const { stats, filters, privacyMode } = useStore();
+    const { stats, filters, privacyMode, updateFilters } = useStore();
     const [expandedWeeks, setExpandedWeeks] = useState<Record<string, boolean>>({});
 
     const series = stats?.dailySeries;
@@ -133,15 +134,54 @@ export const DailySalesPanel: React.FC = memo(() => {
                             {/* Days */}
                             {isExpanded && w.days.map((d: any) => {
                                 const isSunday = new Date(d.date).getDay() === 0;
+                                const [, mStr, dStr] = d.date.split('-');
+                                const calendarMonthIdx = parseInt(mStr, 10) - 1;
+                                const dayNum = parseInt(dStr, 10);
+                                const monthName = CONFIG.CALENDAR_MONTHS[calendarMonthIdx];
+
+                                const isSelected = filters.selectedDay === dayNum && filters.matrixMonth === monthName;
+
+                                const handleDayClick = () => {
+                                    if (isSelected) {
+                                        updateFilters({
+                                            selectedDay: null,
+                                            selectedWeek: null
+                                        });
+                                    } else {
+                                        updateFilters({
+                                            matrixMonth: monthName,
+                                            selectedDay: dayNum,
+                                            selectedWeek: null
+                                        });
+                                    }
+                                };
+
                                 return (
                                     <div
                                         key={d.date}
-                                        className="flex items-center justify-between px-2.5 py-1 hover:bg-canvas-soft/30 transition-colors"
+                                        onClick={handleDayClick}
+                                        className={`flex items-center justify-between px-2.5 py-1 cursor-pointer transition-colors ${
+                                            isSelected
+                                                ? 'bg-emerald-50 border-l-2 border-l-emerald-600 text-emerald-700 font-bold'
+                                                : 'hover:bg-canvas-soft/30'
+                                        }`}
                                     >
-                                        <span className={`text-[10px] font-mono tabular-nums ${isSunday ? 'text-ink-faint/60' : 'text-ink-mute'}`}>
+                                        <span className={`text-[10px] font-mono tabular-nums ${
+                                            isSelected
+                                                ? 'text-emerald-700'
+                                                : isSunday
+                                                ? 'text-ink-faint/60'
+                                                : 'text-ink-mute'
+                                        }`}>
                                             {fmtDate(d.date)}
                                         </span>
-                                        <span className={`text-[10px] font-bold font-mono tabular-nums ${isSunday ? 'text-ink-faint/60' : 'text-ink-secondary'}`}>
+                                        <span className={`text-[10px] font-mono tabular-nums ${
+                                            isSelected
+                                                ? 'text-emerald-800 font-black'
+                                                : isSunday
+                                                ? 'text-ink-faint/60'
+                                                : 'text-ink-secondary font-bold'
+                                        }`}>
                                             {fmtCompact(d.val, d.qty, d.mw, metric, privacyMode)}
                                         </span>
                                     </div>

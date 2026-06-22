@@ -77,6 +77,17 @@ export const KpiGrid: React.FC = () => {
         return result;
     }, [stats]);
 
+    const momentum = React.useMemo(() => {
+        if (!stats) return undefined;
+        const anchorDate = stats.kpiAnchorDate ? new Date(stats.kpiAnchorDate) : new Date();
+        const curYear = anchorDate.getFullYear();
+        const curMonth = anchorDate.getMonth();
+        const curMonthDays = new Date(curYear, curMonth + 1, 0).getDate();
+        const avg = (stats.last7DaysSales || 0) / 7;
+        const proj = avg * curMonthDays;
+        return { avg, proj };
+    }, [stats]);
+
     // ── Early returns AFTER all hooks ─────────────────────────────────────────
 
     // Gate on user's dashboard feature flag (from access_whitelist)
@@ -123,6 +134,7 @@ export const KpiGrid: React.FC = () => {
         ? `PERIOD ${metricSuffix}`
         : `ANCHOR · ${toDateLabel} ${metricSuffix}`;
 
+
     return (
         <div className="flex w-full h-32 shrink-0 gap-3 pb-2 overflow-x-auto no-scrollbar" data-lenis-prevent="true">
             <KpiCard
@@ -132,6 +144,7 @@ export const KpiGrid: React.FC = () => {
                 iconName="calendar-days"
                 isInteractive={false}
                 breakdown={kpi.periodBreakdown}
+                momentum={momentum}
             />
 
             <KpiCard

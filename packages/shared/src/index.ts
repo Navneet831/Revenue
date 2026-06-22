@@ -1,5 +1,5 @@
 export const FEATURES = {
-    agentation: false,
+    agentation: true,
     story: true,
     commitDrilldown: false,
     enable_auth: true,
@@ -1133,7 +1133,6 @@ export class RevenueComputeEngine {
             l: 'MOMENTUM (7-DAY AVG)',
             txt: `Recent trailing velocity projects ${formatInsightVal(projWeek)} for the current period.`
         });
-
         const unfiltCust = custArr.sort((a, b) => b.v - a.v);
         const sumCustAbs = unfiltCust.reduce((a, c) => a + Math.abs(c.v), 0);
         const hhi = ConcentrationAnalyser.calculateHHI(unfiltCust);

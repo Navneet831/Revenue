@@ -1,9 +1,9 @@
 import Logger from '../../../monitoring/logging/index.js';
+import { FEATURES } from '@revenue/shared';
 
 /**
  * FeatureService: Handles dynamic feature toggling and user-specific permissions.
- * Integration: Queries Supabase REST API (PostgREST) to ensure parity with 
- * database-level feature management.
+ * Integration: Queries Supabase REST API (PostgREST) whitelist table.
  */
 export class FeatureService {
     /**
@@ -15,9 +15,26 @@ export class FeatureService {
         const supabaseUrl = process.env.VITE_SUPABASE_URL;
         const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
 
+        const globalFeatures = {
+            agentation: process.env.FEATURE_AGENTATION !== undefined
+                ? process.env.FEATURE_AGENTATION === 'true'
+                : FEATURES.agentation,
+            story: process.env.FEATURE_STORY !== undefined
+                ? process.env.FEATURE_STORY === 'true'
+                : FEATURES.story,
+            commitDrilldown: process.env.FEATURE_COMMIT_DRILLDOWN !== undefined
+                ? process.env.FEATURE_COMMIT_DRILLDOWN === 'true'
+                : FEATURES.commitDrilldown,
+            enable_auth: process.env.FEATURE_ENABLE_AUTH !== undefined
+                ? process.env.FEATURE_ENABLE_AUTH === 'true'
+                : FEATURES.enable_auth,
+            ledger: true,
+            audit: true,
+        };
+
         if (!supabaseUrl || !supabaseKey) {
             Logger.warn('feature_service_config_missing', { supabaseUrl: !!supabaseUrl, supabaseKey: !!supabaseKey });
-            return { agentation: false, story: true, commitDrilldown: false, enable_auth: false };
+            return globalFeatures;
         }
 
         try {
@@ -27,53 +44,49 @@ export class FeatureService {
                 'Content-Type': 'application/json'
             };
 
-            // 1. Fetch global feature applicability
-            const featuresRes = await fetch(`${supabaseUrl}/rest/v1/features?select=feature,enabled`, { headers });
-            if (!featuresRes.ok) throw new Error(`Features fetch failed: ${featuresRes.statusText}`);
-            const features = await featuresRes.json();
-            
-            const globalFeatures = {};
-            features.forEach(f => {
-                globalFeatures[f.feature.toLowerCase()] = f.enabled;
-            });
-
-            // 2. Fetch user-specific permissions
-            // Since we can't join without a FK in PostgREST, we fetch separately
-            const whitelistUrl = `${supabaseUrl}/rest/v1/whitelist?select=Name&email=eq.${encodeURIComponent(userEmail)}`;
+            // Query whitelist — select all columns so PostgREST returns exact mixed-case names
+            const whitelistUrl = `${supabaseUrl}/rest/v1/whitelist?select=*&email=ilike.${encodeURIComponent(userEmail)}`;
             const whitelistRes = await fetch(whitelistUrl, { headers });
-            if (!whitelistRes.ok) throw new Error(`Whitelist fetch failed`);
+
+            if (!whitelistRes.ok) {
+                throw new Error(`Whitelist fetch failed: ${whitelistRes.statusText}`);
+            }
+
             const whitelistData = await whitelistRes.json();
 
-            if (whitelistData.length === 0) return { agentation: false, story: true, commitDrilldown: false, enable_auth: true };
+            // User not in whitelist — deny all sensitive features when auth is enabled
+            if (whitelistData.length === 0) {
+                if (globalFeatures.enable_auth) {
+                    return {
+                        agentation: false,
+                        story: false,
+                        commitDrilldown: false,
+                        enable_auth: true,
+                        ledger: false,
+                        audit: false,
+                        devTab: false,
+                        grewGpt: false,
+                    };
+                }
+                return globalFeatures;
+            }
 
-            const userName = whitelistData[0].Name;
-            const permUrl = `${supabaseUrl}/rest/v1/feature_permissions?select=feature,allowed&Name=eq.${encodeURIComponent(userName)}`;
-            const permRes = await fetch(permUrl, { headers });
-            
-            if (!permRes.ok) throw new Error(`Permissions fetch failed`);
-            const permissions = await permRes.json();
+            const row = whitelistData[0];
 
-            const userPermissions = {};
-            permissions.forEach(p => {
-                userPermissions[p.feature.toLowerCase()] = p.allowed;
-            });
-
-            // 3. Merged logic: Active = Globally Enabled AND User Allowed
             return {
-                agentation: (globalFeatures['agentation'] && userPermissions['agentation']) || false,
-                story: (globalFeatures['story'] && userPermissions['story']) || false,
-                commitDrilldown: (globalFeatures['commit drilldown'] && userPermissions['commit drilldown']) || false,
-                enable_auth: (globalFeatures['authentication'] && userPermissions['authentication']) || false
+                agentation:      globalFeatures.agentation && row.agentation       === true,
+                story:           globalFeatures.story      && row.story            === true,
+                commitDrilldown: globalFeatures.commitDrilldown && row.commit_drill_down === true,
+                enable_auth:     globalFeatures.enable_auth,
+                ledger:          row['Ledger']   === true,
+                audit:           row['audit']    === true,
+                devTab:          row['Dev']      === true,
+                grewGpt:         row['GrewGpt']  === true,
             };
         } catch (err) {
             Logger.error('fetch_features_failed', err);
-            // Default safe state on failure
-            return {
-                agentation: false,
-                story: true,
-                commitDrilldown: false,
-                enable_auth: false
-            };
+            return globalFeatures;
         }
     }
 }
+

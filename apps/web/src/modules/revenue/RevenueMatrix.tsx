@@ -42,9 +42,47 @@ export const RevenueMatrix: React.FC = memo(() => {
         mw: 'Σ "MW"  (capacity)'
     };
     const DELTA_FORMULA: Record<'mom' | 'qoq' | 'yoy', string> = {
-        mom: 'Δ MoM = (month − prior month) ÷ prior month × 100',
-        qoq: 'Δ QoQ = (quarter − prior quarter) ÷ prior quarter × 100',
-        yoy: 'Δ YoY = (period − same period prior FY) ÷ prior × 100'
+        mom: 'MoM (Month-over-Month) calculation: compares each month with the previous month.',
+        qoq: 'QoQ (Quarter-over-Quarter) calculation: compares each quarter with the same quarter of the previous fiscal year.',
+        yoy: 'YoY (Year-over-Year) calculation: compares each month with the same month of the previous calendar year.'
+    };
+
+    const getCellTooltip = (key: 'mom' | 'qoq' | 'yoy', d: any, idx: number) => {
+        const anchorDate = stats.kpiAnchorDate ? new Date(stats.kpiAnchorDate) : new Date();
+        const curYear = anchorDate.getFullYear();
+        const curMonth = anchorDate.getMonth();
+        const curFYStartYear = curMonth >= 3 ? curYear : curYear - 1;
+
+        const getMonthAndYear = (fiscalIdx: number) => {
+            const name = stats.matrix[fiscalIdx].month;
+            const year = fiscalIdx < 9 ? curFYStartYear : curFYStartYear + 1;
+            return { name, year };
+        };
+
+        const curInfo = getMonthAndYear(idx);
+
+        if (key === 'mom') {
+            const prevInfo = idx === 0 
+                ? { name: 'Mar', year: curFYStartYear } 
+                : getMonthAndYear(idx - 1);
+            return `${d.month} · Δ MoM = (${curInfo.name} ${curInfo.year} − ${prevInfo.name} ${prevInfo.year}) ÷ ${prevInfo.name} ${prevInfo.year} × 100`;
+        }
+
+        if (key === 'qoq') {
+            const qIdx = Math.floor(idx / 3);
+            const qNames = ['Q1 (Apr-Jun)', 'Q2 (Jul-Sep)', 'Q3 (Oct-Dec)', 'Q4 (Jan-Mar)'];
+            const qName = qNames[qIdx];
+            const curFY = `FY${String(curFYStartYear).slice(-2)}`;
+            const prevFY = `FY${String(curFYStartYear - 1).slice(-2)}`;
+            return `${d.month} · Δ QoQ = (${qName} ${curFY} − ${qName} ${prevFY}) ÷ ${qName} ${prevFY} × 100`;
+        }
+
+        if (key === 'yoy') {
+            const prevYear = curInfo.year - 1;
+            return `${d.month} · Δ YoY = (${curInfo.name} ${curInfo.year} − ${curInfo.name} ${prevYear}) ÷ ${curInfo.name} ${prevYear} × 100`;
+        }
+
+        return '';
     };
 
     // The active metric drives the matrix: its row is pinned first and emphasized,
@@ -128,7 +166,7 @@ export const RevenueMatrix: React.FC = memo(() => {
                 return (
                     <td
                         key={idx}
-                        data-tooltip={`${d.month} · ${DELTA_FORMULA[key]}`}
+                        data-tooltip={getCellTooltip(key, d, idx)}
                         className={`px-2 py-1 font-mono text-right relative transition-all duration-200 whitespace-nowrap cursor-help ${borderCls} ${isSelectedMonth || isPartofSelectedQ ? 'bg-canvas-deep/50' : ''}`}
                     >
                         <span className={`relative z-10 ${colorCls} text-[11px] font-bold tracking-tight`}>

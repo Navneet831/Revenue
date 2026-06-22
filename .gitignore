@@ -1,118 +1,20 @@
-# Dependency directories
-node_modules/
-package-lock.json
-
-# Vercel
-.vercel
-# Environment variables
-.env.local
-.env.example
-.env.development.local
-.env.test.local
-.env.production.local
-# Build outputs
+﻿node_modules/
+**/node_modules/
 dist/
-build/
-.next/
-out/
 dist_staging/
-# Logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-venv/
-.venv/
-develop-eggs/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-# Data Files & Databases
-*.csv
-*.duckdb
-*.xlsb
-*.xlsx
-*.sqlite
-*.db
-# OS Files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-# IDEs
-.vscode/
-.idea/
-*.swp
-*.swo
-# Project specific maintenance
-maintenance/
-dist_staging/
-other/
-migrate_duckdb_export.py
-migrate_excel_to_pg.py
-reload_revenue.py
-update_duckdb.py
-check_xlsb_date.py
-check_duckdb_date.py
-check_pg_date.py
-test-results/
-coverage/
-
-# Local environment files
-.env*
-.env
-
-# graphify knowledge-graph artifacts (regenerate with: python -m graphify update apps)
-graphify-out/
-
-# PyInstaller / cx_Freeze / executable builds
 build/
-dist/
-*.spec
-__pycache__/
-*.pyc
-*.pyo
-*.egg-info/
-launcher.exe
-revenue-app/
-revenue-app.exe
-
-# Node.js build artifacts
-apps/web/dist/
-.next/
-.nuxt/
-out/
-
-# Build caches
-.tsc-build-cache
+.cache/
 *.tsbuildinfo
-
-# Temporary files
-*.tmp
-*.temp
+.venv/
+venv/
+**/__pycache__/
+*.pyc
+.pytest_cache/
+.env
+**/.env
+!**/.env.example
+*.bak
+installer_output/
 *.log
-debug.log
-.gemini
-.claude
-.antigravitycli/
+.DS_Store
+Thumbs.db

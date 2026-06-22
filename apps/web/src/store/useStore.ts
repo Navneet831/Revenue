@@ -1,4 +1,8 @@
-import { create } from 'zustand';
+// Import from the static `zustand/react` entry, not the bare `zustand` root.
+// zustand v5's root re-exports its subpaths dynamically, which no bundler can
+// statically analyze — when this app is compiled into the shell, `create` comes
+// back undefined. `zustand/react` has a real `export { create }`.
+import { create } from 'zustand/react';
 import { RevenueRow, FilterConfig, AnalyticalOutput, KeyMap, CONFIG } from '@revenue/shared';
 
 export interface AppState {
@@ -17,7 +21,7 @@ export interface AppState {
     allSKUs: string[];
     allCustomers: string[];
     keyMap: KeyMap | null;
-    ui: { segDropOpen: boolean; velDropOpen: boolean; insightsOpen: boolean; storiesOpen: boolean };
+    ui: { segDropOpen: boolean; velDropOpen: boolean; insightsOpen: boolean; storiesOpen: boolean; grewGptOpen: boolean };
     hiddenKPIs: string[];
     filters: FilterConfig;
     cardViews: { master: string; cust: string; sku: string; saleshead: string };
@@ -30,15 +34,21 @@ export interface AppState {
     stats: AnalyticalOutput | null;
     insightsSeen: boolean;
     activeApp: 'REVENUE' | 'INVENTORY' | 'LOGISTICS';
-    activeMainView: 'DASHBOARD' | 'LEDGER' | 'AUDIT';
+    activeMainView: 'DASHBOARD' | 'LEDGER' | 'AUDIT' | 'DEV';
     unviewedStories: boolean;
     user: { name: string; features?: Record<string, boolean> } | null;
     isAuthenticated: boolean;
+    isBootstrapping: boolean;
+    authError: string | null;
     features: {
         agentation: boolean;
         story: boolean;
         commitDrilldown: boolean;
         enable_auth: boolean;
+        ledger: boolean;
+        audit: boolean;
+        devTab: boolean;
+        grewGpt: boolean;
     };
 
     // Actions
@@ -66,9 +76,11 @@ export interface AppState {
     setStats: (stats: AnalyticalOutput | null) => void;
     setInsightsSeen: (seen: boolean) => void;
     setUnviewedStories: (unviewed: boolean) => void;
-    setActiveMainView: (view: 'DASHBOARD' | 'LEDGER' | 'AUDIT') => void;
+    setActiveMainView: (view: 'DASHBOARD' | 'LEDGER' | 'AUDIT' | 'DEV') => void;
     setUser: (user: { name: string; features?: Record<string, boolean> } | null) => void;
     setAuthenticated: (auth: boolean) => void;
+    setBootstrapping: (v: boolean) => void;
+    setAuthError: (msg: string | null) => void;
     setActiveApp: (app: 'REVENUE' | 'INVENTORY' | 'LOGISTICS') => void;
     setFeatures: (features: AppState['features']) => void;
 }
@@ -107,7 +119,7 @@ export const useStore = create<AppState>((set) => ({
     allSKUs: [],
     allCustomers: [],
     keyMap: null,
-    ui: { segDropOpen: false, velDropOpen: false, insightsOpen: false, storiesOpen: false },
+    ui: { segDropOpen: false, velDropOpen: false, insightsOpen: false, storiesOpen: false, grewGptOpen: false },
     hiddenKPIs: [],
     filters: initialFilters(),
     cardViews: { master: 'tabular', cust: 'tabular', sku: 'tabular', saleshead: 'tabular' },
@@ -119,11 +131,17 @@ export const useStore = create<AppState>((set) => ({
     unviewedStories: true,
     user: null,
     isAuthenticated: false,
+    isBootstrapping: true,
+    authError: null,
     features: {
         agentation: false,
         story: false,
         commitDrilldown: true,
-        enable_auth: false
+        enable_auth: false,
+        ledger: true,
+        audit: true,
+        devTab: true,
+        grewGpt: false,
     },
 
     // Actions
@@ -196,6 +214,8 @@ export const useStore = create<AppState>((set) => ({
     setActiveMainView: (activeMainView) => set({ activeMainView }),
     setUser: (user) => set({ user }),
     setAuthenticated: (isAuthenticated) => set({ isAuthenticated }),
+    setBootstrapping: (isBootstrapping) => set({ isBootstrapping }),
+    setAuthError: (authError) => set({ authError }),
     setActiveApp: (activeApp) => set({ activeApp }),
     setFeatures: (features) => set({ features })
 }));

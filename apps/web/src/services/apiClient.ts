@@ -23,7 +23,8 @@ export class ApiClient {
             let errorDetail = 'Unknown Error';
             try {
                 const errData = await response.json();
-                errorDetail = errData.error || errorDetail;
+                const base = errData.error || errorDetail;
+                errorDetail = errData.details ? `${base} — ${errData.details}` : base;
             } catch (e) {
                 errorDetail = response.statusText;
             }

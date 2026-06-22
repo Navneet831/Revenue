@@ -1,5 +1,5 @@
 import React from 'react';
-import { Terminal, Layers, BookOpen, TableProperties, ShieldCheck, LogOut } from 'lucide-react';
+import { Terminal, Layers, BookOpen, TableProperties, ShieldCheck, LogOut, Sparkles } from 'lucide-react';
 import { useStore } from '@revenue/store/useStore';
 import { supabase } from '@revenue/services/supabaseClient';
 import { SolarModuleIcon, InternalIcon, RMIcon, ScrapIcon } from '../../assets/CustomIcons';
@@ -22,7 +22,9 @@ export const GlobalSidebar: React.FC<GlobalSidebarProps> = ({ onOpenHelp, onOpen
         setActiveMainView,
         setUser,
         setAuthenticated,
-        user
+        user,
+        ui,
+        updateUIState
     } = useStore();
 
     const filteredSegments = allSegments.filter((s) => {
@@ -139,35 +141,61 @@ export const GlobalSidebar: React.FC<GlobalSidebarProps> = ({ onOpenHelp, onOpen
 
                 {/* Bottom Actions */}
                 <div className="shrink-0 flex flex-col items-center pb-3 gap-2 border-t border-hairline pt-3 bg-canvas/50">
-                    {(!user || user.features?.ledger === true) && (
-                        <div 
-                            onClick={() => setActiveMainView('LEDGER')} 
-                            className={`p-1.5 rounded-md cursor-pointer transition-colors ${activeMainView === 'LEDGER' ? 'text-emerald-600 bg-emerald-50' : 'text-ink-faint hover:text-ink'}`} 
+                    {features.ledger && (
+                        <div
+                            onClick={() => setActiveMainView('LEDGER')}
+                            className={`p-1.5 rounded-md cursor-pointer transition-colors ${activeMainView === 'LEDGER' ? 'text-emerald-600 bg-emerald-50' : 'text-ink-faint hover:text-ink'}`}
                             data-tooltip="Transaction Ledger"
                         >
                             <TableProperties className="w-5 h-5" />
                         </div>
                     )}
 
-                    {(!user || user.features?.audit === true) && (
-                        <div 
-                            onClick={() => setActiveMainView('AUDIT')} 
-                            className={`p-1.5 rounded-md cursor-pointer transition-colors ${activeMainView === 'AUDIT' ? 'text-amber-600 bg-amber-50' : 'text-ink-faint hover:text-ink'}`} 
+                    {features.audit && (
+                        <div
+                            onClick={() => setActiveMainView('AUDIT')}
+                            className={`p-1.5 rounded-md cursor-pointer transition-colors ${activeMainView === 'AUDIT' ? 'text-amber-600 bg-amber-50' : 'text-ink-faint hover:text-ink'}`}
                             data-tooltip="Audit Control"
                         >
                             <ShieldCheck className="w-5 h-5" />
                         </div>
                     )}
 
+                    {features.devTab && (
+                        <div
+                            onClick={() => setActiveMainView(activeMainView === 'DEV' ? 'DASHBOARD' : 'DEV')}
+                            className={`p-1.5 rounded-md cursor-pointer transition-colors ${activeMainView === 'DEV' ? 'text-emerald-400 bg-[#05070A]' : 'text-ink-faint hover:text-ink'}`}
+                            data-tooltip="Dev Console"
+                        >
+                            <Terminal className="w-5 h-5" />
+                        </div>
+                    )}
+
                     <div className="w-8 border-t border-hairline my-0.5" />
 
-                    <div 
-                        onClick={handleLogout} 
-                        className="p-1.5 rounded-md cursor-pointer transition-colors text-ink-faint hover:text-rose-500 hover:bg-rose-50" 
-                        data-tooltip="Logout / Terminate Session"
-                    >
-                        <LogOut className="w-5 h-5" />
-                    </div>
+                    {features.grewGpt && (
+                        <div
+                            onClick={() => updateUIState({ grewGptOpen: !ui.grewGptOpen })}
+                            className={`flex flex-col items-center select-none transition-colors p-1 rounded-md cursor-pointer animate-in fade-in ${ui.grewGptOpen ? 'text-sky-600 bg-sky-50' : 'text-sky-500 hover:text-sky-600'}`}
+                            title="GrewGPT AI Assistant"
+                        >
+                            <Sparkles className={`w-5 h-5 ${ui.grewGptOpen ? '' : 'animate-pulse'}`} />
+                            <span className="text-[7px] font-black tracking-tighter uppercase font-mono mt-0.5">GrewGPT</span>
+                        </div>
+                    )}
+
+                    {features.enable_auth && (
+                        <>
+                            <div className="w-8 border-t border-hairline my-0.5" />
+                            <div
+                                onClick={handleLogout}
+                                className="p-1.5 rounded-md cursor-pointer transition-colors text-ink-faint hover:text-rose-500 hover:bg-rose-50"
+                                data-tooltip="Logout / Terminate Session"
+                            >
+                                <LogOut className="w-5 h-5" />
+                            </div>
+                        </>
+                    )}
                 </div>
             </aside>
         </div>

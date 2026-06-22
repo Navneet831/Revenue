@@ -11,8 +11,6 @@ AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
 DefaultDirName={autopf}\{#MyAppName}
-PrivilegesRequired=lowest
-PrivilegesRequiredOverridesAllowed=dialog
 DisableProgramGroupPage=yes
 DefaultGroupName={#MyAppName}
 ; Set output folder and filename

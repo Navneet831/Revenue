@@ -5,6 +5,10 @@ export interface AppFeatures {
     story: boolean;
     commitDrilldown: boolean;
     enable_auth: boolean;
+    ledger: boolean;
+    audit: boolean;
+    devTab: boolean;
+    grewGpt: boolean;
 }
 
 export class FeatureService {
@@ -19,7 +23,11 @@ export class FeatureService {
                 agentation: false,
                 story: false,
                 commitDrilldown: true,
-                enable_auth: false
+                enable_auth: false,
+                ledger: true,
+                audit: true,
+                devTab: true,
+                grewGpt: true,
             };
         }
     }

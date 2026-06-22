@@ -201,6 +201,24 @@ export const ListCard: React.FC<ListCardProps> = ({ id, title, icon, cardKey, fi
     const rightLabelsPlugin = createRightLabelsPlugin(privacyMode);
     const dynamicHeight = Math.max(300, topData.length * 28);
 
+    // HHI Calculation
+    const hhi = preparedData.length > 0 ? (() => {
+        const absValues = preparedData.map((d: any) => Math.abs(d.displayV || 0));
+        const totalAbs = absValues.reduce((a: number, b: number) => a + b, 0);
+        if (totalAbs <= 0) return 0;
+        return absValues.reduce((sum: number, v: number) => sum + Math.pow((v / totalAbs) * 100, 2), 0);
+    })() : 0;
+
+    let hhiBadgeClass = 'bg-emerald-50 text-emerald-700 border-emerald-200/60';
+    let hhiTooltip = 'Diversified concentration';
+    if (hhi >= 2500) {
+        hhiBadgeClass = 'bg-rose-50 text-rose-700 border-rose-200/60';
+        hhiTooltip = 'Highly concentrated (HHI >= 2500)';
+    } else if (hhi >= 1500) {
+        hhiBadgeClass = 'bg-blue-50 text-blue-700 border-blue-200/60';
+        hhiTooltip = 'Moderate concentration (1500 <= HHI < 2500)';
+    }
+
     return (
         <div id={id} className="flex flex-col group relative rounded-2xl min-h-0 min-w-0 bg-white overflow-hidden border border-hairline h-full shadow-sm">
             {/* Widget header */}
@@ -213,6 +231,14 @@ export const ListCard: React.FC<ListCardProps> = ({ id, title, icon, cardKey, fi
                             <span className="ml-1 text-black/40 font-mono text-[9px]">({count})</span>
                         )}
                     </span>
+                    {preparedData.length > 0 && (
+                        <span 
+                            title={hhiTooltip}
+                            className={`ml-2 px-1.5 py-0.5 text-[9px] font-mono font-bold border rounded-md whitespace-nowrap transition-colors duration-200 ${hhiBadgeClass}`}
+                        >
+                            HHI: {hhi.toFixed(0)}
+                        </span>
+                    )}
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                     <span className="text-[9px] font-bold text-emerald-700 uppercase tracking-widest">{metricLabel}</span>

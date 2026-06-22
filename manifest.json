@@ -1,0 +1,11 @@
+{
+  "name": "Revenue",
+  "version": "1.0.0",
+  "description": "Revenue Analytics (proxied Node.js service)",
+  "proxy_url": "http://127.0.0.1:3001",
+  "proxy_prefixes": ["/api/v1/revenue", "/api/revenue", "/api/features"],
+  "frontend": {
+    "entry": "@revenue/index"
+  },
+  "permissions": ["revenue:read"]
+}

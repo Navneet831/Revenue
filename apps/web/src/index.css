@@ -589,9 +589,9 @@ span.flatpickr-weekday {
 
 /* Excel-like menu buttons */
 .ag-theme-alpine .ag-header-cell-menu-button {
-    opacity: 0.65 !important;
+    opacity: 1 !important; /* Fully visible, not translucent */
     margin-left: 4px !important;
-    transition: opacity 0.2s, background-color 0.2s;
+    transition: background-color 0.2s;
     border-radius: 4px;
     padding: 2px !important;
     display: flex !important;
@@ -599,7 +599,6 @@ span.flatpickr-weekday {
     justify-content: center !important;
 }
 .ag-theme-alpine .ag-header-cell-menu-button:hover {
-    opacity: 1 !important;
     background-color: rgba(15, 23, 42, 0.08) !important;
 }
 
@@ -609,5 +608,40 @@ span.flatpickr-weekday {
 }
 .ag-theme-alpine .ag-header-cell-sorted {
     background-color: rgba(59, 130, 246, 0.02) !important;
+}
+
+/* Enable header cell text wrap */
+.ag-theme-alpine .ag-header-cell-text {
+    white-space: normal !important;
+    text-overflow: clip !important;
+    word-break: break-word !important;
+}
+
+/* Hide default sort and filter icons inside the header label container to keep a single Excel-style icon */
+.ag-theme-alpine .ag-header-cell-label .ag-header-icon {
+    display: none !important;
+}
+
+/* Highlight the filter funnel icon in emerald green when a filter is active */
+.ag-theme-alpine .ag-header-cell-filtered .ag-header-cell-menu-button {
+    color: #059669 !important; /* emerald-600 */
+}
+
+/* Excel funnel/caret toggle rules */
+.ag-theme-alpine .excel-funnel-icon {
+    display: none !important;
+}
+.ag-theme-alpine .excel-caret-icon {
+    display: inline-block !important;
+    color: #475569 !important; /* Slate-600 */
+}
+
+/* When the column has an active filter */
+.ag-theme-alpine .ag-header-cell-filtered .excel-funnel-icon {
+    display: inline-block !important;
+    color: #059669 !important; /* emerald-600 */
+}
+.ag-theme-alpine .ag-header-cell-filtered .excel-caret-icon {
+    color: #059669 !important; /* emerald-600 */
 }
 
