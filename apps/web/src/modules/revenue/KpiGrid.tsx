@@ -70,16 +70,27 @@ export const KpiGrid: React.FC = () => {
                 const wNum = parseInt(wNumStr, 10);
                 if (!result[wNum]) result[wNum] = {};
                 Object.entries(breakdown).forEach(([key, val]) => {
-                    result[wNum][key] = (result[wNum][key] || 0) + val;
+                    result[wNum][key] = (result[wNum][key] || 0) + Number(val);
                 });
             });
         });
         return result;
     }, [stats]);
 
+    const momentum = React.useMemo(() => {
+        if (!stats) return undefined;
+        const anchorDate = stats.kpiAnchorDate ? new Date(stats.kpiAnchorDate) : new Date();
+        const curYear = anchorDate.getFullYear();
+        const curMonth = anchorDate.getMonth();
+        const curMonthDays = new Date(curYear, curMonth + 1, 0).getDate();
+        const avg = (stats.last7DaysSales || 0) / 7;
+        const proj = avg * curMonthDays;
+        return { avg, proj };
+    }, [stats]);
+
     // ── Early returns AFTER all hooks ─────────────────────────────────────────
 
-    // Gate on user's dashboard feature flag (from access_whitelist)
+    // Gate on user's dashboard feature flag (from whitelist)
     if (user?.features && user.features.dashboard === false) {
         return (
             <div className="flex w-full gap-3 pb-2 h-32 shrink-0 items-center justify-center bg-amber-50 rounded-xl border border-amber-100 shadow-sm">
@@ -123,6 +134,7 @@ export const KpiGrid: React.FC = () => {
         ? `PERIOD ${metricSuffix}`
         : `ANCHOR · ${toDateLabel} ${metricSuffix}`;
 
+
     return (
         <div className="flex w-full h-32 shrink-0 gap-3 pb-2 overflow-x-auto no-scrollbar" data-lenis-prevent="true">
             <KpiCard
@@ -132,6 +144,7 @@ export const KpiGrid: React.FC = () => {
                 iconName="calendar-days"
                 isInteractive={false}
                 breakdown={kpi.periodBreakdown}
+                momentum={momentum}
             />
 
             <KpiCard
@@ -172,7 +185,11 @@ export const KpiGrid: React.FC = () => {
                 onToggleDetail={() => handleToggleDetail('ytd')}
                 breakdown={selectedWeekNum !== null ? weeklyBreakdowns[selectedWeekNum] : kpi.periodBreakdown}
                 selectedWeek={selectedWeekNum}
-                onSelectWeek={(w) => setSelectedWeekNum(selectedWeekNum === w ? null : w)}
+                onSelectWeek={(w) => {
+                    const next = selectedWeekNum === w ? null : w;
+                    setSelectedWeekNum(next);
+                    updateFilters({ selectedWeek: next, selectedDay: null });
+                }}
                 consolidated={ytdWeeks.map(w => ({
                     val: filters.metric === 'Amount' ? w.val / CONFIG.CURRENCY_DIVIDER : filters.metric === 'MW' ? w.mw : w.qty,
                     weekNum: w.weekNum
