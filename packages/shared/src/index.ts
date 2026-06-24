@@ -1,5 +1,5 @@
 export const FEATURES = {
-    agentation: false,
+    agentation: true,
     story: true,
     commitDrilldown: false,
     enable_auth: true,
@@ -812,6 +812,15 @@ export class RevenueComputeEngine {
 
         const excludedSet = f.excludedSeries || new Set();
 
+        // Previous month relative to the anchor — accumulated only up to the anchor
+        // day-of-month so MoM is like-for-like: a partial current month is compared
+        // against the SAME portion of the previous month, not the full previous month.
+        const prevAnchorDate = new Date(curYear, curMonth - 1, 1);
+        const prevAnchorMonthIdx = prevAnchorDate.getMonth();
+        const prevAnchorMonthYear = prevAnchorDate.getFullYear();
+        let prevMonthToDate = 0;
+        let prevMonthToDateHasData = false;
+
         // 1. First Pass: Compute historical pacing datasets
         for (let i = 0; i < this.rawData.length; i++) {
             const r = this.rawData[i];
@@ -895,6 +904,17 @@ export class RevenueComputeEngine {
                                 (global_paced[key].plotKeys[plotKey] || 0) + metricVal;
                             global_paced[key].hasData = true;
                         }
+
+                        // Like-for-like MoM baseline: previous month truncated to the
+                        // anchor day-of-month (mirrors the anchor month's own pacing).
+                        if (
+                            rMonth === prevAnchorMonthIdx &&
+                            rYear === prevAnchorMonthYear &&
+                            r.day <= anchorDay
+                        ) {
+                            prevMonthToDate += metricVal;
+                            prevMonthToDateHasData = true;
+                        }
                     }
                 }
             }
@@ -976,14 +996,14 @@ export class RevenueComputeEngine {
 
         // 3. Post-Process KPI Pacing Metrics
         const curKey = `${curYear}-${String(curMonth).padStart(2, '0')}`;
-        const prevMonthDate = new Date(curYear, curMonth - 1, 1);
-        const prevMKey = `${prevMonthDate.getFullYear()}-${String(prevMonthDate.getMonth()).padStart(2, '0')}`;
         const prevYearSameMonthDate = new Date(curYear - 1, curMonth, 1);
         const prevYKey = `${prevYearSameMonthDate.getFullYear()}-${String(prevYearSameMonthDate.getMonth()).padStart(2, '0')}`;
 
         kpi.mtd = global_paced[curKey] && global_paced[curKey].hasData ? global_paced[curKey].metricVal : 0;
         kpi.mtdBreakdown = global_paced[curKey] && global_paced[curKey].hasData ? global_paced[curKey].plotKeys : {};
-        kpi.prevMtd = global_paced[prevMKey] && global_paced[prevMKey].hasData ? global_paced[prevMKey].metricVal : 0;
+        // Like-for-like MoM: previous month counted only to the anchor day-of-month
+        // (was previously the FULL previous month, which understated a partial MTD).
+        kpi.prevMtd = prevMonthToDateHasData ? prevMonthToDate : 0;
         const prevYearMtd =
             global_paced[prevYKey] && global_paced[prevYKey].hasData ? global_paced[prevYKey].metricVal : 0;
 
@@ -1048,7 +1068,16 @@ export class RevenueComputeEngine {
             const keyPrevY = `${colYear - 1}-${String(colMonth).padStart(2, '0')}`;
 
             const curPaced = global_paced[keyCur] ? global_paced[keyCur].metricVal || 0 : 0;
-            const prevMPaced = global_paced[keyPrevM] ? global_paced[keyPrevM].metricVal || 0 : 0;
+            // For the anchor (in-progress) month, compare against the previous month
+            // counted to the same day-of-month (like-for-like), not the full month.
+            const prevMPaced =
+                keyCur === curKey
+                    ? prevMonthToDateHasData
+                        ? prevMonthToDate
+                        : 0
+                    : global_paced[keyPrevM]
+                      ? global_paced[keyPrevM].metricVal || 0
+                      : 0;
             const prevYPaced = global_paced[keyPrevY] ? global_paced[keyPrevY].metricVal || 0 : 0;
 
             const colQTD = getQTD(colYear, colMonth).sum;
@@ -1133,7 +1162,6 @@ export class RevenueComputeEngine {
             l: 'MOMENTUM (7-DAY AVG)',
             txt: `Recent trailing velocity projects ${formatInsightVal(projWeek)} for the current period.`
         });
-
         const unfiltCust = custArr.sort((a, b) => b.v - a.v);
         const sumCustAbs = unfiltCust.reduce((a, c) => a + Math.abs(c.v), 0);
         const hhi = ConcentrationAnalyser.calculateHHI(unfiltCust);

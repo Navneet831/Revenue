@@ -42,9 +42,67 @@ export const RevenueMatrix: React.FC = memo(() => {
         mw: 'Σ "MW"  (capacity)'
     };
     const DELTA_FORMULA: Record<'mom' | 'qoq' | 'yoy', string> = {
-        mom: 'Δ MoM = (month − prior month) ÷ prior month × 100',
-        qoq: 'Δ QoQ = (quarter − prior quarter) ÷ prior quarter × 100',
-        yoy: 'Δ YoY = (period − same period prior FY) ÷ prior × 100'
+        mom: 'MoM (Month-over-Month): each month vs the previous month. The current (in-progress) month is compared like-for-like — both months counted only up to the anchor day-of-month.',
+        qoq: 'QoQ (quarter-to-date): for each month, sums from the quarter\'s first month through that month, then compares with the same window of the previous fiscal year. The value grows within a quarter; the in-progress month is counted to the anchor day in both years.',
+        yoy: 'YoY (Year-over-Year): each month vs the same month last year. The current (in-progress) month is compared like-for-like — both years counted only up to the anchor day-of-month.'
+    };
+
+    const getCellTooltip = (key: 'mom' | 'qoq' | 'yoy', d: any, idx: number) => {
+        const anchorDate = stats.kpiAnchorDate ? new Date(stats.kpiAnchorDate) : new Date();
+        const curYear = anchorDate.getFullYear();
+        const curMonth = anchorDate.getMonth();
+        const anchorDay = anchorDate.getDate();
+        const curFYStartYear = curMonth >= 3 ? curYear : curYear - 1;
+
+        // Fiscal index of the anchor (in-progress) month — the only column whose data
+        // is partial, so the only one paced to the anchor day-of-month on both sides.
+        const anchorFiscalIdx = (curMonth + 9) % 12;
+        const isAnchorMonth = idx === anchorFiscalIdx;
+        // e.g. " (1–15)" — appended to a month that is counted only to the anchor day.
+        const cutoff = isAnchorMonth ? ` (1–${anchorDay})` : '';
+
+        const getMonthAndYear = (fiscalIdx: number) => {
+            const name = stats.matrix[fiscalIdx].month;
+            const year = fiscalIdx < 9 ? curFYStartYear : curFYStartYear + 1;
+            return { name, year };
+        };
+
+        const curInfo = getMonthAndYear(idx);
+
+        if (key === 'mom') {
+            const prevInfo = idx === 0
+                ? { name: 'Mar', year: curFYStartYear }
+                : getMonthAndYear(idx - 1);
+            // For the anchor month, the previous month is also counted to the anchor
+            // day-of-month (like-for-like), so the cutoff applies to BOTH terms.
+            return `${d.month} · Δ MoM = (${curInfo.name} ${curInfo.year}${cutoff} − ${prevInfo.name} ${prevInfo.year}${cutoff}) ÷ ${prevInfo.name} ${prevInfo.year}${cutoff} × 100`;
+        }
+
+        if (key === 'qoq') {
+            // The engine computes QoQ as quarter-TO-DATE: it sums from the quarter's
+            // first month THROUGH this month (getQTD), then compares with the same
+            // window one fiscal year earlier. So the value grows month-by-month within
+            // a quarter — the tooltip window must reflect that, or it can't reproduce
+            // the number shown (only the quarter's final month would ever match).
+            const qIdx = Math.floor(idx / 3);
+            const qName = ['Q1', 'Q2', 'Q3', 'Q4'][qIdx];
+            const qStartIdx = qIdx * 3;
+            const startName = stats.matrix[qStartIdx].month;
+            // The in-progress month inside the window is counted to the anchor day.
+            const endLabel = `${d.month}${cutoff}`;
+            const windowLabel = idx === qStartIdx ? endLabel : `${startName}–${endLabel}`;
+            const curFY = `FY${String(curFYStartYear).slice(-2)}`;
+            const prevFY = `FY${String(curFYStartYear - 1).slice(-2)}`;
+            return `${d.month} · Δ QoQ (${qName} to-date) = (${windowLabel} ${curFY} − ${windowLabel} ${prevFY}) ÷ ${windowLabel} ${prevFY} × 100`;
+        }
+
+        if (key === 'yoy') {
+            const prevYear = curInfo.year - 1;
+            // For the anchor month both years are counted to the anchor day-of-month.
+            return `${d.month} · Δ YoY = (${curInfo.name} ${curInfo.year}${cutoff} − ${curInfo.name} ${prevYear}${cutoff}) ÷ ${curInfo.name} ${prevYear}${cutoff} × 100`;
+        }
+
+        return '';
     };
 
     // The active metric drives the matrix: its row is pinned first and emphasized,
@@ -77,16 +135,16 @@ export const RevenueMatrix: React.FC = memo(() => {
 
                 const borderCls = isQEnd ? 'border-r border-hairline' : '';
                 const textCls = isTotal
-                    ? `${isPrimary ? 'text-emerald-700' : 'text-emerald-700/60'} text-[13px] font-bold tracking-tight`
+                    ? `${isPrimary ? 'text-emerald-700' : 'text-emerald-700/60'} text-[11.5px] font-bold tracking-tighter`
                     : isSelectedMonth || isPartofSelectedQ
-                        ? `${isPrimary ? 'text-ink' : 'text-ink/80'} text-[12px] font-bold tracking-tight`
-                        : `${isPrimary ? 'text-ink' : 'text-ink/70'} text-[12px] font-medium tracking-tight`;
+                        ? `${isPrimary ? 'text-ink' : 'text-ink/80'} text-[10.5px] font-bold tracking-tighter`
+                        : `${isPrimary ? 'text-ink' : 'text-ink/70'} text-[10.5px] font-medium tracking-tighter`;
 
                 return (
                     <td
                         key={idx}
                         data-tooltip={`${d.month} · ${ROW_FORMULA[key]}`}
-                        className={`px-2 py-1 font-mono text-right relative transition-all duration-200 whitespace-nowrap cursor-help ${borderCls} ${isSelectedMonth || isPartofSelectedQ ? 'bg-canvas-deep/50' : ''}`}
+                        className={`px-1 py-1 font-mono text-right relative transition-all duration-200 whitespace-nowrap cursor-help ${borderCls} ${isSelectedMonth || isPartofSelectedQ ? 'bg-canvas-deep/50' : ''}`}
                     >
                         <span className={`${textCls} relative z-10 pointer-events-none`}>
                             {privacyMode ? '••••' : formatter(d[key])}
@@ -111,12 +169,12 @@ export const RevenueMatrix: React.FC = memo(() => {
 
                 const borderCls = isQEnd ? 'border-r border-hairline' : '';
 
-                if (isTotal) return <td key={idx} className={`px-2 text-center whitespace-nowrap text-ink-faint text-[11px] font-mono ${borderCls}`}>—</td>;
+                if (isTotal) return <td key={idx} className={`px-1 text-center whitespace-nowrap text-ink-faint text-[10px] font-mono ${borderCls}`}>—</td>;
 
                 const val = d[key];
                 if (val === null || val === undefined) {
                     return (
-                        <td key={idx} className={`px-2 text-right text-ink-faint text-[11px] font-mono whitespace-nowrap ${borderCls} ${isSelectedMonth || isPartofSelectedQ ? 'bg-canvas-deep/50' : ''}`}>
+                        <td key={idx} className={`px-1 text-right text-ink-faint text-[10px] font-mono whitespace-nowrap ${borderCls} ${isSelectedMonth || isPartofSelectedQ ? 'bg-canvas-deep/50' : ''}`}>
                             N/A
                         </td>
                     );
@@ -128,10 +186,10 @@ export const RevenueMatrix: React.FC = memo(() => {
                 return (
                     <td
                         key={idx}
-                        data-tooltip={`${d.month} · ${DELTA_FORMULA[key]}`}
-                        className={`px-2 py-1 font-mono text-right relative transition-all duration-200 whitespace-nowrap cursor-help ${borderCls} ${isSelectedMonth || isPartofSelectedQ ? 'bg-canvas-deep/50' : ''}`}
+                        data-tooltip={getCellTooltip(key, d, idx)}
+                        className={`px-1 py-1 font-mono text-right relative transition-all duration-200 whitespace-nowrap cursor-help ${borderCls} ${isSelectedMonth || isPartofSelectedQ ? 'bg-canvas-deep/50' : ''}`}
                     >
-                        <span className={`relative z-10 ${colorCls} text-[11px] font-bold tracking-tight`}>
+                        <span className={`relative z-10 ${colorCls} text-[10px] font-bold tracking-tighter`}>
                             {privacyMode ? '••' : `${isPos ? '+' : ''}${val.toFixed(1)}%`}
                         </span>
                     </td>
