@@ -1,6 +1,7 @@
 import React from 'react';
 import { KpiCard } from './KpiCard';
 import { useStore } from '@revenue/store/useStore';
+import { useAuthStore } from '@grew/auth';
 import { useSectionData } from '@revenue/hooks/useSectionData';
 import { AlertCircle, Loader2, ShieldOff } from 'lucide-react';
 import { CONFIG } from '@revenue/shared';
@@ -20,8 +21,8 @@ export const KpiGrid: React.FC = () => {
         activeKpiDetail,
         setActiveKpiDetail,
         isCustomPeriodActive,
-        user
     } = useStore();
+    const { user } = useAuthStore();
 
     const consolidatedWeeks = React.useMemo(() => {
         if (!stats?.dailySeries) return [];
@@ -33,7 +34,7 @@ export const KpiGrid: React.FC = () => {
             4: { val: 0, mw: 0, qty: 0, weekNum: 4 },
             5: { val: 0, mw: 0, qty: 0, weekNum: 5 }
         };
-        series.forEach((d) => {
+        series.forEach((d: { date: string; val: number; mw: number; qty: number }) => {
             const dayOfMonth = new Date(d.date).getDate();
             const weekNum = Math.min(Math.ceil(dayOfMonth / 7), 5);
             if (groups[weekNum]) {
@@ -52,7 +53,7 @@ export const KpiGrid: React.FC = () => {
 
     const weekWiseTotal = React.useMemo(() => {
         const metric = filters.metric || 'Amount';
-        const total = ytdWeeks.reduce((acc, w) => {
+        const total = ytdWeeks.reduce((acc: number, w: { val: number; mw: number; qty: number; weekNum: number }) => {
             if (metric === 'Amount') return acc + w.val;
             if (metric === 'MW') return acc + w.mw;
             return acc + w.qty;
@@ -65,8 +66,8 @@ export const KpiGrid: React.FC = () => {
     const weeklyBreakdowns = React.useMemo(() => {
         if (!stats?.buckets?.chart?.weekly) return {};
         const result: Record<number, Record<string, number>> = {};
-        Object.values(stats.buckets.chart.weekly).forEach((weeks) => {
-            Object.entries(weeks).forEach(([wNumStr, breakdown]) => {
+        Object.values(stats.buckets.chart.weekly as Record<string, Record<string, Record<string, number>>>).forEach((weeks) => {
+            Object.entries(weeks as Record<string, Record<string, number>>).forEach(([wNumStr, breakdown]) => {
                 const wNum = parseInt(wNumStr, 10);
                 if (!result[wNum]) result[wNum] = {};
                 Object.entries(breakdown).forEach(([key, val]) => {
@@ -102,7 +103,7 @@ export const KpiGrid: React.FC = () => {
 
     if (isLoading) {
         return (
-            <div className="flex w-full gap-3 pb-2 overflow-x-auto no-scrollbar h-32 shrink-0 items-center justify-center bg-white rounded-xl border border-hairline shadow-sm">
+            <div className="flex w-full gap-3 pb-2 overflow-x-auto no-scrollbar h-32 shrink-0 items-center justify-center card-metal rounded-xl">
                 <Loader2 className="w-5 h-5 text-primary animate-spin mr-2" />
                 <span className="text-[10px] font-mono text-ink-mute uppercase tracking-widest">Calculating KPIs...</span>
             </div>
@@ -190,7 +191,7 @@ export const KpiGrid: React.FC = () => {
                     setSelectedWeekNum(next);
                     updateFilters({ selectedWeek: next, selectedDay: null });
                 }}
-                consolidated={ytdWeeks.map(w => ({
+                consolidated={ytdWeeks.map((w: { val: number; mw: number; qty: number; weekNum: number }) => ({
                     val: filters.metric === 'Amount' ? w.val / CONFIG.CURRENCY_DIVIDER : filters.metric === 'MW' ? w.mw : w.qty,
                     weekNum: w.weekNum
                 }))}
