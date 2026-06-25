@@ -12,6 +12,11 @@ export default defineConfig({
             '@revenue/services': path.resolve(__dirname, './src/services'),
             '@revenue/hooks': path.resolve(__dirname, './src/hooks'),
             '@revenue/assets': path.resolve(__dirname, './src/assets'),
+            '@grew/auth': path.resolve(__dirname, '../../../../packages/auth/src'),
+            // Force single-copy resolution for deps used by packages/auth/src
+            // (hoisted to workspace root, not duplicated in apps/web/node_modules)
+            '@supabase/supabase-js': path.resolve(__dirname, '../../node_modules/@supabase/supabase-js'),
+            'zustand': path.resolve(__dirname, '../../node_modules/zustand'),
         },
     },
     // Production build output consumed by Express server.js
@@ -32,14 +37,26 @@ export default defineConfig({
     },
     server: {
         // Dev server: runs alongside Express (which must be on a different port in dev)
-        host: '127.0.0.1',
+        host: '0.0.0.0',
         port: 5173,
         // Proxy all /api/* calls to the Express backend
         proxy: {
             '/api': {
                 target: 'http://127.0.0.1:8000',
                 changeOrigin: true,
-                secure: false
+                secure: false,
+                configure: (proxy) => {
+                    proxy.on('error', (err, _req, res) => {
+                        // Without this, a connection-refused to the API server causes
+                        // Vite to close the socket with no HTTP response, which the
+                        // browser reports as "TypeError: Failed to fetch" instead of
+                        // a readable error message.
+                        if (!res.headersSent) {
+                            res.writeHead(503, { 'Content-Type': 'application/json' });
+                            res.end(JSON.stringify({ error: 'API server unreachable', details: err.message }));
+                        }
+                    });
+                }
             }
         }
     }
