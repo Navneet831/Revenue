@@ -156,7 +156,7 @@ export const App: React.FC = () => {
     }
 
     if (features.enable_auth && !isAuthenticated) {
-        return <Login />;
+        return <Login redirectTo="http://127.0.0.1:8000/auth/callback" />;
     }
 
     const activeModule = MODULE_REGISTRY[activeApp];
