@@ -17,7 +17,7 @@ export interface AppState {
     allSKUs: string[];
     allCustomers: string[];
     keyMap: KeyMap | null;
-    ui: { segDropOpen: boolean; velDropOpen: boolean; insightsOpen: boolean; storiesOpen: boolean };
+    ui: { segDropOpen: boolean; velDropOpen: boolean; insightsOpen: boolean; storiesOpen: boolean; grewGptOpen: boolean };
     hiddenKPIs: string[];
     filters: FilterConfig;
     cardViews: { master: string; cust: string; sku: string; saleshead: string };
@@ -30,16 +30,12 @@ export interface AppState {
     stats: AnalyticalOutput | null;
     insightsSeen: boolean;
     activeApp: 'REVENUE' | 'INVENTORY' | 'LOGISTICS';
-    activeMainView: 'DASHBOARD' | 'LEDGER' | 'AUDIT';
+    activeMainView: 'DASHBOARD' | 'LEDGER' | 'AUDIT' | 'DEV' | 'GREWGPT';
     unviewedStories: boolean;
-    user: { name: string; features?: Record<string, boolean> } | null;
-    isAuthenticated: boolean;
-    features: {
-        agentation: boolean;
-        story: boolean;
-        commitDrilldown: boolean;
-        enable_auth: boolean;
-    };
+    // Keyed by whitelist column name (e.g. "agentation", "audit", "story").
+    // enable_auth is the only platform-level flag; all others come from the whitelist row.
+    // Auth state (isAuthenticated, isBootstrapping, user, authError) lives in @grew/auth useAuthStore.
+    features: Record<string, boolean>;
 
     // Actions
     setData: (data: RevenueRow[]) => void;
@@ -66,30 +62,44 @@ export interface AppState {
     setStats: (stats: AnalyticalOutput | null) => void;
     setInsightsSeen: (seen: boolean) => void;
     setUnviewedStories: (unviewed: boolean) => void;
-    setActiveMainView: (view: 'DASHBOARD' | 'LEDGER' | 'AUDIT') => void;
-    setUser: (user: { name: string; features?: Record<string, boolean> } | null) => void;
-    setAuthenticated: (auth: boolean) => void;
+    setActiveMainView: (view: 'DASHBOARD' | 'LEDGER' | 'AUDIT' | 'DEV' | 'GREWGPT') => void;
     setActiveApp: (app: 'REVENUE' | 'INVENTORY' | 'LOGISTICS') => void;
     setFeatures: (features: AppState['features']) => void;
 }
 
-const initialFilters = (minDate: string = '', maxDate: string = ''): FilterConfig => ({
-    segment: [],
-    metric: 'Amount',
-    velocityMode: 'Weekly',
-    salesHead: [],
-    customer: [],
-    pendingOnly: false,
-    startDate: minDate,
-    endDate: maxDate,
-    customStartDate: undefined,
-    matrixMonth: null,
-    selectedQuarter: null,
-    selectedWeek: null,
-    selectedDay: null,
-    excludedSeries: new Set<string>(),
-    selectedSku: []
-});
+const initialFilters = (minDate: string = '', maxDate: string = ''): FilterConfig => {
+    let defaultSegment: string[] = [];
+    try {
+        if (typeof useStore !== 'undefined' && useStore.getState) {
+            const segments = useStore.getState().allSegments;
+            if (segments && segments.length > 0) {
+                const solar = segments.find(s => {
+                    const sLower = s.toLowerCase();
+                    return sLower.includes('solar module') && !sLower.includes('internal');
+                });
+                if (solar) defaultSegment = [solar];
+            }
+        }
+    } catch (_) {}
+
+    return {
+        segment: defaultSegment,
+        metric: 'Amount',
+        velocityMode: 'Weekly',
+        salesHead: [],
+        customer: [],
+        pendingOnly: false,
+        startDate: minDate,
+        endDate: maxDate,
+        customStartDate: undefined,
+        matrixMonth: null,
+        selectedQuarter: null,
+        selectedWeek: null,
+        selectedDay: null,
+        excludedSeries: new Set<string>(),
+        selectedSku: []
+    };
+};
 
 export const useStore = create<AppState>((set) => ({
     data: [],
@@ -107,7 +117,7 @@ export const useStore = create<AppState>((set) => ({
     allSKUs: [],
     allCustomers: [],
     keyMap: null,
-    ui: { segDropOpen: false, velDropOpen: false, insightsOpen: false, storiesOpen: false },
+    ui: { segDropOpen: false, velDropOpen: false, insightsOpen: false, storiesOpen: false, grewGptOpen: false },
     hiddenKPIs: [],
     filters: initialFilters(),
     cardViews: { master: 'tabular', cust: 'tabular', sku: 'tabular', saleshead: 'tabular' },
@@ -117,14 +127,7 @@ export const useStore = create<AppState>((set) => ({
     activeApp: 'REVENUE',
     activeMainView: 'DASHBOARD',
     unviewedStories: true,
-    user: null,
-    isAuthenticated: false,
-    features: {
-        agentation: false,
-        story: false,
-        commitDrilldown: true,
-        enable_auth: false
-    },
+    features: { enable_auth: false },
 
     // Actions
     setData: (data) => set({ data }),
@@ -194,8 +197,6 @@ export const useStore = create<AppState>((set) => ({
     setInsightsSeen: (insightsSeen) => set({ insightsSeen }),
     setUnviewedStories: (unviewedStories) => set({ unviewedStories }),
     setActiveMainView: (activeMainView) => set({ activeMainView }),
-    setUser: (user) => set({ user }),
-    setAuthenticated: (isAuthenticated) => set({ isAuthenticated }),
     setActiveApp: (activeApp) => set({ activeApp }),
     setFeatures: (features) => set({ features })
 }));

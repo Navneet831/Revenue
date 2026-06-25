@@ -1,5 +1,6 @@
 import React from 'react';
 import { useStore } from '@revenue/store/useStore';
+import { useAuthStore } from '@grew/auth';
 
 /**
  * FOOTER COMPONENT
@@ -7,7 +8,8 @@ import { useStore } from '@revenue/store/useStore';
  * - Last updated date from latestDate
  */
 export const AppFooter: React.FC = () => {
-    const { latestDate, user, isAuthenticated, features } = useStore();
+    const { latestDate, features } = useStore();
+    const { user, isAuthenticated } = useAuthStore();
 
     const formattedDate = latestDate
         ? latestDate.toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })

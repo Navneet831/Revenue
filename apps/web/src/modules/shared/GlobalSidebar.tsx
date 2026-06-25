@@ -1,7 +1,7 @@
-import React from 'react';
-import { Terminal, Layers, BookOpen, TableProperties, ShieldCheck, LogOut } from 'lucide-react';
+import React, { memo } from 'react';
+import { Layers, TableProperties, ShieldCheck, LogOut, Sparkles, Cpu } from 'lucide-react';
 import { useStore } from '@revenue/store/useStore';
-import { supabase } from '@revenue/services/supabaseClient';
+import { supabase, useAuthStore } from '@grew/auth';
 import { SolarModuleIcon, InternalIcon, RMIcon, ScrapIcon } from '../../assets/CustomIcons';
 
 interface GlobalSidebarProps {
@@ -9,23 +9,23 @@ interface GlobalSidebarProps {
     onOpenStories?: () => void;
 }
 
-export const GlobalSidebar: React.FC<GlobalSidebarProps> = ({ onOpenHelp, onOpenStories }) => {
+const GlobalSidebarContent: React.FC<GlobalSidebarProps> = ({ onOpenHelp, onOpenStories }) => {
     const {
         toggleSidebar,
         allSegments,
         filters,
         updateFilters,
+        updateUIState,
         activeApp,
         features,
         unviewedStories,
         activeMainView,
         setActiveMainView,
-        setUser,
-        setAuthenticated,
-        user
     } = useStore();
 
-    const filteredSegments = allSegments.filter((s) => {
+    const { setUser, setAuthenticated } = useAuthStore();
+
+    const filteredSegments = allSegments.filter((s: string) => {
         const sLower = s.toLowerCase();
         return (
             sLower.includes('solar module') ||
@@ -139,23 +139,50 @@ export const GlobalSidebar: React.FC<GlobalSidebarProps> = ({ onOpenHelp, onOpen
 
                 {/* Bottom Actions */}
                 <div className="shrink-0 flex flex-col items-center pb-3 gap-2 border-t border-hairline pt-3 bg-canvas/50">
-                    {(!user || user.features?.ledger === true) && (
-                        <div 
-                            onClick={() => setActiveMainView('LEDGER')} 
-                            className={`p-1.5 rounded-md cursor-pointer transition-colors ${activeMainView === 'LEDGER' ? 'text-emerald-600 bg-emerald-50' : 'text-ink-faint hover:text-ink'}`} 
-                            data-tooltip="Transaction Ledger"
+                    {features.Ledger && (
+                        <div
+                            onClick={() => setActiveMainView('LEDGER')}
+                            className={`p-1.5 rounded-md cursor-pointer transition-colors ${activeMainView === 'LEDGER' ? 'text-emerald-600 bg-emerald-50' : 'text-ink-faint hover:text-ink'}`}
+                            data-tooltip="Ledger"
                         >
                             <TableProperties className="w-5 h-5" />
                         </div>
                     )}
 
-                    {(!user || user.features?.audit === true) && (
-                        <div 
-                            onClick={() => setActiveMainView('AUDIT')} 
-                            className={`p-1.5 rounded-md cursor-pointer transition-colors ${activeMainView === 'AUDIT' ? 'text-amber-600 bg-amber-50' : 'text-ink-faint hover:text-ink'}`} 
+                    {features.audit && (
+                        <div
+                            onClick={() => setActiveMainView('AUDIT')}
+                            className={`p-1.5 rounded-md cursor-pointer transition-colors ${activeMainView === 'AUDIT' ? 'text-amber-600 bg-amber-50' : 'text-ink-faint hover:text-ink'}`}
                             data-tooltip="Audit Control"
                         >
                             <ShieldCheck className="w-5 h-5" />
+                        </div>
+                    )}
+
+                    <div className="w-8 border-t border-hairline my-0.5" />
+
+                    {features.GrewGpt && (
+                        <div
+                            onClick={() => setActiveMainView('GREWGPT')}
+                            className={`flex flex-col items-center cursor-pointer select-none transition-colors p-1 rounded-md ${
+                                activeMainView === 'GREWGPT'
+                                    ? 'text-sky-600 bg-sky-100'
+                                    : 'text-sky-500 hover:text-sky-600 hover:bg-sky-50'
+                            }`}
+                            data-tooltip="GrewGPT AI Assistant"
+                        >
+                            <Sparkles className={`w-5 h-5 ${activeMainView !== 'GREWGPT' ? 'animate-pulse' : ''}`} />
+                            <span className="text-[7px] font-black tracking-tighter uppercase font-mono mt-0.5">GrewGPT</span>
+                        </div>
+                    )}
+
+                    {features.Dev && (
+                        <div
+                            onClick={() => setActiveMainView('DEV')}
+                            className={`p-1.5 rounded-md cursor-pointer transition-colors ${activeMainView === 'DEV' ? 'text-violet-600 bg-violet-50' : 'text-ink-faint hover:text-ink'}`}
+                            data-tooltip="Developer Panel"
+                        >
+                            <Cpu className="w-5 h-5" />
                         </div>
                     )}
 
@@ -173,3 +200,5 @@ export const GlobalSidebar: React.FC<GlobalSidebarProps> = ({ onOpenHelp, onOpen
         </div>
     );
 };
+
+export const GlobalSidebar = memo(GlobalSidebarContent);
