@@ -18,24 +18,24 @@ export const AuditView: React.FC = () => {
     if (!features.audit) return null;
 
     return (
-        <div className="flex-1 flex flex-col bg-[#05070A] overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-300">
+        <div className="flex-1 flex flex-col bg-canvas overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-300">
 
             {/* Header */}
-            <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between shrink-0">
+            <div className="px-6 py-4 border-b border-hairline flex items-center justify-between shrink-0 bg-white">
                 <div className="flex items-center gap-3">
                     <div className="p-2 bg-amber-500/10 rounded-xl border border-amber-500/20">
-                        <ShieldCheck className="w-5 h-5 text-amber-400" />
+                        <ShieldCheck className="w-5 h-5 text-amber-600" />
                     </div>
                     <div>
-                        <h1 className="text-sm font-semibold text-white">Audit Control</h1>
-                        <p className="text-xs text-slate-500 mt-0.5">
+                        <h1 className="text-sm font-semibold text-ink">Audit Control</h1>
+                        <p className="text-xs text-ink-mute mt-0.5">
                             Every number · every toggle · every click — explained &amp; verifiable
                         </p>
                     </div>
                 </div>
                 <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                    <span className="text-xs font-medium text-emerald-400">Logic Verified</span>
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                    <span className="text-xs font-medium text-emerald-600">Logic Verified</span>
                 </div>
             </div>
 
@@ -43,7 +43,7 @@ export const AuditView: React.FC = () => {
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 max-w-7xl mx-auto">
 
                     {/* ── 1. KPI CARDS — the headline figures ─────────────────── */}
-                    <DarkCard span2 title="Headline KPIs — what each big number means" icon={<Sigma className="w-4 h-4 text-emerald-400" />}>
+                    <DarkCard span2 title="Headline KPIs — what each big number means" icon={<Sigma className="w-4 h-4 text-emerald-600" />}>
                         <SpecTable
                             headers={['Card', 'Value shown', 'Comparison badge', 'Notes']}
                             widths={['w-24', 'flex-[2]', 'flex-1', 'flex-[2]']}
@@ -55,8 +55,8 @@ export const AuditView: React.FC = () => {
                             ]}
                         />
                         <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FormulaBlock accent="border-slate-500" title="Comparison badge %" body={<><code>((value − baseline) ÷ baseline) × 100</code>. Green ↑ if up, red ↓ if down. Click the MTD/QTD/YTD badge for an inline breakdown (value vs baseline, absolute Δ, periods).</>} />
-                            <FormulaBlock accent="border-slate-500" title="Coloured strip" body={<>The bar under each card shows that value’s SKU composition; each slice’s width = its share. Slices below 0.5% are hidden.</>} />
+                            <FormulaBlock accent="border-slate-400" title="Comparison badge %" body={<><code>((value − baseline) ÷ baseline) × 100</code>. Green ↑ if up, red ↓ if down. Click the MTD/QTD/YTD badge for an inline breakdown (value vs baseline, absolute Δ, periods).</>} />
+                            <FormulaBlock accent="border-slate-400" title="Coloured strip" body={<>The bar under each card shows that value’s SKU composition; each slice’s width = its share. Slices below 0.5% are hidden.</>} />
                         </div>
                         <CaptionNote tone="warn">
                             On the YTD card the headline total and the YoY badge are produced by two different routines and can differ slightly —
@@ -65,7 +65,7 @@ export const AuditView: React.FC = () => {
                     </DarkCard>
 
                     {/* ── 2. CORE METRICS ─────────────────────────────────────── */}
-                    <DarkCard span2 title="The three metrics — what Amount / MW / Qty mean" icon={<Calculator className="w-4 h-4 text-sky-400" />}>
+                    <DarkCard span2 title="The three metrics — what Amount / MW / Qty mean" icon={<Calculator className="w-4 h-4 text-sky-600" />}>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <FormulaBlock accent="border-blue-500"   title="Amount (Revenue)" body={<>Sum of invoiced <code>Taxable Value</code>, shown in Crores (÷ 10,000,000). This is taxable value — <strong>not</strong> net value and not tax-inclusive.</>} />
                             <FormulaBlock accent="border-amber-500"  title="Qty (Volume)"     body={<>Sum of <code>SalesQty</code> (invoiced units), shown as a whole number.</>} />
@@ -79,7 +79,7 @@ export const AuditView: React.FC = () => {
                     </DarkCard>
 
                     {/* ── 3. PACING & MOMENTUM ────────────────────────────────── */}
-                    <DarkCard title="Pacing & Momentum" icon={<Cpu className="w-4 h-4 text-amber-400" />}>
+                    <DarkCard title="Pacing & Momentum" icon={<Cpu className="w-4 h-4 text-amber-600" />}>
                         <div className="space-y-4">
                             <FormulaBlock accent="border-amber-500" title="Projection" body={<>7-day average = <code>last 7 days’ sales ÷ 7</code> (calendar days up to the To-date). Projection = <code>average × days in the month</code>. The arrow = how that projection compares to current MTD.</>} />
                             <FormulaBlock accent="border-amber-500" title="Like-for-like pacing" body={<>When comparing the current month, only days up to the To-date’s day-of-month are counted, so MoM/QoQ/YoY are same-day-to-same-day.</>} />
@@ -91,7 +91,7 @@ export const AuditView: React.FC = () => {
                     </DarkCard>
 
                     {/* ── 4. CONCENTRATION (HHI) ──────────────────────────────── */}
-                    <DarkCard title="Concentration / Risk (HHI)" icon={<Hash className="w-4 h-4 text-rose-400" />}>
+                    <DarkCard title="Concentration / Risk (HHI)" icon={<Hash className="w-4 h-4 text-rose-600" />}>
                         <div className="space-y-4">
                             <FormulaBlock accent="border-rose-500" title="HHI score" body={<><code>Σ (share% )²</code> across the list (0–10,000). Higher = more concentrated / less diversified.</>} />
                             <FormulaBlock accent="border-rose-500" title="Bands" body={<><code>&lt;1500</code> Diversified · <code>1500–2499</code> Moderate · <code>≥2500</code> Highly Concentrated. Shown as a badge on the Sales-Head, Clients and SKU cards (each computes its own), plus Top-5 customer &amp; Top-3 SKU share in Intelligence.</>} />
@@ -99,7 +99,7 @@ export const AuditView: React.FC = () => {
                     </DarkCard>
 
                     {/* ── 5. GROWTH DELTAS (MATRIX) ───────────────────────────── */}
-                    <DarkCard span2 title="Matrix — monthly figures & growth deltas" icon={<TrendingUp className="w-4 h-4 text-emerald-400" />}>
+                    <DarkCard span2 title="Matrix — monthly figures & growth deltas" icon={<TrendingUp className="w-4 h-4 text-emerald-600" />}>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8">
                             <div>
                                 <DefRow label="REV"   desc="Row · ₹ Cr"     code="Σ Taxable Value ÷ 10,000,000 per month (full month)." />
@@ -121,7 +121,7 @@ export const AuditView: React.FC = () => {
                     </DarkCard>
 
                     {/* ── 6. TOGGLES & CONTROLS ───────────────────────────────── */}
-                    <DarkCard span2 title="Toggles & Controls — exact effect of every input" icon={<SlidersHorizontal className="w-4 h-4 text-violet-400" />}>
+                    <DarkCard span2 title="Toggles & Controls — exact effect of every input" icon={<SlidersHorizontal className="w-4 h-4 text-violet-600" />}>
                         <SpecTable
                             headers={['Control', 'What it does']}
                             widths={['w-52', 'flex-1']}
@@ -143,7 +143,7 @@ export const AuditView: React.FC = () => {
                     </DarkCard>
 
                     {/* ── 7. CLICK & CROSS-IMPACT ─────────────────────────────── */}
-                    <DarkCard span2 title="Click & Cross-Impact — how one click changes the rest" icon={<MousePointerClick className="w-4 h-4 text-teal-400" />}>
+                    <DarkCard span2 title="Click & Cross-Impact — how one click changes the rest" icon={<MousePointerClick className="w-4 h-4 text-teal-600" />}>
                         <SpecTable
                             headers={['You click…', 'Direct change', 'Knock-on effect']}
                             widths={['flex-1', 'flex-[1.6]', 'flex-[2]']}
@@ -163,14 +163,14 @@ export const AuditView: React.FC = () => {
                     </DarkCard>
 
                     {/* ── 8. CAVEATS / TRUST ──────────────────────────────────── */}
-                    <DarkCard title="Caveats — looks like logic, isn’t" icon={<AlertTriangle className="w-4 h-4 text-amber-400" />}>
+                    <DarkCard title="Caveats — looks like logic, isn’t" icon={<AlertTriangle className="w-4 h-4 text-amber-600" />}>
                         <DefRow label="Sunday"   desc="Cosmetic only"    code="Greyed in the Daily Sales list; NOT excluded from any sum, average or projection." />
                         <DefRow label="Colours"  desc="Stable identity"  code="Each SKU keeps one fixed colour across chart, legend and strips." />
                         <DefRow label="Cust cap" desc="List limits"      code="Some breakdowns cap at the top 20–50 entities by value." />
                     </DarkCard>
 
                     {/* ── 9. FORMATTING ───────────────────────────────────────── */}
-                    <DarkCard title="Number Formatting" icon={<Ruler className="w-4 h-4 text-sky-400" />}>
+                    <DarkCard title="Number Formatting" icon={<Ruler className="w-4 h-4 text-sky-600" />}>
                         <DefRow label="Locale"  desc="Grouping"  code="en-IN (lakh / crore style)." />
                         <DefRow label="Amount"  desc="₹ Cr"      code="2 decimals, ₹ prefix, Cr suffix." />
                         <DefRow label="MW"      desc="Capacity"  code="2 decimals." />
@@ -178,7 +178,7 @@ export const AuditView: React.FC = () => {
                     </DarkCard>
 
                     {/* ── 10. DATA SOURCE & COVERAGE ──────────────────────────── */}
-                    <DarkCard span2 title="Data Source & Coverage" icon={<Database className="w-4 h-4 text-blue-400" />}>
+                    <DarkCard span2 title="Data Source & Coverage" icon={<Database className="w-4 h-4 text-blue-600" />}>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8">
                             <div>
                                 <DefRow label="Source"   desc="Where rows come from" code="Invoiced revenue records (table: revenue)." />
@@ -194,7 +194,7 @@ export const AuditView: React.FC = () => {
                     </DarkCard>
 
                     {/* ── 11. KEYBOARD SHORTCUTS ──────────────────────────────── */}
-                    <DarkCard span2 title="Keyboard Shortcuts" icon={<Keyboard className="w-4 h-4 text-slate-400" />}>
+                    <DarkCard span2 title="Keyboard Shortcuts" icon={<Keyboard className="w-4 h-4 text-slate-600" />}>
                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                             <ShortcutGroup title="Navigation & Views">
                                 <ShortcutRow keys={['F1']}        desc="System Help" />
@@ -230,56 +230,56 @@ export const AuditView: React.FC = () => {
 // ─── Sub-components ────────────────────────────────────────────────────────────
 
 const CardHeader: React.FC<{ title: string; icon: React.ReactNode }> = ({ title, icon }) => (
-    <div className="px-4 py-3 border-b border-white/10 flex items-center gap-2.5">
+    <div className="px-4 py-3 border-b border-hairline bg-canvas-soft/30 flex items-center gap-2.5">
         {icon}
-        <span className="text-xs font-semibold text-white tracking-wide">{title}</span>
+        <span className="text-xs font-semibold text-ink tracking-wide">{title}</span>
     </div>
 );
 
 const DarkCard: React.FC<{ title: string; icon: React.ReactNode; span2?: boolean; children: React.ReactNode }> = ({ title, icon, span2, children }) => (
-    <div className={`bg-[#0D1117] rounded-xl border border-white/10 overflow-hidden ${span2 ? 'xl:col-span-2' : ''}`}>
+    <div className={`bg-white rounded-xl border border-hairline shadow-sm overflow-hidden ${span2 ? 'xl:col-span-2' : ''}`}>
         <CardHeader title={title} icon={icon} />
         <div className="p-4">{children}</div>
     </div>
 );
 
 const DefRow: React.FC<{ label: string; desc: string; code: string }> = ({ label, desc, code }) => (
-    <div className="flex items-start gap-3 py-3 border-b border-white/5 last:border-0">
-        <span className="w-20 shrink-0 text-[10px] font-medium text-slate-500 uppercase tracking-wide font-mono mt-0.5">{label}</span>
+    <div className="flex items-start gap-3 py-3 border-b border-hairline last:border-0">
+        <span className="w-20 shrink-0 text-[10px] font-semibold text-ink-mute uppercase tracking-wide font-mono mt-0.5">{label}</span>
         <div className="flex-1 min-w-0">
-            <div className="text-xs font-medium text-white mb-1">{desc}</div>
-            <code className="text-xs text-slate-400 font-mono leading-relaxed block">{code}</code>
+            <div className="text-xs font-semibold text-ink mb-1">{desc}</div>
+            <code className="text-xs text-ink-mute font-mono leading-relaxed block bg-canvas border border-hairline/50 rounded px-1 py-0.5 w-fit">{code}</code>
         </div>
     </div>
 );
 
 const FormulaBlock: React.FC<{ accent: string; title: string; body: React.ReactNode }> = ({ accent, title, body }) => (
     <div className="space-y-2">
-        <h4 className={`text-xs font-semibold text-white border-l-2 ${accent} pl-2.5`}>{title}</h4>
-        <p className="text-xs text-slate-400 leading-relaxed pl-2.5">{body}</p>
+        <h4 className={`text-xs font-semibold text-ink border-l-2 ${accent} pl-2.5`}>{title}</h4>
+        <div className="text-xs text-ink-mute leading-relaxed pl-2.5">{body}</div>
     </div>
 );
 
 const CaptionNote: React.FC<{ children: React.ReactNode; tone?: 'info' | 'warn' }> = ({ children, tone = 'info' }) => (
-    <div className={`mt-4 flex items-start gap-2.5 p-3 rounded-lg border ${tone === 'warn' ? 'bg-amber-500/10 border-amber-500/20' : 'bg-white/[0.03] border-white/10'}`}>
+    <div className={`mt-4 flex items-start gap-2.5 p-3 rounded-lg border ${tone === 'warn' ? 'bg-amber-50/5 border-amber-200/60 text-ink-mute' : 'bg-canvas-soft/30 border-hairline text-ink-mute'}`}>
         {tone === 'warn'
-            ? <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-px" />
-            : <Info className="w-3.5 h-3.5 text-slate-500 shrink-0 mt-px" />}
-        <p className="text-xs text-slate-400 leading-relaxed">{children}</p>
+            ? <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-px" />
+            : <Info className="w-3.5 h-3.5 text-ink-mute shrink-0 mt-px" />}
+        <p className="text-xs text-ink-mute leading-relaxed">{children}</p>
     </div>
 );
 
 const SpecTable: React.FC<{ headers: string[]; widths: string[]; rows: React.ReactNode[][] }> = ({ headers, widths, rows }) => (
-    <div className="border border-white/10 rounded-lg overflow-hidden">
-        <div className="flex bg-white/[0.04] border-b border-white/10">
+    <div className="border border-hairline rounded-lg overflow-hidden">
+        <div className="flex bg-canvas-soft border-b border-hairline">
             {headers.map((h, i) => (
-                <div key={i} className={`${widths[i]} px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-slate-500 border-r border-white/10 last:border-r-0`}>{h}</div>
+                <div key={i} className={`${widths[i]} px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-ink-mute border-r border-hairline last:border-r-0`}>{h}</div>
             ))}
         </div>
         {rows.map((row, ri) => (
-            <div key={ri} className="flex border-b border-white/5 last:border-b-0 hover:bg-white/[0.02] transition-colors">
+            <div key={ri} className="flex border-b border-hairline/60 last:border-b-0 hover:bg-canvas-soft/20 transition-colors">
                 {row.map((cell, ci) => (
-                    <div key={ci} className={`${widths[ci]} px-3 py-2.5 text-xs leading-relaxed border-r border-white/5 last:border-r-0 ${ci === 0 ? 'font-semibold text-white font-mono' : 'text-slate-300'}`}>{cell}</div>
+                    <div key={ci} className={`${widths[ci]} px-3 py-2.5 text-xs leading-relaxed border-r border-hairline/60 last:border-r-0 ${ci === 0 ? 'font-semibold text-ink font-mono' : 'text-ink-mute'}`}>{cell}</div>
                 ))}
             </div>
         ))}
@@ -288,17 +288,17 @@ const SpecTable: React.FC<{ headers: string[]; widths: string[]; rows: React.Rea
 
 const ShortcutGroup: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
     <div className="space-y-1">
-        <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-2.5 pb-1.5 border-b border-white/10">{title}</p>
+        <p className="text-[10px] font-semibold text-ink-mute uppercase tracking-wide mb-2.5 pb-1.5 border-b border-hairline">{title}</p>
         {children}
     </div>
 );
 
 const ShortcutRow: React.FC<{ keys: string[]; desc: string }> = ({ keys, desc }) => (
     <div className="flex items-center justify-between gap-2 py-1.5">
-        <span className="text-xs text-slate-300">{desc}</span>
+        <span className="text-xs text-ink-mute">{desc}</span>
         <div className="flex gap-1 shrink-0">
             {keys.map((k, i) => (
-                <kbd key={i} className="px-1.5 py-0.5 bg-white/5 border border-white/15 rounded text-[10px] font-mono font-medium text-slate-200 whitespace-nowrap">{k}</kbd>
+                <kbd key={i} className="px-1.5 py-0.5 bg-canvas-soft border border-hairline rounded text-[10px] font-mono font-medium text-ink whitespace-nowrap">{k}</kbd>
             ))}
         </div>
     </div>
@@ -306,9 +306,9 @@ const ShortcutRow: React.FC<{ keys: string[]; desc: string }> = ({ keys, desc })
 
 export const FeatureFlag: React.FC<{ name: string; enabled: boolean }> = ({ name, enabled }) => (
     <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium ${
-        enabled ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-white/[0.03] border-white/10 text-slate-500'
+        enabled ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600' : 'bg-canvas border-hairline text-ink-mute'
     }`}>
-        <CheckCircle2 className="w-3.5 h-3.5" />
+        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
         {name}
     </div>
 );

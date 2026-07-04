@@ -17,6 +17,9 @@ export default defineConfig({
             // (hoisted to workspace root, not duplicated in apps/web/node_modules)
             '@supabase/supabase-js': path.resolve(__dirname, '../../node_modules/@supabase/supabase-js'),
             'zustand': path.resolve(__dirname, '../../node_modules/zustand'),
+            'lucide-react': path.resolve(__dirname, '../../node_modules/lucide-react'),
+            'react': path.resolve(__dirname, '../../node_modules/react'),
+            'react-dom': path.resolve(__dirname, '../../node_modules/react-dom'),
         },
     },
     // Production build output consumed by Express server.js

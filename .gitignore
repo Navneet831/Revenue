@@ -16,6 +16,7 @@ build/
 .next/
 out/
 dist_staging/
+installer_output/
 # Logs
 npm-debug.log*
 yarn-debug.log*
@@ -80,6 +81,9 @@ check_pg_date.py
 test-results/
 coverage/
 .env*
+!.env.example
+!.env.*.example
+
 
 # graphify knowledge-graph artifacts (regenerate with: python -m graphify update apps)
 graphify-out/
@@ -110,7 +114,7 @@ out/
 *.tmp
 *.temp
 *.log
-debug.log
 .gemini
 .claude
 .antigravitycli/
+installer_output/

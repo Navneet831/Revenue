@@ -108,6 +108,19 @@ const Cache = {
 
         memoryCacheStore.delete(key);
         return true;
+    },
+
+    /** Wipes every key — used when DB switches to avoid serving stale data. */
+    flush: async () => {
+        memoryCacheStore.clear();
+        if (isRedisConnected && redisClient) {
+            try {
+                await redisClient.flushDb();
+            } catch (err) {
+                Logger.error('redis_flush_failed', err);
+            }
+        }
+        Logger.info('cache_flushed');
     }
 };
 

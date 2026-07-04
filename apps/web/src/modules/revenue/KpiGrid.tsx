@@ -89,6 +89,58 @@ export const KpiGrid: React.FC = () => {
         return { avg, proj };
     }, [stats]);
 
+    const variances = React.useMemo(() => {
+        if (!stats || !stats.mb51SalesPeriods) {
+            return { today: undefined, mtd: undefined, qtd: undefined, ytd: undefined };
+        }
+        
+        const metric = filters.metric || 'Amount';
+        const mb51 = stats.mb51SalesPeriods;
+        
+        // 1. Today variance
+        let todaySales = 0;
+        if (stats.dailySeries && stats.dailySeries.length > 0) {
+            const anchorStr = stats.kpiAnchorDate
+                ? (stats.kpiAnchorDate instanceof Date 
+                    ? stats.kpiAnchorDate.toISOString().slice(0, 10) 
+                    : new Date(stats.kpiAnchorDate).toISOString().slice(0, 10))
+                : stats.dailySeries[0].date;
+            const dayRow = stats.dailySeries.find((x: { date: string }) => x.date === anchorStr) || stats.dailySeries[0];
+            if (dayRow) {
+                todaySales = metric === 'Amount' ? dayRow.val : metric === 'MW' ? dayRow.mw : dayRow.qty;
+            }
+        }
+        const todayMb51 = metric === 'Amount' ? mb51.today.amount : metric === 'MW' ? mb51.today.mw : mb51.today.qty;
+        const todayVar = todaySales - todayMb51;
+
+        // 2. MTD variance
+        const mtdSales = stats.kpi?.mtd || 0;
+        const mtdMb51 = metric === 'Amount' ? mb51.mtd.amount : metric === 'MW' ? mb51.mtd.mw : mb51.mtd.qty;
+        const mtdVar = mtdSales - mtdMb51;
+
+        // 3. QTD variance
+        const qtdSales = stats.kpi?.qtd || 0;
+        const qtdMb51 = metric === 'Amount' ? mb51.qtd.amount : metric === 'MW' ? mb51.qtd.mw : mb51.qtd.qty;
+        const qtdVar = qtdSales - qtdMb51;
+
+        // 4. YTD variance
+        const ytdWeeksList = stats.ytdWeekly || consolidatedWeeks;
+        const ytdSales = ytdWeeksList.reduce((acc: number, w: { val: number; mw: number; qty: number }) => {
+            if (metric === 'Amount') return acc + w.val;
+            if (metric === 'MW') return acc + w.mw;
+            return acc + w.qty;
+        }, 0);
+        const ytdMb51 = metric === 'Amount' ? mb51.ytd.amount : metric === 'MW' ? mb51.ytd.mw : mb51.ytd.qty;
+        const ytdVar = ytdSales - ytdMb51;
+
+        return {
+            today: todayVar,
+            mtd: mtdVar,
+            qtd: qtdVar,
+            ytd: ytdVar
+        };
+    }, [stats, filters.metric, consolidatedWeeks]);
+
     // ── Early returns AFTER all hooks ─────────────────────────────────────────
 
     // Gate on user's dashboard feature flag (from whitelist)
@@ -136,6 +188,9 @@ export const KpiGrid: React.FC = () => {
         : `ANCHOR · ${toDateLabel} ${metricSuffix}`;
 
 
+
+    const showSalesVsMb51 = user?.features ? user.features["Sales Vs Mb51"] !== false : true;
+
     return (
         <div className="flex w-full h-32 shrink-0 gap-3 pb-2 overflow-x-auto no-scrollbar" data-lenis-prevent="true">
             <KpiCard
@@ -146,6 +201,7 @@ export const KpiGrid: React.FC = () => {
                 isInteractive={false}
                 breakdown={kpi.periodBreakdown}
                 momentum={momentum}
+                variance={showSalesVsMb51 ? variances.today : undefined}
             />
 
             <KpiCard
@@ -159,6 +215,17 @@ export const KpiGrid: React.FC = () => {
                 detailOpen={activeKpiDetail === 'mtd'}
                 onToggleDetail={() => handleToggleDetail('mtd')}
                 breakdown={kpi.mtdBreakdown}
+                selectedWeek={selectedWeekNum}
+                onSelectWeek={(w) => {
+                    const next = selectedWeekNum === w ? null : w;
+                    setSelectedWeekNum(next);
+                    updateFilters({ selectedWeek: next, selectedDay: null });
+                }}
+                consolidated={consolidatedWeeks.map((w: { val: number; mw: number; qty: number; weekNum: number }) => ({
+                    val: filters.metric === 'Amount' ? w.val / CONFIG.CURRENCY_DIVIDER : filters.metric === 'MW' ? w.mw : w.qty,
+                    weekNum: w.weekNum
+                }))}
+                variance={showSalesVsMb51 ? variances.mtd : undefined}
             />
 
             <KpiCard
@@ -172,6 +239,7 @@ export const KpiGrid: React.FC = () => {
                 detailOpen={activeKpiDetail === 'qtd'}
                 onToggleDetail={() => handleToggleDetail('qtd')}
                 breakdown={kpi.qtdBreakdown}
+                variance={showSalesVsMb51 ? variances.qtd : undefined}
             />
 
             <KpiCard
@@ -195,6 +263,7 @@ export const KpiGrid: React.FC = () => {
                     val: filters.metric === 'Amount' ? w.val / CONFIG.CURRENCY_DIVIDER : filters.metric === 'MW' ? w.mw : w.qty,
                     weekNum: w.weekNum
                 }))}
+                variance={showSalesVsMb51 ? variances.ytd : undefined}
             />
         </div>
     );

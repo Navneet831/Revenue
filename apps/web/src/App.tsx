@@ -156,7 +156,11 @@ export const App: React.FC = () => {
     }
 
     if (features.enable_auth && !isAuthenticated) {
-        return <Login redirectTo="http://127.0.0.1:8000/auth/callback" />;
+        // No redirectTo: Login defaults to window.location.origin + '/auth/callback',
+        // so OAuth returns the user to wherever they actually are (exe :8000, dev
+        // :5173, LAN/ngrok). Hardcoding an absolute host:port sent every non-:8000
+        // session to a dead port after login → "This site can't be reached".
+        return <Login />;
     }
 
     const activeModule = MODULE_REGISTRY[activeApp];
@@ -164,7 +168,7 @@ export const App: React.FC = () => {
     return (
         <ErrorBoundary>
             <div className="w-screen h-screen relative flex flex-col bg-canvas overflow-hidden">
-                <div id="core-app" className="flex-1 flex w-full relative overflow-hidden font-sans antialiased text-[11px] font-medium tracking-wide text-slate-900">
+                <div id="core-app" className="flex-1 flex w-full relative overflow-hidden font-sans antialiased text-[11px] font-medium tracking-wide text-ink">
                     <div className="flex h-full w-full relative select-none overflow-hidden">
                         <GlobalSidebar onOpenStories={() => updateUIState({ storiesOpen: true })} />
 

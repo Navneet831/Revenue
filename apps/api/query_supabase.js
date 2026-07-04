@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 dotenv.config({ path: '../../.env' });
 
-const url = `${process.env.VITE_SUPABASE_URL}/rest/v1/access_whitelist?select=email,features`;
+const url = `${process.env.VITE_SUPABASE_URL}/rest/v1/whitelist?select=email,agentation,commit_drill_down,audit`;
 const key = process.env.VITE_SUPABASE_ANON_KEY;
 
 async function main() {
@@ -19,7 +19,7 @@ async function main() {
     throw new Error(`Supabase REST error: ${res.status} ${res.statusText}`);
   }
   const data = await res.json();
-  console.log('--- SUPABASE ACCESS WHITELIST ---');
+  console.log('--- SUPABASE WHITELIST ---');
   console.log(JSON.stringify(data, null, 2));
   console.log('---------------------------------');
 }

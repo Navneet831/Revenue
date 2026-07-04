@@ -267,6 +267,7 @@ export interface KPIStats {
 
 export interface MatrixRow {
     month: string;
+    hasStarted?: boolean;
     valCr: number | null;
     mw: number | null;
     qty: number | null;
@@ -322,6 +323,12 @@ export interface AnalyticalOutput {
     isOnlySolar: boolean;
     dailySeries?: Array<{ date: string; val: number; mw: number; qty: number }>;
     ytdWeekly?: Array<{ val: number; mw: number; qty: number; weekNum: number }>;
+    mb51SalesPeriods?: {
+        today: { amount: number; qty: number; mw: number };
+        mtd: { amount: number; qty: number; mw: number };
+        qtd: { amount: number; qty: number; mw: number };
+        ytd: { amount: number; qty: number; mw: number };
+    };
 }
 
 export const CONFIG: ConfigType = {
@@ -758,8 +765,15 @@ export class RevenueComputeEngine {
         }
 
         let kpiAnchorDate = new Date(filterEndTime);
-        if (kpiAnchorDate > latestDate) {
-            kpiAnchorDate = new Date(latestDate);
+        let maxDateLimit = latestDate;
+        if (f.endDate) {
+            const parsedEndDate = new Date(f.endDate);
+            if (!isNaN(parsedEndDate.getTime()) && parsedEndDate < maxDateLimit) {
+                maxDateLimit = parsedEndDate;
+            }
+        }
+        if (kpiAnchorDate > maxDateLimit) {
+            kpiAnchorDate = new Date(maxDateLimit);
         }
         kpiAnchorDate.setHours(23, 59, 59, 999);
 
@@ -1083,21 +1097,23 @@ export class RevenueComputeEngine {
             const colQTD = getQTD(colYear, colMonth).sum;
             const prevYQTD = getQTD(colYear - 1, colMonth).sum;
 
-            const mom = ConcentrationAnalyser.calculateGrowth(curPaced, prevMPaced);
-            const yoy = ConcentrationAnalyser.calculateGrowth(curPaced, prevYPaced);
-            const qoq = ConcentrationAnalyser.calculateGrowth(colQTD, prevYQTD);
+            // Check if this month has started relative to the anchor date
+            const hasStarted = colYear < curYear || (colYear === curYear && colMonth <= curMonth);
+
+            const mom = hasStarted ? ConcentrationAnalyser.calculateGrowth(curPaced, prevMPaced) : null;
+            const yoy = hasStarted ? ConcentrationAnalyser.calculateGrowth(curPaced, prevYPaced) : null;
+            const qoq = hasStarted ? ConcentrationAnalyser.calculateGrowth(colQTD, prevYQTD) : null;
 
             const fullCur = global_full[keyCur] || { val: 0, mw: 0, qty: 0, hasData: false };
 
             return {
                 month: mName,
-                valCr: fullCur.hasData
+                hasStarted: hasStarted,
+                valCr: hasStarted && (fullCur.hasData || fullCur.val > 0)
                     ? fullCur.val / CONFIG.CURRENCY_DIVIDER
-                    : fullCur.val > 0
-                      ? fullCur.val / CONFIG.CURRENCY_DIVIDER
-                      : null,
-                mw: fullCur.hasData ? fullCur.mw : fullCur.mw > 0 ? fullCur.mw : null,
-                qty: fullCur.hasData ? fullCur.qty : fullCur.qty > 0 ? fullCur.qty : null,
+                    : null,
+                mw: hasStarted && (fullCur.hasData || fullCur.mw > 0) ? fullCur.mw : null,
+                qty: hasStarted && (fullCur.hasData || fullCur.qty > 0) ? fullCur.qty : null,
                 mom: mom,
                 yoy: yoy,
                 qoq: qoq

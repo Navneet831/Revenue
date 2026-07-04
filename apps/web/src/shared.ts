@@ -1,5 +1,3 @@
-export * from '@grew/shared';
-
 export class MetricFormatter {
     static formatValue(val: number, type: string, privacyMode: boolean = false): string {
         if (privacyMode) return '••••••';

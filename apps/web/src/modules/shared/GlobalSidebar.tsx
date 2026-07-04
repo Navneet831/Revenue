@@ -85,7 +85,7 @@ const GlobalSidebarContent: React.FC<GlobalSidebarProps> = ({ onOpenHelp, onOpen
         <div className="flex h-full shrink-0 z-[100]">
             <aside
                 id="sidebar"
-                className="flex h-full w-14 flex-col bg-canvas border-r border-hairline relative transition-all duration-300"
+                className="flex h-full w-14 flex-col bg-canvas-soft border-r-2 border-card-border relative transition-all duration-300"
             >
                 {/* Logo Section with Story Ring */}
                 <div

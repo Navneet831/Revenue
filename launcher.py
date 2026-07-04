@@ -33,6 +33,16 @@ def get_exe_dir() -> Path:
     return Path(__file__).parent
 
 
+def fail(msg: str):
+    """Show the error and exit. The exe is built console=False, so stdin is
+    unavailable — a message box is the only way the user ever sees the error."""
+    print(msg)
+    if os.name == 'nt':
+        import ctypes
+        ctypes.windll.user32.MessageBoxW(None, msg, 'GrewAnalytics', 0x10)  # MB_ICONERROR
+    sys.exit(1)
+
+
 def find_node(data_root: Path) -> str:
     """Return path to node.exe — bundled copy first, then system PATH."""
     bundled = data_root / 'node' / 'node.exe'
@@ -71,14 +81,14 @@ def build_env(data_root: Path, exe_dir: Path) -> dict:
       1. Env vars already in the process (set by user before launching)
       2. .env file next to the .exe  (user-editable after install)
       3. Bundled defaults below
-    dotenv in env.js will load the .env at _internal/.env via '../../.env',
-    which OVERRIDES everything with override:true — so we just set safe fallbacks.
+      4. Bundled _internal/.env — loaded by dotenv in env.js (override:false,
+         so anything we put in the process env here wins over it)
     """
     env = os.environ.copy()
 
     # Production defaults — dotenv in env.js will override these if .env exists
     env.setdefault('NODE_ENV',               'production')
-    env.setdefault('HOST',                   '0.0.0.0')
+    env.setdefault('HOST',                   '127.0.0.1')
     env.setdefault('PORT',                   '8000')
     env.setdefault('HIDE_GIT_ENDPOINTS',     'true')
 
@@ -103,6 +113,12 @@ def build_env(data_root: Path, exe_dir: Path) -> dict:
 
 
 def main():
+    # Named mutex lets the installer (AppMutex in GrewAnalytics.iss) detect a
+    # running instance. Held until process exit; no handle needed.
+    if os.name == 'nt':
+        import ctypes
+        ctypes.windll.kernel32.CreateMutexW(None, False, 'GrewAnalyticsAppMutex')
+
     data_root = get_data_root()
     exe_dir   = get_exe_dir()
 
@@ -118,11 +134,10 @@ def main():
     print()
 
     if not backend_dir.exists():
-        print(f"ERROR: backend not found at {backend_dir}")
-        input("Press Enter to exit...")
-        sys.exit(1)
+        fail(f"ERROR: backend not found at {backend_dir}")
 
     env = build_env(data_root, exe_dir)
+    url = 'http://127.0.0.1:8000'
 
     try:
         creationflags = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
@@ -137,9 +152,7 @@ def main():
             creationflags=creationflags,
         )
     except FileNotFoundError:
-        print(f"ERROR: Node.js not found ({node_exe}). Install Node.js or re-run build_exe.py.")
-        input("Press Enter to exit...")
-        sys.exit(1)
+        fail(f"ERROR: Node.js not found ({node_exe}). Install Node.js or re-run build_exe.py.")
 
     # Stream node output in background thread so startup messages are visible
     log_thread = threading.Thread(target=pipe_output, args=(proc.stdout, 'node'), daemon=True)
@@ -147,12 +160,8 @@ def main():
 
     print("Waiting for backend (up to 30 s)...")
     if not wait_for_port(8000, timeout=30):
-        print("ERROR: Backend did not start within 30 seconds.")
         proc.terminate()
-        input("Press Enter to exit...")
-        sys.exit(1)
-
-    url = 'http://127.0.0.1:8000'
+        fail("ERROR: Backend did not start within 30 seconds.")
 
     def shutdown(sig=None, frame=None):
         print("\nShutting down...")
@@ -178,7 +187,8 @@ def main():
             width=1280, 
             height=800,
             min_size=(1024, 768),
-            background_color='#0b101e'
+            background_color='#0b101e',
+            maximized=True
         )
         
         # When desktop window is closed, shut down the Node backend

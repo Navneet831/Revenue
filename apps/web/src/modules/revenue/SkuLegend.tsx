@@ -24,7 +24,7 @@ export const SkuLegend: React.FC = () => {
                                 next.has(key) ? next.delete(key) : next.add(key);
                             } else {
                                 // New Select/Unselect Global behavior
-                                const otherVisible = stats.activePlotKeys.some(k => k !== key && !filters.excludedSeries.has(k));
+                                const otherVisible = stats.activePlotKeys.some((k: string) => k !== key && !filters.excludedSeries.has(k));
                                 
                                 if (next.has(key) || otherVisible) {
                                     // Isolate this key: Exclude everything EXCEPT this one

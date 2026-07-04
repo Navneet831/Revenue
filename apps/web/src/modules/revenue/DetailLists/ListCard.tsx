@@ -201,10 +201,28 @@ export const ListCard: React.FC<ListCardProps> = ({ id, title, icon, cardKey, fi
     const rightLabelsPlugin = createRightLabelsPlugin(privacyMode);
     const dynamicHeight = Math.max(300, topData.length * 28);
 
+    // HHI Calculation
+    const hhi = preparedData.length > 0 ? (() => {
+        const absValues = preparedData.map((d: any) => Math.abs(d.displayV || 0));
+        const totalAbs = absValues.reduce((a: number, b: number) => a + b, 0);
+        if (totalAbs <= 0) return 0;
+        return absValues.reduce((sum: number, v: number) => sum + Math.pow((v / totalAbs) * 100, 2), 0);
+    })() : 0;
+
+    let hhiBadgeClass = 'bg-slate-100 text-slate-700 border-slate-200';
+    let hhiTooltip = 'Diversified concentration';
+    if (hhi >= 2500) {
+        hhiBadgeClass = 'bg-slate-200 text-slate-800 border-slate-300';
+        hhiTooltip = 'Highly concentrated (HHI >= 2500)';
+    } else if (hhi >= 1500) {
+        hhiBadgeClass = 'bg-blue-50 text-blue-700 border-blue-200';
+        hhiTooltip = 'Moderate concentration (1500 <= HHI < 2500)';
+    }
+
     return (
-        <div id={id} className="flex flex-col group relative rounded-2xl min-h-0 min-w-0 bg-white overflow-hidden border border-hairline h-full shadow-sm">
+        <div id={id} className="card-metal flex flex-col group relative rounded-2xl min-h-0 min-w-0 overflow-hidden h-full">
             {/* Widget header */}
-            <div className="p-2 px-3 border-b border-hairline bg-canvas-soft/40 flex justify-between items-center z-50 shrink-0">
+            <div className="card-strip-header p-2 pr-3 flex justify-between items-center z-50 shrink-0">
                 <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pr-2">
                     {icon}
                     <span className="text-[11px] font-bold text-black uppercase tracking-tight flex items-center whitespace-nowrap">
@@ -213,6 +231,14 @@ export const ListCard: React.FC<ListCardProps> = ({ id, title, icon, cardKey, fi
                             <span className="ml-1 text-black/40 font-mono text-[9px]">({count})</span>
                         )}
                     </span>
+                    {preparedData.length > 0 && (
+                        <span 
+                            title={hhiTooltip}
+                            className={`ml-2 px-1.5 py-0.5 text-[9px] font-mono font-bold border rounded-md whitespace-nowrap transition-colors duration-200 ${hhiBadgeClass}`}
+                        >
+                            HHI: {hhi.toFixed(0)}
+                        </span>
+                    )}
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                     <span className="text-[9px] font-bold text-emerald-700 uppercase tracking-widest">{metricLabel}</span>
@@ -256,8 +282,7 @@ export const ListCard: React.FC<ListCardProps> = ({ id, title, icon, cardKey, fi
                                 const activeColor = isSelected
                                     ? colorDef.fillFade.replace('0.15', '0.35')
                                     : colorDef.fillFade;
-                                const bgStyle = {
-                                    background: `linear-gradient(90deg, transparent ${100 - r.pct}%, ${activeColor} ${100 - r.pct}%)`,
+                                const rowStyle = {
                                     boxShadow: isSelected ? `inset 0 0 0 1px ${colorDef.solid}` : 'none',
                                     borderBottom: '1px solid #E7E5E4'
                                 };
@@ -269,8 +294,8 @@ export const ListCard: React.FC<ListCardProps> = ({ id, title, icon, cardKey, fi
                                     <div
                                         key={r.n}
                                         onClick={(e) => handleRowClick(r.n, e.ctrlKey)}
-                                        style={bgStyle}
-                                        className="cursor-pointer transition-all duration-200 hover:bg-canvas flex items-center select-none"
+                                        style={rowStyle}
+                                        className="cursor-pointer transition-all duration-200 hover:bg-slate-50 flex items-center select-none"
                                     >
                                         <div
                                             className={`flex-1 p-2 text-[10px] pl-3 tracking-wide truncate ${isSelected ? 'font-bold' : 'font-medium'}`}
@@ -279,16 +304,22 @@ export const ListCard: React.FC<ListCardProps> = ({ id, title, icon, cardKey, fi
                                         >
                                             {i + 1}. {r.n}
                                         </div>
-                                        <div className="p-2 pr-3 flex flex-col items-end shrink-0">
+                                        <div className="p-2 pr-3 flex flex-col items-end shrink-0 w-32">
                                             <span
                                                 className="text-[11px] font-mono font-bold tracking-tight"
                                                 style={{ color: isSelected ? colorDef.solid : '#000000' }}
                                             >
                                                 {privacyMode ? '••••••' : MetricFormatter.formatValue(r.displayV, filters.metric, privacyMode)}
                                             </span>
-                                            <span className="text-[8.5px] font-sans text-black/50 tracking-widest mt-[1px] uppercase whitespace-nowrap">
+                                            <span className="text-[8.5px] font-sans text-black/50 tracking-widest mt-[1px] uppercase whitespace-nowrap mb-1">
                                                 {subtext}
                                             </span>
+                                            <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden flex justify-end">
+                                                <div 
+                                                    className="h-full rounded-full" 
+                                                    style={{ width: `${r.pct}%`, backgroundColor: colorDef.solid }} 
+                                                />
+                                            </div>
                                         </div>
                                     </div>
                                 );

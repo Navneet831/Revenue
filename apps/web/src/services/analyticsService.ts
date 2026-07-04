@@ -1,5 +1,6 @@
 import { ApiClient } from './apiClient';
 import type { AnalyticalOutput, FilterConfig } from '@revenue/shared';
+import { API_ENDPOINTS } from '../constants';
 
 /**
  * Server-side analytics client. The heavy compute now runs on the API (same
@@ -22,7 +23,7 @@ function buildQuery(f: FilterConfig): string {
     (f.segment || []).forEach((s) => p.append('segment', s));
     (f.salesHead || []).forEach((s) => p.append('salesHead', s));
     (f.customer || []).forEach((s) => p.append('customer', s));
-    (f.selectedSku || []).forEach((s) => p.append('selectedSku', s));
+    (f.selectedSku || []).forEach((s: string) => p.append('selectedSku', s));
     Array.from(f.excludedSeries || []).forEach((s) => p.append('excludeWp', String(s)));
     if (f.metric) p.set('metric', f.metric);
     if (f.velocityMode) p.set('velocityMode', f.velocityMode);
@@ -50,13 +51,21 @@ export class AnalyticsApi {
     private static api = ApiClient.getInstance();
 
     static async meta(): Promise<RevenueMeta> {
-        return this.api.get<RevenueMeta>('/api/v1/revenue/meta');
+        return this.api.get<RevenueMeta>(API_ENDPOINTS.revenue.meta);
     }
 
     static async analytics(f: FilterConfig): Promise<AnalyticalOutput> {
-        const stats = await this.api.get<any>(`/api/v1/revenue/analytics?${buildQuery(f)}`);
+        const stats = await this.api.get<any>(`${API_ENDPOINTS.revenue.analytics}?${buildQuery(f)}`);
         // Revive the one Date the UI consumes (KpiCard reads stats.kpiAnchorDate).
         if (stats && stats.kpiAnchorDate) stats.kpiAnchorDate = new Date(stats.kpiAnchorDate);
         return stats as AnalyticalOutput;
+    }
+
+    static async clearCache(): Promise<{ ok: boolean; message: string }> {
+        return this.api.post<{ ok: boolean; message: string }>(API_ENDPOINTS.db.switch);
+    }
+
+    static async history(): Promise<any[]> {
+        return this.api.get<any[]>(API_ENDPOINTS.revenue.history);
     }
 }

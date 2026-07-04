@@ -1,85 +1,70 @@
 /** @type {import('tailwindcss').Config} */
+const fs = require('fs');
+const path = require('path');
+const colorsData = JSON.parse(fs.readFileSync(path.resolve(__dirname, './src/theme/colors.json'), 'utf8'));
+
 module.exports = {
-    content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+    content: [
+        './index.html',
+        './src/**/*.{js,ts,jsx,tsx}',
+        // The shared @grew/auth package (Login.tsx) lives out-of-tree in
+        // packages/auth/src. Without this entry, Tailwind purges all the
+        // utility classes used by the login page and it renders unstyled.
+        '../../../../packages/auth/src/**/*.{ts,tsx}',
+    ],
     theme: {
         extend: {
             fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] },
+            // Every colour value lives in src/theme/colors.json (single source of
+            // truth). Nothing hardcoded here — edit the JSON and Tailwind hot-reloads.
+            // Two tiers:
+            //   • semantic tokens (canvas/ink/primary/success…) — meaning-based, preferred in new code
+            //   • palette scales (slate/emerald/amber…) — raw shades behind class names like text-slate-500
+            //   • aliases — legacy flat names kept for back-compat
             colors: {
-                // --- B2 "Golden Layer" design system ---
-                // Warm ivory canvas + pure-white floating cards + amber-gold primary.
-                // Emerald is kept as a semantic-only color for positive financial indicators.
-                canvas: '#FDFBF7',          // warm ivory — app background
-                'canvas-soft': '#F0EBE0',   // warm linen — sidebar / panel surfaces
-                'canvas-deep': '#EAE3D6',   // deeper warm — modal headers, table headers
-                'canvas-night': '#1c1c1c',
-                'canvas-night-soft': '#202020',
-                ink: '#1C1917',             // warm near-black (stone-950)
-                'ink-secondary': '#44403C', // warm dark grey (stone-700)
-                'ink-mute': '#78716C',      // warm medium grey (stone-500)
-                'ink-faint': '#A8A29E',     // warm light grey (stone-400)
-                'on-primary': '#1C1917',    // dark text on amber (5.6:1 contrast ✓)
-                primary: '#D97706',         // amber-600 — financial gold
-                'primary-deep': '#B45309',  // amber-700
-                'primary-soft': '#FDE68A',  // amber-200
-                'primary-ghost': '#FEF3C7', // amber-100 — hover backgrounds
-                hairline: '#E7E5E4',        // stone-200 — warm hairline
-                'hairline-strong': '#D6D3D1', // stone-300
+                white: colorsData.surface.cardBg,
+                // ── Semantic tokens ───────────────────────────────────────────
+                canvas: colorsData.surface.appBg,
+                'canvas-soft': colorsData.surface.panelBg,
+                // Legacy aliases
+                bg: colorsData.aliases.bg,
+                panel: colorsData.aliases.panel,
+                border: colorsData.aliases.border,
+                brand: colorsData.aliases.brand,
+                'brand-teal': colorsData.aliases['brand-teal'],
+                'brand-green': colorsData.aliases['brand-green'],
+                'dark-base': colorsData.aliases['dark-base'],
+                'dark-card': colorsData.aliases['dark-card'],
+                'dark-border': colorsData.aliases['dark-border'],
+                'canvas-deep': colorsData.surface.headerBg,
+                'canvas-night': colorsData.surface.appBgDark,
+                'canvas-night-soft': colorsData.surface.panelBgDark,
+                ink: colorsData.text.default,
+                'ink-secondary': colorsData.text.secondary,
+                'ink-mute': colorsData.text.muted,
+                'ink-faint': colorsData.text.placeholder,
+                'on-primary': colorsData.text.onPrimary,
+                primary: colorsData.interactive.primaryAction,
+                'primary-deep': colorsData.interactive.primaryActionHover,
+                'primary-soft': colorsData.interactive.primaryActionSelected,
+                'primary-ghost': colorsData.interactive.primaryActionGhost,
+                hairline: colorsData.border.muted,
+                'hairline-strong': colorsData.border.default,
+                'card-bg': colorsData.surface.cardBg,
+                'card-border': colorsData.surface.cardBorder,
 
-                // Legacy aliases kept for existing class usages.
-                bg: '#FDFBF7',
-                panel: '#F0EBE0',
-                border: '#E7E5E4',
-                brand: '#D97706',
-                'brand-teal': '#B45309',
-                'brand-green': '#3ecf8e',   // kept — semantic positive indicator in charts
-                'dark-base': '#1c1c1c',
-                'dark-card': '#1c1c1c',
-                'dark-border': '#2a2a2a',
+                // Status — *-bg carry baked-in alpha because Tailwind v3 cannot
+                // apply the /opacity modifier to oklch() colours (parser predates oklch).
+                success: colorsData.status.success,
+                'success-bg': colorsData.status.successBg,
+                risk: colorsData.status.risk,
+                'risk-bg': colorsData.status.riskBg,
+                strategic: colorsData.status.strategic,
+                'strategic-bg': colorsData.status.strategicBg,
 
-                // Emerald kept as semantic-only: positive variance, growth, confirmed states.
-                emerald: {
-                    50: '#ecfdf5',
-                    100: '#d1fae5',
-                    200: '#a7f3d0',
-                    300: '#6ee7b7',
-                    400: '#4ade80',
-                    500: '#3ecf8e',
-                    600: '#24b47e',
-                    700: '#1c9e6e',
-                    800: '#186b50',
-                    900: '#14583f',
-                    950: '#052e1f'
-                },
-
-                // Amber scale — primary action color family.
-                amber: {
-                    50: '#fffbeb',
-                    100: '#fef3c7',
-                    200: '#fde68a',
-                    300: '#fcd34d',
-                    400: '#fbbf24',
-                    500: '#f59e0b',
-                    600: '#d97706',
-                    700: '#b45309',
-                    800: '#92400e',
-                    900: '#78350f',
-                    950: '#451a03'
-                },
-
-                // Stone scale — warm grey family for text hierarchy and surfaces.
-                stone: {
-                    50: '#fafaf9',
-                    100: '#f5f5f4',
-                    200: '#e7e5e4',
-                    300: '#d6d3d1',
-                    400: '#a8a29e',
-                    500: '#78716c',
-                    600: '#57534e',
-                    700: '#44403c',
-                    800: '#292524',
-                    900: '#1c1917',
-                    950: '#0c0a09'
-                }
+                // ── Legacy flat aliases + raw palette scales (all from colors.json) ──
+                ...colorsData.aliases,
+                ...colorsData.palette,
             },
             gridTemplateRows: { 12: 'repeat(12, minmax(0, 1fr))' },
             gridTemplateColumns: { 12: 'repeat(12, minmax(0, 1fr))' }

@@ -38,7 +38,15 @@ export const Breadcrumbs: React.FC = () => {
     }
 
     if (filters.matrixMonth) {
-        tags.push(createTag('MONTH', filters.matrixMonth, 'blue', () => updateFilters({ matrixMonth: null })));
+        tags.push(createTag('MONTH', filters.matrixMonth, 'blue', () => updateFilters({ matrixMonth: null, selectedWeek: null, selectedDay: null })));
+    }
+
+    if (filters.selectedWeek) {
+        tags.push(createTag('WEEK', `Week ${filters.selectedWeek}`, 'rose', () => updateFilters({ selectedWeek: null })));
+    }
+
+    if (filters.selectedDay) {
+        tags.push(createTag('DAY', `Day ${filters.selectedDay}`, 'emerald', () => updateFilters({ selectedDay: null })));
     }
 
     if (filters.salesHead.length > 0) {

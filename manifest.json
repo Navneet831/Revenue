@@ -1,0 +1,11 @@
+{
+  "name": "Revenue",
+  "version": "1.0.0",
+  "description": "Revenue Analytics Intelligence API",
+  "backend_entry": "apps.Revenue.backend.module.module",
+  "prefix": "/api/revenue",
+  "frontend": {
+    "entry": "@revenue/App"
+  },
+  "permissions": ["revenue:read", "revenue:write"]
+}

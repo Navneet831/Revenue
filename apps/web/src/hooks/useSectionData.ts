@@ -25,10 +25,9 @@ export function useSectionData(_sectionName: string) {
         };
 
         // Listen for Vite HMR updates
-        if (import.meta.hot) {
-            import.meta.hot.on('vite:beforeUpdate', handleHMR);
-            return () => import.meta.hot?.off('vite:beforeUpdate', handleHMR);
-        }
+        if (!import.meta.hot) return;
+        import.meta.hot.on('vite:beforeUpdate', handleHMR);
+        return () => import.meta.hot?.off('vite:beforeUpdate', handleHMR);
     }, [queryClient]);
 
     // Shared bootstrap query (deduped with RevenueDashboard) — its failure means
