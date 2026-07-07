@@ -8,9 +8,9 @@
         "packages/*"
     ],
     "scripts": {
-        "start": "npm run start -w apps/api",
-        "dev": "concurrently -n API,WEB -c cyan,magenta \"npm run dev -w apps/api\" \"npm run dev -w apps/web\"",
-        "dev:api": "npm run dev -w apps/api",
+        "start": "python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000",
+        "dev": "concurrently -n API,WEB -c cyan,magenta \"npm run dev:api\" \"npm run dev -w apps/web\"",
+        "dev:api": "python -m uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000",
         "dev:web": "npm run dev -w apps/web",
         "build:shared": "npm run build -w packages/shared",
         "build:web": "npm run build -w apps/web",

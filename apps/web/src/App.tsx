@@ -53,7 +53,7 @@ const ModuleLoading: React.FC<{ label: string }> = ({ label }) => (
     </div>
 );
 
-export const App: React.FC = () => {
+export const App: React.FC<{ embedded?: boolean; activeTab?: string }> = ({ embedded = false, activeTab }) => {
     // Auth state from the shared package
     const {
         isAuthenticated,
@@ -68,9 +68,11 @@ export const App: React.FC = () => {
     const {
         updateUIState,
         activeApp,
+        setActiveApp,
         setFeatures,
         features,
         activeMainView,
+        setActiveMainView,
         ui,
     } = useStore();
 
@@ -84,6 +86,48 @@ export const App: React.FC = () => {
     }, [authUser, setFeatures]);
 
     useEffect(() => {
+        if (activeTab) {
+            const tabToView: Record<string, 'DASHBOARD' | 'LEDGER' | 'AUDIT' | 'DEV' | 'GREWGPT'> = {
+                'dashboard': 'DASHBOARD',
+                'ledger': 'LEDGER',
+                'audit': 'AUDIT',
+                'dev': 'DEV',
+                'grewgpt': 'GREWGPT'
+            };
+            const view = tabToView[activeTab];
+            if (view) {
+                setActiveMainView(view);
+                setActiveApp('REVENUE');
+            }
+        }
+    }, [activeTab, setActiveMainView, setActiveApp]);
+
+    useEffect(() => {
+        if (embedded && activeMainView) {
+            const viewToTab: Record<string, string> = {
+                'DASHBOARD': 'dashboard',
+                'LEDGER': 'ledger',
+                'AUDIT': 'audit',
+                'DEV': 'dev',
+                'GREWGPT': 'grewgpt'
+            };
+            const tab = viewToTab[activeMainView];
+            if (tab) {
+                const currentSubPath = window.location.pathname.split('/')[2] || 'dashboard';
+                if (currentSubPath !== tab) {
+                    window.history.pushState(null, '', `/revenue/${tab}`);
+                }
+            }
+        }
+    }, [activeMainView, embedded]);
+
+    useEffect(() => {
+        if (embedded) {
+            // Shell has already verified the session — skip Revenue's own gate
+            setBootstrapping(false);
+            return;
+        }
+
         // Runtime listener: handles new sign-ins (OTP, magic link, OAuth)
         // and explicit sign-outs after the initial boot is complete.
         const { data: authListener } = supabase.auth.onAuthStateChange(
@@ -129,7 +173,7 @@ export const App: React.FC = () => {
         boot();
 
         return () => authListener.subscription.unsubscribe();
-    }, []);
+    }, [embedded]);
 
     useEffect(() => {
         if (isAuthenticated && window.location.pathname === '/auth/callback') {
@@ -141,33 +185,40 @@ export const App: React.FC = () => {
         updateUIState({ storiesOpen: true });
     });
 
-    // Block ALL rendering until features + auth are resolved.
-    if (isBootstrapping) {
-        return (
-            <div className="w-screen h-screen flex items-center justify-center bg-[#05070A]">
-                <div className="flex flex-col items-center gap-4">
-                    <div className="w-10 h-10 border-[3px] border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin" />
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest animate-pulse">
-                        Verifying Access…
-                    </p>
+    // Auth gate (standalone mode only)
+    if (!embedded) {
+        // Block ALL rendering until features + auth are resolved.
+        if (isBootstrapping) {
+            return (
+                <div className="w-screen h-screen flex items-center justify-center bg-[#05070A]">
+                    <div className="flex flex-col items-center gap-4">
+                        <div className="w-10 h-10 border-[3px] border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin" />
+                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest animate-pulse">
+                            Verifying Access…
+                        </p>
+                    </div>
                 </div>
-            </div>
-        );
-    }
+            );
+        }
 
-    if (features.enable_auth && !isAuthenticated) {
-        // No redirectTo: Login defaults to window.location.origin + '/auth/callback',
-        // so OAuth returns the user to wherever they actually are (exe :8000, dev
-        // :5173, LAN/ngrok). Hardcoding an absolute host:port sent every non-:8000
-        // session to a dead port after login → "This site can't be reached".
-        return <Login />;
+        if (features.enable_auth && !isAuthenticated) {
+            // No redirectTo: Login defaults to window.location.origin + '/auth/callback',
+            // so OAuth returns the user to wherever they actually are (exe :8000, dev
+            // :5173, LAN/ngrok). Hardcoding an absolute host:port sent every non-:8000
+            // session to a dead port after login → "This site can't be reached".
+            return <Login />;
+        }
     }
 
     const activeModule = MODULE_REGISTRY[activeApp];
 
+    // In embedded mode, render only the page content with a minimal error boundary.
+    // The shell provides its own sidebar, footer, and agentation toolbar.
+    const Wrapper = embedded ? React.Fragment : ErrorBoundary;
+
     return (
-        <ErrorBoundary>
-            <div className="w-screen h-screen relative flex flex-col bg-canvas overflow-hidden">
+        <Wrapper>
+            <div className={embedded ? 'w-full h-full relative flex flex-col bg-canvas overflow-hidden' : 'w-screen h-screen relative flex flex-col bg-canvas overflow-hidden'}>
                 <div id="core-app" className="flex-1 flex w-full relative overflow-hidden font-sans antialiased text-[11px] font-medium tracking-wide text-ink">
                     <div className="flex h-full w-full relative select-none overflow-hidden">
                         <GlobalSidebar onOpenStories={() => updateUIState({ storiesOpen: true })} />
@@ -194,7 +245,7 @@ export const App: React.FC = () => {
                             ) : activeMainView === 'LEDGER' && features.Ledger ? (
                                 <DataSourceTable />
                             ) : activeModule?.Component ? (
-                                <SectionBoundary name={activeModule.label} className="m-4 flex-1">
+                                <SectionBoundary name={activeModule.label} className="flex-1 overflow-y-auto">
                                     <Suspense fallback={<ModuleLoading label={activeModule.label} />}>
                                         <activeModule.Component />
                                     </Suspense>
@@ -219,14 +270,14 @@ export const App: React.FC = () => {
                     </GrewGPTErrorBoundary>
                 </div>
 
-                <AppFooter />
+                {!embedded && <AppFooter />}
 
-                {features.agentation && AgentationToolbar && (
+                {!embedded && features.agentation && AgentationToolbar && (
                     <Suspense fallback={null}>
                         <AgentationToolbar />
                     </Suspense>
                 )}
             </div>
-        </ErrorBoundary>
+        </Wrapper>
     );
 };

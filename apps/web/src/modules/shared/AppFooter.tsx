@@ -47,7 +47,7 @@ export const AppFooter: React.FC = () => {
                     title="Click to view database load history logs"
                 >
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    <span className="hover:underline">last_updated: <span className="text-slate-900 font-mono">{formattedDateWithTime}</span></span>
+                    <span className="hover:underline">Last updated on: <span className="text-slate-900 font-mono">{formattedDateWithTime}</span></span>
                 </button>
             </div>
 

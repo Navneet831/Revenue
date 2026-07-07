@@ -1,6 +1,6 @@
 import logging
-from apps.Revenue.backend.database import RevenueRepository
-from apps.Revenue.backend.sanitizer import build_key_map, sanitize
+from ..database import RevenueRepository
+from ..sanitizer import build_key_map, sanitize
 
 logger = logging.getLogger(__name__)
 

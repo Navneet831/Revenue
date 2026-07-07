@@ -1,7 +1,17 @@
 export class MetricFormatter {
     static formatValue(val: number, type: string, privacyMode: boolean = false): string {
         if (privacyMode) return '••••••';
-        return val.toString();
+        if (val === null || val === undefined || !isFinite(val)) return '—';
+        const t = (type || '').toLowerCase();
+        // Amounts are ₹ crores — KpiCard parses the exact `₹<n> Cr` shape.
+        if (t === 'amount' || t === 'valcr' || t === 'revenue') {
+            return `₹${val.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} Cr`;
+        }
+        if (t === 'mw') {
+            return `${val.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} MW`;
+        }
+        // Quantities / counts — whole units with Indian grouping
+        return Math.round(val).toLocaleString('en-IN');
     }
     static formatChartTooltip(val: number, type: string, privacyMode: boolean = false): string {
         return this.formatValue(val, type, privacyMode);

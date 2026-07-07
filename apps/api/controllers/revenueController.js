@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url';
 import Logger from '../../../monitoring/logging/index.js';
 import * as Metrics from '../../../monitoring/metrics/index.js';
 import Cache from '../services/cache.js';
-import { RevenueRepository } from '../repositories/revenueRepository.js';
+import { RevenueRepository, fetchDbConfig } from '../repositories/revenueRepository.js';
 import { AnalyticsService } from '../services/analyticsService.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -110,46 +110,23 @@ export const getDbConfig = async (req, res) => {
     let source = null;
     let connectionError = null;
 
-    if (process.env.PG_HOST) {
+    // Resolve via the same helper the data path uses, so the reported DB always
+    // matches the one queries actually run against. Password is dropped here so
+    // it never reaches the client.
+    try {
+        const cfg = await fetchDbConfig();
         connection = {
-            host: process.env.PG_HOST,
-            port: parseInt(process.env.PG_PORT || '5432'),
-            user: process.env.PG_USER,
-            database: process.env.PG_DATABASE,
-            ssl: process.env.PG_SSL === 'true',
+            host: cfg.host,
+            port: Number(cfg.port || 5432),
+            user: cfg.user,
+            database: cfg.database,
+            ssl: cfg.ssl !== undefined
+                ? (cfg.ssl === true || cfg.ssl === 'true')
+                : (cfg.host !== 'localhost' && cfg.host !== '127.0.0.1'),
         };
-        source = 'local_env';
-    } else {
-        const supabaseUrl = process.env.VITE_SUPABASE_URL;
-        const anonKey = process.env.VITE_SUPABASE_ANON_KEY;
-        if (supabaseUrl && anonKey) {
-            try {
-                const resp = await fetch(`${supabaseUrl}/functions/v1/db-credentials`, {
-                    headers: { 'apikey': anonKey, 'Authorization': `Bearer ${anonKey}` }
-                });
-                const body = await resp.json().catch(() => ({}));
-                if (resp.ok) {
-                    // Build the connection explicitly so a password (should the
-                    // edge function ever return one) never reaches the client.
-                    connection = {
-                        host: body.host,
-                        port: Number(body.port || 5432),
-                        user: body.user,
-                        database: body.database,
-                        ssl: body.ssl !== undefined
-                            ? (body.ssl === true || body.ssl === 'true')
-                            : (body.host !== 'localhost' && body.host !== '127.0.0.1'),
-                    };
-                    source = 'edge_function';
-                } else {
-                    connectionError = body.error || `Edge function 'db-credentials' returned HTTP ${resp.status}`;
-                }
-            } catch (err) {
-                connectionError = `Could not reach the 'db-credentials' edge function: ${err.message}`;
-            }
-        } else {
-            connectionError = 'No PG_HOST in local .env and no Supabase credentials (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY) to fall back on.';
-        }
+        source = cfg.source;
+    } catch (err) {
+        connectionError = err.message;
     }
 
     // Live data stats from in-memory cache (zero extra DB round-trip)
@@ -164,7 +141,7 @@ export const getDbConfig = async (req, res) => {
                 minDate: fmt(range.min_date),
                 maxDate: fmt(range.max_date),
                 cacheStatus: 'warm',
-                fetchMode: process.env.PG_HOST ? 'direct_pg' : 'edge_function',
+                fetchMode: source === 'local_env' ? 'direct_pg' : 'edge_function',
             };
         } else {
             dataStats = {
@@ -172,7 +149,7 @@ export const getDbConfig = async (req, res) => {
                 minDate: null,
                 maxDate: null,
                 cacheStatus: 'cold',
-                fetchMode: process.env.PG_HOST ? 'direct_pg' : 'edge_function',
+                fetchMode: source === 'local_env' ? 'direct_pg' : 'edge_function',
             };
         }
     } catch (_) {

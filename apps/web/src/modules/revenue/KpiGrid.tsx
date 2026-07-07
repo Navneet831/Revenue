@@ -47,9 +47,9 @@ export const KpiGrid: React.FC = () => {
     }, [stats]);
 
     const ytdWeeks = React.useMemo(() => {
-        if (!stats?.ytdWeekly) return consolidatedWeeks;
+        if (!stats?.ytdWeekly) return [];
         return stats.ytdWeekly;
-    }, [stats, consolidatedWeeks]);
+    }, [stats]);
 
     const weekWiseTotal = React.useMemo(() => {
         const metric = filters.metric || 'Amount';

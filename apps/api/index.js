@@ -11,7 +11,7 @@ import { rateLimit } from 'express-rate-limit';
 import { execFileSync } from 'child_process';
 import Logger from '../../monitoring/logging/index.js';
 import revenueRoutes from './routes/revenueRoutes.js';
-import { RevenueRepository, clearRepositoryCache } from './repositories/revenueRepository.js';
+import { RevenueRepository, clearRepositoryCache, fetchDbConfig } from './repositories/revenueRepository.js';
 import { clearAnalyticsCache } from './services/analyticsService.js';
 import Cache from './services/cache.js';
 import { FEATURES } from '@revenue/shared';
@@ -155,24 +155,14 @@ app.post('/api/v1/db/switch', async (req, res) => {
     }
 });
 
-// GET /api/v1/db/status — shows which DB is currently configured (reads from edge function).
+// GET /api/v1/db/status — shows which DB the data path is actually configured to
+// use (same resolver: local .env first, else the db-credentials edge function).
 app.get('/api/v1/db/status', async (req, res) => {
-    const supabaseUrl = process.env.VITE_SUPABASE_URL;
-    const anonKey = process.env.VITE_SUPABASE_ANON_KEY;
-    if (!supabaseUrl || !anonKey) {
-        return res.status(500).json({ error: 'VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY missing from .env' });
-    }
     try {
-        const r = await fetch(`${supabaseUrl}/functions/v1/db-credentials`, {
-            headers: { 'apikey': anonKey, 'Authorization': `Bearer ${anonKey}` }
-        });
-        if (!r.ok) {
-            const body = await r.json().catch(() => ({ error: r.statusText }));
-            return res.status(502).json({ error: `db-credentials returned ${r.status}`, detail: body });
-        }
-        const cfg = await r.json();
+        const cfg = await fetchDbConfig();
         res.json({
             configured: true,
+            source: cfg.source,
             host: cfg.host,
             port: cfg.port,
             database: cfg.database,
@@ -180,7 +170,7 @@ app.get('/api/v1/db/status', async (req, res) => {
             password: cfg.password ? '***' : '(not set)',
         });
     } catch (err) {
-        res.status(502).json({ error: 'Cannot reach Supabase db-credentials edge function', detail: err.message });
+        res.status(502).json({ error: err.message });
     }
 });
 

@@ -19,17 +19,14 @@ class RevenueModule(PlatformModule):
         from apps.Revenue.backend.database import set_platform_repo
 
         pg_manager = services.get("pg_db")
-        db_manager = services.get("db")
 
         if pg_manager is not None:
             from apps.Revenue.backend.database import PostgreSQLRepository
-            repo = PostgreSQLRepository(pg_manager.database_url)
-            set_platform_repo(repo)
-        elif db_manager is not None:
-            # Revenue data lives in PostgreSQL; DuckDB fallback unlikely but supported
-            from apps.Revenue.backend.database import PostgreSQLRepository
-            # DuckDB doesn't have the revenue table, so this is a no-op fallback
-            pass
+            try:
+                repo = PostgreSQLRepository(pg_manager.database_url)
+                set_platform_repo(repo)
+            except Exception as e:
+                print(f"⚠️  Revenue: Failed to connect to PostgreSQL ({e}). Continuing without repository connection at boot.")
 
         self.audit = services.get("audit")
         self.agent = services.get("agent")

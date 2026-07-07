@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { RevenueRow, FilterConfig, AnalyticalOutput, KeyMap, CONFIG } from '@revenue/shared';
+import { RevenueRow, FilterConfig, AnalyticalOutput, KeyMap, CONFIG, DataSanitizer } from '@revenue/shared';
 
 export interface AppState {
     data: RevenueRow[];
@@ -123,7 +123,7 @@ export const useStore = create<AppState>((set) => ({
     cardViews: { master: 'tabular', cust: 'tabular', sku: 'tabular', saleshead: 'tabular' },
     COLOR_REGISTRY: { sku: {}, customer: {}, segment: {}, saleshead: {} },
     stats: null,
-    insightsSeen: true,
+    insightsSeen: false,
     activeApp: 'REVENUE',
     activeMainView: 'DASHBOARD',
     unviewedStories: true,
@@ -131,7 +131,16 @@ export const useStore = create<AppState>((set) => ({
 
     // Actions
     setData: (data) => set({ data }),
-    setLatestDate: (latestDate) => set({ latestDate }),
+    setLatestDate: (latestDate) =>
+        set((state) => {
+            const latestDateStr = latestDate ? DataSanitizer.formatDate(latestDate) : '';
+            const defaultStart = latestDateStr ? DataSanitizer.getFYStart(latestDateStr) : '';
+            const isCustom = state.filters.startDate ? state.filters.startDate !== defaultStart : false;
+            return {
+                latestDate,
+                isCustomPeriodActive: isCustom
+            };
+        }),
     setGlobalMinMax: (min, max) =>
         set((state) => {
             const minStr = min ? min.toLocaleDateString('sv-SE') : '';
@@ -169,9 +178,19 @@ export const useStore = create<AppState>((set) => ({
                 : [...state.hiddenKPIs, kpi]
         })),
     updateFilters: (updates) =>
-        set((state) => ({
-            filters: { ...state.filters, ...updates }
-        })),
+        set((state) => {
+            const nextFilters = { ...state.filters, ...updates };
+            let isCustom = state.isCustomPeriodActive;
+            if (updates.startDate !== undefined && state.latestDate) {
+                const latestDateStr = DataSanitizer.formatDate(state.latestDate);
+                const defaultStart = DataSanitizer.getFYStart(latestDateStr);
+                isCustom = updates.startDate !== defaultStart;
+            }
+            return {
+                filters: nextFilters,
+                isCustomPeriodActive: isCustom
+            };
+        }),
     resetFilters: () =>
         set((state) => {
             const minStr = state.globalMinDate ? state.globalMinDate.toLocaleDateString('sv-SE') : '';

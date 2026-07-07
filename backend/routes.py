@@ -7,16 +7,17 @@ from typing import List, Optional
 
 from fastapi import APIRouter, HTTPException, Query
 
-from apps.Revenue.backend.database import RevenueRepository
-from apps.Revenue.backend.services.analytics_service import AnalyticsService
-from apps.Revenue.backend.services.cache import Cache
-from apps.Revenue.backend.services.revenue_service import RevenueService
+from .database import RevenueRepository
+from .services.analytics_service import AnalyticsService
+from .services.cache import Cache
+from .services.revenue_service import RevenueService
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
 @router.get("/")
+@router.get("")
 async def get_all_revenue():
     """Returns all sanitized revenue data."""
     try:
@@ -264,3 +265,18 @@ async def switch_db():
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail={"ok": False, "error": str(e)})
+
+
+@router.get("/history")
+async def get_history():
+    """DB load history log (returns [] on failure, like the Node route)."""
+    try:
+        return RevenueRepository.get_load_history()
+    except Exception as e:
+        logger.error("api_history_fetch_failed: %s", e)
+        raise HTTPException(status_code=500, detail="Failed to retrieve load history.")
+
+
+@router.get("/health")
+async def health():
+    return {"module": "revenue", "status": "online"}

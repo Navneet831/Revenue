@@ -3,9 +3,9 @@ import time
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
-from apps.Revenue.backend.services.revenue_service import RevenueService
-from apps.Revenue.backend.database import RevenueRepository
-from apps.Revenue.backend.services.cache import Cache
+from .revenue_service import RevenueService
+from ..database import RevenueRepository
+from .cache import Cache
 
 logger = logging.getLogger(__name__)
 
@@ -347,6 +347,28 @@ class AnalyticsService:
         segs_active: set = set()
         plot_keys: set = set()
 
+        # Populate active plot keys and segments from range-bounded records (ignoring exclusions & drilldowns)
+        for r in rows:
+            d = r.get('date')
+            if not isinstance(d, datetime):
+                continue
+            if start_dt and d < start_dt:
+                continue
+            if end_dt and d > end_dt:
+                continue
+            if f_segments and r.get('segment') not in f_segments:
+                continue
+            is_pend = r.get('isPending', False)
+            is_target_state = is_pend if f_pending else not is_pend
+            if not is_target_state:
+                continue
+                
+            wp = r.get('wp', 'Generic')
+            plot_keys.add(wp)
+            seg = r.get('segment')
+            if seg:
+                segs_active.add(seg)
+
         for r in filtered:
             val_cr = r.get('val', 0) / CURRENCY_DIVIDER
 
@@ -358,11 +380,6 @@ class AnalyticsService:
 
             wp = r.get('wp', 'Generic')
             wp_map[wp] = wp_map.get(wp, 0) + val_cr
-            plot_keys.add(wp)
-
-            seg = r.get('segment')
-            if seg:
-                segs_active.add(seg)
 
         sh_list = sorted(
             [{'name': k, 'v': v} for k, v in sh_map.items()],
@@ -403,8 +420,20 @@ class AnalyticsService:
             if isinstance(r.get('date'), datetime) and r['date'] >= seven_days_ago
         ) / CURRENCY_DIVIDER
 
+        # Determine anchor date from filters if provided, else use latest_date
+        anchor_date = latest_date
+        if filters.get('endDate'):
+            try:
+                anchor_date = datetime.strptime(filters['endDate'], '%Y-%m-%d')
+            except ValueError:
+                pass
+        
+        if anchor_date > latest_date:
+            anchor_date = latest_date
+            
+        anchor = anchor_date.replace(hour=23, minute=59, second=59, microsecond=999999)
+        
         # ---- KPI: MTD, QTD, YTD (fiscal calendar) ----
-        anchor = latest_date
         mtd_start = anchor.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
         # Fiscal quarters: Q1=Apr-Jun, Q2=Jul-Sep, Q3=Oct-Dec, Q4=Jan-Mar
@@ -444,9 +473,247 @@ class AnalyticsService:
         # Check if only solar segments are active
         is_only_solar = len(segs_active) == 1 and 'Solar' in segs_active
 
+        CONFIG_FISCAL_MONTHS = ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar']
+        
+        anchor_day = anchor_date.day
+        cur_month = anchor_date.month - 1  # 0-indexed (0=Jan)
+        cur_year = anchor_date.year
+        cur_key = f"{cur_year}-{cur_month:02d}"
+        
+        cur_fy_start_year = ytd_start.year
+        metric = filters.get('metric', 'Amount')
+        
+        # Compute global pacing and global full datasets for matrix comparison
+        global_full = {}
+        global_paced = {}
+        
+        # Like-for-like MoM baseline: previous month truncated to the anchor day-of-month
+        prev_anchor_year = cur_year - 1 if cur_month == 0 else cur_year
+        prev_anchor_month = 11 if cur_month == 0 else cur_month - 1
+        
+        prev_month_to_date = 0.0
+        prev_month_to_date_has_data = False
+        
+        for r in rows:
+            if f_segments and r.get('segment') not in f_segments:
+                continue
+            r_date = r['date']
+            if not isinstance(r_date, datetime):
+                continue
+            r_month = r_date.month - 1
+            r_year = r_date.year
+            r_day = r_date.day
+            r_wp = r.get('wp', 'Generic')
+            
+            if f_excluded and r_wp in f_excluded:
+                continue
+                
+            matches_drilldown = True
+            if f_sales_heads and r.get('salesHead') not in f_sales_heads:
+                matches_drilldown = False
+            if f_customers and r.get('customer') not in f_customers:
+                matches_drilldown = False
+            if f_skus and r_wp not in f_skus:
+                matches_drilldown = False
+                
+            if not matches_drilldown:
+                continue
+                
+            is_pend = r.get('isPending', False)
+            is_target_state = is_pend if f_pending else not is_pend
+            
+            if is_target_state:
+                key = f"{r_year}-{r_month:02d}"
+                val = r.get('val', 0.0)
+                mw = r.get('mw', 0.0)
+                qty = r.get('qty', 0.0)
+                metric_val = val / CURRENCY_DIVIDER if metric == 'Amount' else mw if metric == 'MW' else qty
+                
+                if key not in global_full:
+                    global_full[key] = {
+                        'val': 0.0,
+                        'mw': 0.0,
+                        'qty': 0.0,
+                        'metricVal': 0.0,
+                        'hasData': False
+                    }
+                global_full[key]['val'] += val
+                global_full[key]['mw'] += mw
+                global_full[key]['qty'] += qty
+                global_full[key]['metricVal'] += metric_val
+                global_full[key]['hasData'] = True
+                
+                is_paced = r_month != cur_month or r_day <= anchor_day
+                if is_paced:
+                    if key not in global_paced:
+                        global_paced[key] = {
+                            'val': 0.0,
+                            'mw': 0.0,
+                            'qty': 0.0,
+                            'metricVal': 0.0,
+                            'hasData': False
+                        }
+                    global_paced[key]['val'] += val
+                    global_paced[key]['mw'] += mw
+                    global_paced[key]['qty'] += qty
+                    global_paced[key]['metricVal'] += metric_val
+                    global_paced[key]['hasData'] = True
+                    
+                if r_month == prev_anchor_month and r_year == prev_anchor_year and r_day <= anchor_day:
+                    prev_month_to_date += metric_val
+                    prev_month_to_date_has_data = True
+
+        qtr_map = {
+            3: 0, 4: 0, 5: 0,
+            6: 1, 7: 1, 8: 1,
+            9: 2, 10: 2, 11: 2,
+            0: 3, 1: 3, 2: 3
+        }
+        
+        def get_qtd(year: int, end_month: int) -> float:
+            q_idx = qtr_map[end_month]
+            quarters = [
+                [3, 4, 5],
+                [6, 7, 8],
+                [9, 10, 11],
+                [0, 1, 2]
+            ]
+            q_months = quarters[q_idx]
+            total_sum = 0.0
+            for m in q_months:
+                is_valid = False
+                if m == end_month:
+                    is_valid = True
+                elif end_month >= 3:
+                    if m < end_month and m >= 3:
+                        is_valid = True
+                else:
+                    if m < end_month or m >= 3:
+                        is_valid = True
+                
+                if is_valid:
+                    k = f"{year}-{m:02d}"
+                    if k in global_paced and global_paced[k]['hasData']:
+                        total_sum += global_paced[k]['metricVal']
+            return total_sum
+            
+        def calculate_growth(cur: Optional[float], prev: Optional[float]) -> Optional[float]:
+            if cur is None or prev is None:
+                return None
+            if prev == 0:
+                return 100.0 if cur > 0 else 0.0
+            return ((cur - prev) / prev) * 100.0
+
+        matrix_arr = []
+        for i, m_name in enumerate(CONFIG_FISCAL_MONTHS):
+            col_month = (i + 3) % 12
+            col_year = cur_fy_start_year if i < 9 else cur_fy_start_year + 1
+            key_cur = f"{col_year}-{col_month:02d}"
+            
+            p_year = col_year - 1 if col_month == 0 else col_year
+            p_month = 11 if col_month == 0 else col_month - 1
+            key_prev_m = f"{p_year}-{p_month:02d}"
+            key_prev_y = f"{col_year - 1}-{col_month:02d}"
+            
+            cur_paced = global_paced.get(key_cur, {}).get('metricVal', 0.0) if key_cur in global_paced else 0.0
+            
+            if key_cur == cur_key:
+                prev_m_paced = prev_month_to_date if prev_month_to_date_has_data else 0.0
+            else:
+                prev_m_paced = global_paced.get(key_prev_m, {}).get('metricVal', 0.0) if key_prev_m in global_paced else 0.0
+                
+            prev_y_paced = global_paced.get(key_prev_y, {}).get('metricVal', 0.0) if key_prev_y in global_paced else 0.0
+            
+            col_qtd = get_qtd(col_year, col_month)
+            prev_y_qtd = get_qtd(col_year - 1, col_month)
+            
+            has_started = col_year < cur_year or (col_year == cur_year and col_month <= cur_month)
+            
+            mom = calculate_growth(cur_paced, prev_m_paced) if has_started else None
+            yoy = calculate_growth(cur_paced, prev_y_paced) if has_started else None
+            qoq = calculate_growth(col_qtd, prev_y_qtd) if has_started else None
+            
+            full_cur = global_full.get(key_cur, {'val': 0.0, 'mw': 0.0, 'qty': 0.0, 'hasData': False})
+            
+            matrix_arr.append({
+                'month': m_name,
+                'hasStarted': has_started,
+                'valCr': (full_cur['val'] / CURRENCY_DIVIDER) if has_started and (full_cur['hasData'] or full_cur['val'] > 0) else None,
+                'mw': full_cur['mw'] if has_started and (full_cur['hasData'] or full_cur['mw'] > 0) else None,
+                'qty': full_cur['qty'] if has_started and (full_cur['hasData'] or full_cur['qty'] > 0) else None,
+                'mom': mom,
+                'yoy': yoy,
+                'qoq': qoq
+            })
+            
+        totals = {'valCr': 0.0, 'mw': 0.0, 'qty': 0.0}
+        for item in matrix_arr:
+            if item['valCr'] is not None:
+                totals['valCr'] += item['valCr']
+            if item['mw'] is not None:
+                totals['mw'] += item['mw']
+            if item['qty'] is not None:
+                totals['qty'] += item['qty']
+                
+        matrix_arr.append({
+            'month': 'Total',
+            'hasStarted': True,
+            'valCr': totals['valCr'],
+            'mw': totals['mw'],
+            'qty': totals['qty'],
+            'mom': None,
+            'yoy': None,
+            'qoq': None
+        })
+
+        prev_y_key = f"{cur_year - 1}-{cur_month:02d}"
+        prev_year_mtd = global_paced.get(prev_y_key, {}).get('metricVal', 0.0) if prev_y_key in global_paced else 0.0
+
+        # Determine if it's a custom period range
+        start_date = ytd_start
+        if filters.get('startDate'):
+            try:
+                start_date = datetime.strptime(filters['startDate'], '%Y-%m-%d')
+            except ValueError:
+                pass
+
+        is_custom_period = start_date.date() != ytd_start.date()
+
+        # Calculate periodSales based on selected metric
+        if is_custom_period:
+            if metric == 'Amount':
+                period_sales = total_cr
+            elif metric == 'MW':
+                period_sales = total_mw
+            else:
+                period_sales = total_qty
+        else:
+            # Anchor date only sales
+            anchor_day_start = anchor_date.replace(hour=0, minute=0, second=0, microsecond=0)
+            anchor_day_end = anchor_date.replace(hour=23, minute=59, second=59, microsecond=999999)
+            
+            exact_day_val = sum(
+                r.get('val' if metric == 'Amount' else 'mw' if metric == 'MW' else 'qty', 0)
+                for r in rows
+                if isinstance(r.get('date'), datetime) and anchor_day_start <= r['date'] <= anchor_day_end
+                and (not f_segments or r.get('segment') in f_segments)
+                and (not f_sales_heads or r.get('salesHead') in f_sales_heads)
+                and (not f_customers or r.get('customer') in f_customers)
+                and (not f_skus or r.get('wp') in f_skus)
+                and (not f_excluded or r.get('wp') not in f_excluded)
+                and (r.get('isPending', False) == f_pending)
+            )
+            
+            if metric == 'Amount':
+                period_sales = exact_day_val / CURRENCY_DIVIDER
+            else:
+                period_sales = exact_day_val
+
+        period_sales = round(period_sales, 2)
+
         return {
             'kpi': {
-                'periodSales': total_cr,
+                'periodSales': period_sales,
                 'periodBreakdown': {},
                 'periodActiveKeys': list(plot_keys),
                 'mtd': mtd_val,
@@ -455,7 +722,7 @@ class AnalyticsService:
                 'qtdBreakdown': {},
                 'ytd': ytd_val,
                 'ytdBreakdown': {},
-                'prevMtd': 0,
+                'prevMtd': prev_year_mtd,
                 'prevQtd': 0,
                 'prevYtd': 0,
                 'pending': pending_val,
@@ -475,10 +742,10 @@ class AnalyticsService:
             'activePlotKeys': sorted(plot_keys),
             'isOnlySolar': is_only_solar,
             'rawFiltered': [],
-            'matrix': [],
+            'matrix': matrix_arr,
             'insights': [],
             'storyInsights': [],
-            'prevYearMtd': 0,
+            'prevYearMtd': prev_year_mtd,
             'buckets': {
                 'chart': {
                     'monthly': {},

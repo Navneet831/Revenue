@@ -174,7 +174,13 @@ export const KpiCard: React.FC<KpiCardProps> = memo(({
     const getBadgeTooltip = () => {
         if (compareValue === undefined || compareValue === null || compareValue === 0) return '';
         
-        const anchorDate = stats?.kpiAnchorDate || new Date(filters.endDate || latestDate || new Date());
+        // Always resolve to a Date object — never pass a string/null directly
+        const rawAnchor = stats?.kpiAnchorDate || filters.endDate || latestDate;
+        const anchorDate = rawAnchor instanceof Date
+            ? rawAnchor
+            : rawAnchor
+                ? new Date(rawAnchor)
+                : new Date();
         const yr = anchorDate.getFullYear();
         const mIdx = filters.matrixMonth ? CONFIG.CALENDAR_MONTHS.indexOf(filters.matrixMonth) : anchorDate.getMonth();
         
@@ -242,9 +248,25 @@ export const KpiCard: React.FC<KpiCardProps> = memo(({
         const colorCls = isPos ? 'text-success' : 'text-risk';
         const sign = isPos ? '+' : '';
 
-        const anchorDate = stats?.kpiAnchorDate || new Date(filters.endDate || latestDate || new Date());
+        // Resolve anchorDate safely — always a Date object
+        const rawAnchor = stats?.kpiAnchorDate || filters.endDate || latestDate;
+        const anchorDate = rawAnchor instanceof Date
+            ? rawAnchor
+            : rawAnchor ? new Date(rawAnchor) : new Date();
         const yr = anchorDate.getFullYear();
         const mIdx = filters.matrixMonth ? CONFIG.CALENDAR_MONTHS.indexOf(filters.matrixMonth) : anchorDate.getMonth();
+
+        // Format the difference directly — `value` and `compareValue` are already
+        // in Cr/MW/Qty (post-division) because MetricFormatter.formatValue handles
+        // the division. So `diff` is also already in the same unit — just format it.
+        const formatDiff = (d: number): string => {
+            const abs = Math.abs(d);
+            const pfx = d >= 0 ? '+' : '-';
+            if (privacyMode) return '••••';
+            if (filters.metric === 'Amount') return `${pfx}₹${abs.toFixed(2)} Cr`;
+            if (filters.metric === 'MW') return `${pfx}${abs.toFixed(2)} MW`;
+            return `${pfx}${Math.round(abs).toLocaleString('en-IN')} Qty`;
+        };
 
         let explanation = '';
         if (compareLabel === 'MoM') {
@@ -271,9 +293,9 @@ export const KpiCard: React.FC<KpiCardProps> = memo(({
                     {formatVal(value)} <span className="text-[8px] opacity-50">vs</span> {formatVal(compareValue)}
                 </span>
                 <span className={`${colorCls} font-bold`}>
-                    ({sign}{formatVal(diff)})
+                    ({formatDiff(diff)})
                 </span>
-                <span className="text-success font-bold italic uppercase tracking-tighter">
+                <span className="text-ink-mute font-bold italic uppercase tracking-tighter">
                     — {explanation}
                 </span>
             </div>
@@ -313,7 +335,7 @@ export const KpiCard: React.FC<KpiCardProps> = memo(({
                                 className="absolute inset-x-0 bottom-0 bg-primary/8 transition-all rounded-b-md pointer-events-none"
                                 style={{ height: `${barPct}%` }}
                             />
-                            <span className="text-[6.5px] font-black text-ink-mute uppercase tracking-widest z-10 leading-none mt-0.5 opacity-80">
+                            <span className="text-[9px] font-black text-ink-mute uppercase tracking-widest z-10 leading-none mt-0.5 opacity-80">
                                 W{weekNum}
                             </span>
                             <span className="text-[10px] font-bold font-mono text-ink tracking-tighter tabular-nums z-10 leading-none truncate max-w-full text-center pb-0.5">
@@ -388,7 +410,7 @@ export const KpiCard: React.FC<KpiCardProps> = memo(({
     return (
         <div
             id={id}
-            className={`kpi-module card-metal ${id === 'w-kpi-weeks' || id === 'w-kpi-mtd' ? 'min-w-[340px] flex-[1.6]' : 'min-w-[210px] flex-1'} flex-shrink-0 h-[120px] rounded-2xl flex flex-col relative group overflow-hidden transition-all duration-300 ${
+            className={`kpi-module card-metal border border-black ${id === 'w-kpi-weeks' || id === 'w-kpi-mtd' ? 'min-w-[340px] flex-[1.6]' : 'min-w-[210px] flex-1'} flex-shrink-0 h-[120px] rounded-2xl flex flex-col relative group overflow-hidden transition-all duration-300 ${
                 isInteractive ? 'cursor-pointer' : ''
             } ${detailOpen ? 'is-active' : ''}`}
             onClick={() => isInteractive && onToggleDetail && onToggleDetail()}

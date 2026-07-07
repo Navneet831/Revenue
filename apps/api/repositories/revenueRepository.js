@@ -39,7 +39,11 @@ const CREDS_TTL_MS = 10 * 60 * 1000; // re-fetch credentials every 10 minutes
 let _allRowsCache = null;
 let _dateRangeCache = null;
 
-async function fetchDbConfig() {
+// Single source of truth for "which DB do we use". Exported so the Dev-panel
+// display endpoints (getDbConfig, /db/status) report the SAME source the data
+// path actually connects to — never a stale local-vs-edge mismatch.
+// Returns the PG config plus a `source` field ('local_env' | 'edge_function').
+export async function fetchDbConfig() {
     // Priority 1: local .env credentials — used only when complete. Empty,
     // whitespace-only or partial PG_* values fall through to the edge function
     // instead of producing a broken pool that never connects.
@@ -51,6 +55,7 @@ async function fetchDbConfig() {
             user:     env('PG_USER'),
             password: env('PG_PASSWORD'),
             database: env('PG_DATABASE'),
+            source:   'local_env',
         };
         Logger.info('db_credentials_from_env', { host: config.host, port: config.port, database: config.database });
         return config;
@@ -99,6 +104,7 @@ async function fetchDbConfig() {
     }
 
     const config = await response.json();
+    config.source = 'edge_function';
     Logger.info('db_credentials_fetched', { host: config.host, port: config.port, database: config.database });
     return config;
 }

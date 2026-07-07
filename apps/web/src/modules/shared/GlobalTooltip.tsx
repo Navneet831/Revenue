@@ -53,7 +53,12 @@ export const GlobalTooltip: React.FC = () => {
                 top: `${pos.y}px`,
             }}
         >
-            {content}
+            {content.includes('\n')
+                ? content.split('\n').map((line, i) => (
+                    <div key={i} className={i > 0 ? 'mt-0.5' : ''}>{line}</div>
+                ))
+                : content
+            }
         </div>
     );
 };

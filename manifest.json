@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Revenue Analytics Intelligence API",
   "backend_entry": "apps.Revenue.backend.module.module",
-  "prefix": "/api/revenue",
+  "prefix": "/api/v1/revenue",
   "frontend": {
     "entry": "@revenue/App"
   },
