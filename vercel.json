@@ -9,13 +9,6 @@
     { "source": "/api/(.*)", "destination": "/api" },
     { "source": "/(.*)", "destination": "/" }
   ],
-  "functions": {
-    "api/index.js": {
-      "runtime": "nodejs@20.x",
-      "maxDuration": 30,
-      "memory": 1024
-    }
-  },
   "git": {
     "deploymentEnabled": {
       "main": true,
