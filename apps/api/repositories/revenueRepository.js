@@ -83,7 +83,7 @@ export async function fetchDbConfig() {
 
     let response;
     try {
-        response = await fetch(`${supabaseUrl}/functions/v1/db-credentials`, {
+        response = await fetch(`${supabaseUrl}/functions/v1/credentials`, {
             method: 'GET',
             headers: {
                 'apikey': anonKey,
@@ -101,7 +101,7 @@ export async function fetchDbConfig() {
             detail = body.error || detail;
         } catch (_) {}
         throw new Error(
-            `Supabase db-credentials returned ${response.status}: ${detail}. ` +
+            `Supabase credentials function returned ${response.status}: ${detail}. ` +
             'Ensure PG_HOST, PG_PORT, PG_USER, PG_PASSWORD, PG_DATABASE are set as Supabase secrets.'
         );
     }
