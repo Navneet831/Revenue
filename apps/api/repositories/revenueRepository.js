@@ -68,8 +68,11 @@ export async function fetchDbConfig() {
     }
 
     // Priority 2: Supabase edge function
-    const supabaseUrl = process.env.VITE_SUPABASE_URL;
-    const anonKey = process.env.VITE_SUPABASE_ANON_KEY;
+    // VITE_ env vars are inlined at build time by Vite and may NOT be available
+    // at runtime in Vercel serverless functions. Fall back to SUPABASE_* (without
+    // the Vite prefix) which can be set explicitly for the serverless runtime.
+    const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+    const anonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
 
     if (!supabaseUrl || !anonKey) {
         throw new Error(
