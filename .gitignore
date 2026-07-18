@@ -116,5 +116,6 @@ out/
 *.log
 .gemini
 .claude
+.opencode/
 .antigravitycli/
 installer_output/
