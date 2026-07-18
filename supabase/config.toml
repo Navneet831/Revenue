@@ -21,3 +21,6 @@ additional_redirect_urls = ["https://grewsales.vercel.app/auth/callback"]
 
 [functions.revenue-data]
 verify_jwt = true
+
+[functions.db-credentials]
+verify_jwt = false
