@@ -29,7 +29,7 @@ export const MatrixHeader: React.FC = () => {
     };
 
     return (
-        <div className="flex w-full shrink-0 border-b border-hairline bg-canvas-soft/60 backdrop-blur select-none z-40">
+        <div className="flex w-full shrink-0 border-b-2 border-slate-200 bg-slate-50 select-none z-40">
             <div className="shrink-0 flex items-center justify-center border-r border-hairline h-9" style={{ width: '80px' }}>
                 <button
                     onClick={(e) => { e.stopPropagation(); updateFilters({ pendingOnly: !filters.pendingOnly }); }}
@@ -46,20 +46,23 @@ export const MatrixHeader: React.FC = () => {
                 const isPartofSelectedQ = filters.selectedQuarter === qIdxOfM && !isTotal;
                 const isQStart = idx % 3 === 0 && !isTotal;
                 const isQEnd = idx % 3 === 2 || isTotal;
+                const isDisabledMonth = d.hasStarted === false;
 
                 const borderCls = isQEnd ? 'border-r border-hairline' : '';
-                const totalCls = isTotal ? 'text-emerald-700 bg-emerald-50/50' : '';
+                const totalCls = isTotal ? 'text-slate-900 font-bold bg-slate-50 border-l border-slate-200' : '';
                 const selCls = isSelectedMonth || isPartofSelectedQ
                     ? 'text-[#1C1917] border-b-2 border-amber-600 font-black bg-amber-50/60'
-                    : 'text-[#78716C] hover:text-[#1C1917] hover:bg-[#FEF9F0]';
+                    : isDisabledMonth
+                        ? 'text-[#78716C]/40 cursor-not-allowed opacity-55'
+                        : 'text-[#78716C] hover:text-[#1C1917] hover:bg-[#FEF9F0]';
 
                 return (
                     <div
                         key={idx}
-                        onClick={() => !isTotal && handleMonthToggle(d.month)}
-                        className={`relative flex-1 flex items-center justify-center h-9 text-[11px] uppercase font-bold tracking-widest whitespace-nowrap transition-colors ${borderCls} ${totalCls} ${selCls} ${!isTotal ? 'cursor-pointer' : ''}`}
+                        onClick={() => !isTotal && !isDisabledMonth && handleMonthToggle(d.month)}
+                        className={`relative flex-1 flex items-center justify-center h-9 text-[11px] uppercase font-bold tracking-widest whitespace-nowrap transition-colors ${borderCls} ${totalCls} ${selCls} ${!isTotal && !isDisabledMonth ? 'cursor-pointer' : ''}`}
                     >
-                        {isQStart && (
+                        {isQStart && !isDisabledMonth && (
                             <div
                                 onClick={(e) => { e.stopPropagation(); handleQuarterToggle(qIdxOfM); }}
                                 className={`absolute top-0 left-0 w-3.5 h-3.5 flex items-center justify-center text-[9px] font-black cursor-pointer rounded-br-md transition-all z-40 ${isPartofSelectedQ ? 'bg-primary text-white shadow-[0_0_8px_rgba(217,119,6,0.3)]' : 'bg-canvas-deep text-ink-mute hover:bg-canvas-deep hover:text-ink'}`}

@@ -1,6 +1,7 @@
 import React, { memo, useMemo, useState } from 'react';
 import { useStore } from '@revenue/store/useStore';
 import { ChevronDown, ChevronRight } from 'lucide-react';
+import { CONFIG } from '@revenue/shared';
 
 const CURRENCY_DIVIDER = 10_000_000;
 
@@ -29,7 +30,7 @@ function fmtDate(dateStr: string): string {
 }
 
 export const DailySalesPanel: React.FC = memo(() => {
-    const { stats, filters, privacyMode } = useStore();
+    const { stats, filters, privacyMode, updateFilters } = useStore();
     const [expandedWeeks, setExpandedWeeks] = useState<Record<string, boolean>>({});
 
     const series = stats?.dailySeries;
@@ -50,7 +51,7 @@ export const DailySalesPanel: React.FC = memo(() => {
 
         const groups: Record<string, { val: number; mw: number; qty: number; start: string; end: string; weekNum: number; days: any[] }> = {};
 
-        series.forEach((d) => {
+        series.forEach((d: { date: string; val: number; mw: number; qty: number }) => {
             const date = new Date(d.date);
             const dayOfMonth = date.getDate();
             const weekNum = Math.min(Math.ceil(dayOfMonth / 7), 5);
@@ -87,11 +88,11 @@ export const DailySalesPanel: React.FC = memo(() => {
 
     return (
         <div
-            className="shrink-0 flex flex-col bg-white border border-hairline rounded-2xl overflow-hidden shadow-sm h-full"
+            className="panel-metal shrink-0 flex flex-col rounded-2xl overflow-hidden h-full"
             style={{ width: '162px' }}
         >
             {/* column headers */}
-            <div className="flex items-center justify-between px-2.5 pt-2 pb-1 shrink-0 bg-canvas-soft/20 border-b border-hairline">
+            <div className="card-strip-header flex items-center justify-between pr-2.5 pt-2 pb-1.5 shrink-0">
                 <span className="text-[9px] font-bold text-ink-faint uppercase tracking-widest">
                     Daily Sales
                 </span>
@@ -107,7 +108,7 @@ export const DailySalesPanel: React.FC = memo(() => {
                             {/* Week Header */}
                             <div 
                                 onClick={() => toggleWeek(w.start)}
-                                className="flex items-center justify-between px-2.5 py-2 bg-canvas-soft/40 border-b border-hairline/60 cursor-pointer hover:bg-canvas-soft transition-colors group"
+                                className="flex items-center justify-between px-2 py-1 bg-canvas-soft/40 border-b border-hairline/60 cursor-pointer hover:bg-canvas-soft transition-colors group"
                             >
                                 <div className="flex items-center gap-1.5 min-w-0">
                                     <div className="shrink-0">
@@ -126,22 +127,61 @@ export const DailySalesPanel: React.FC = memo(() => {
                                         </span>
                                     </div>
                                 </div>
-                                <span className="text-[10px] font-black font-mono text-emerald-600 tabular-nums shrink-0 ml-1">
+                                <span className="text-[9px] font-black font-mono text-emerald-600 tabular-nums shrink-0 ml-1">
                                     {fmtCompact(w.val, w.qty, w.mw, metric, privacyMode)}
                                 </span>
                             </div>
                             {/* Days */}
                             {isExpanded && w.days.map((d: any) => {
                                 const isSunday = new Date(d.date).getDay() === 0;
+                                const [, mStr, dStr] = d.date.split('-');
+                                const calendarMonthIdx = parseInt(mStr, 10) - 1;
+                                const dayNum = parseInt(dStr, 10);
+                                const monthName = CONFIG.CALENDAR_MONTHS[calendarMonthIdx];
+
+                                const isSelected = filters.selectedDay === dayNum && filters.matrixMonth === monthName;
+
+                                const handleDayClick = () => {
+                                    if (isSelected) {
+                                        updateFilters({
+                                            selectedDay: null,
+                                            selectedWeek: null
+                                        });
+                                    } else {
+                                        updateFilters({
+                                            matrixMonth: monthName,
+                                            selectedDay: dayNum,
+                                            selectedWeek: null
+                                        });
+                                    }
+                                };
+
                                 return (
                                     <div
                                         key={d.date}
-                                        className="flex items-center justify-between px-2.5 py-1 hover:bg-canvas-soft/30 transition-colors"
+                                        onClick={handleDayClick}
+                                        className={`flex items-center justify-between px-2 py-0.5 cursor-pointer transition-colors ${
+                                            isSelected
+                                                ? 'bg-emerald-50 border-l-2 border-l-emerald-600 text-emerald-700 font-bold'
+                                                : 'hover:bg-canvas-soft/30'
+                                        }`}
                                     >
-                                        <span className={`text-[10px] font-mono tabular-nums ${isSunday ? 'text-ink-faint/60' : 'text-ink-mute'}`}>
+                                        <span className={`text-[9px] font-mono tabular-nums ${
+                                            isSelected
+                                                ? 'text-emerald-700'
+                                                : isSunday
+                                                ? 'text-ink-faint/60'
+                                                : 'text-ink-mute'
+                                        }`}>
                                             {fmtDate(d.date)}
                                         </span>
-                                        <span className={`text-[10px] font-bold font-mono tabular-nums ${isSunday ? 'text-ink-faint/60' : 'text-ink-secondary'}`}>
+                                        <span className={`text-[9px] font-mono tabular-nums ${
+                                            isSelected
+                                                ? 'text-emerald-800 font-black'
+                                                : isSunday
+                                                ? 'text-ink-faint/60'
+                                                : 'text-ink-secondary font-bold'
+                                        }`}>
                                             {fmtCompact(d.val, d.qty, d.mw, metric, privacyMode)}
                                         </span>
                                     </div>

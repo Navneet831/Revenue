@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 import { useStore } from '@revenue/store/useStore';
-import { CacheService } from '@revenue/services/cacheService';
 
 /**
  * EXECUTIVE KEYBOARD SHORTCUTS HOOK
@@ -41,10 +40,9 @@ export const useKeyboardShortcuts = (
                 toggleSidebar();
             }
 
-            // Ctrl + R: Force Reload (purge cache first)
+            // Ctrl + R: Force Reload (fetches fresh data from server)
             if (e.ctrlKey && e.key.toLowerCase() === 'r') {
                 e.preventDefault();
-                CacheService.purge();
                 window.location.reload();
             }
 

@@ -29,9 +29,28 @@
         "forceConsistentCasingInFileNames": true,
         "paths": {
             "@/*": ["./src/*"],
-            "@revenue/shared": ["../../packages/shared/src/index.ts"]
+            "@revenue/shared": ["./src/shared.ts"],
+            "@revenue/store": ["./src/store"],
+            "@revenue/store/*": ["./src/store/*"],
+            "@revenue/services": ["./src/services"],
+            "@revenue/services/*": ["./src/services/*"],
+            "@revenue/hooks": ["./src/hooks"],
+            "@revenue/hooks/*": ["./src/hooks/*"],
+            "@revenue/assets": ["./src/assets"],
+            "@revenue/assets/*": ["./src/assets/*"],
+            "@grew/shared": ["./src/shared.ts"],
+            "@grew/auth": ["../../../../packages/auth/src/index.ts"],
+            "@grew/auth/*": ["../../../../packages/auth/src/*"],
+            "react": ["../../node_modules/@types/react"],
+            "react/jsx-runtime": ["../../node_modules/@types/react/jsx-runtime"],
+            "lucide-react": ["../../node_modules/lucide-react"],
+            "lucide-react/*": ["../../node_modules/lucide-react/*"],
+            "@supabase/supabase-js": ["../../node_modules/@supabase/supabase-js"],
+            "@supabase/supabase-js/*": ["../../node_modules/@supabase/supabase-js/*"],
+            "zustand": ["../../node_modules/zustand"],
+            "zustand/*": ["../../node_modules/zustand/*"]
         }
     },
-    "include": ["src", "worker.js"],
+    "include": ["src", "worker.js", "../../../../packages/auth/src/**/*.ts", "../../../../packages/auth/src/**/*.tsx"],
     "exclude": ["node_modules", "dist"]
 }

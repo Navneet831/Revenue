@@ -20,14 +20,10 @@ export const SkuLegend: React.FC = () => {
                             const next = new Set(filters.excludedSeries);
                             
                             if (isCtrl) {
-                                // Existing multi-toggle behavior
-                                next.has(key) ? next.delete(key) : next.add(key);
-                            } else {
-                                // New Select/Unselect Global behavior
-                                const otherVisible = stats.activePlotKeys.some(k => k !== key && !filters.excludedSeries.has(k));
+                                // Isolate this key: Exclude everything EXCEPT this one
+                                const otherVisible = stats.activePlotKeys.some((k: string) => k !== key && !filters.excludedSeries.has(k));
                                 
                                 if (next.has(key) || otherVisible) {
-                                    // Isolate this key: Exclude everything EXCEPT this one
                                     next.clear();
                                     stats.activePlotKeys.forEach((k: string) => {
                                         if (k !== key) next.add(k);
@@ -36,10 +32,13 @@ export const SkuLegend: React.FC = () => {
                                     // Already isolated, so unselect (show all)
                                     next.clear();
                                 }
+                            } else {
+                                // Toggle behavior
+                                next.has(key) ? next.delete(key) : next.add(key);
                             }
                             updateFilters({ excludedSeries: next });
                         }}
-                        data-tooltip={`${key} · Click to Select (Isolate) · Ctrl+Click to Toggle`}
+                        data-tooltip={`${key} · Click to Toggle · Ctrl+Click to Select (Isolate)`}
                         className={`flex items-center gap-1.5 cursor-pointer shrink-0 transition-all hover:opacity-70 ${isExcluded ? 'opacity-30 grayscale line-through' : 'opacity-100'}`}
                     >
                         <div className="w-2 h-2 rounded-[2px]" style={{ background: colorDef.solid }} />

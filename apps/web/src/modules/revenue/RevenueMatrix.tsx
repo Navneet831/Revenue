@@ -17,7 +17,7 @@ export const RevenueMatrix: React.FC = memo(() => {
 
     if (isLoading) {
         return (
-            <div className="w-full h-full flex flex-col items-center justify-center bg-white gap-3">
+            <div className="w-full h-full flex flex-col items-center justify-center bg-card-bg gap-3">
                 <Loader2 className="w-6 h-6 text-primary animate-spin" />
                 <span className="text-[10px] font-mono text-ink-mute uppercase tracking-widest">Generating Ledger Matrix...</span>
             </div>
@@ -26,9 +26,9 @@ export const RevenueMatrix: React.FC = memo(() => {
 
     if (isError) {
         return (
-            <div className="w-full h-full flex flex-col items-center justify-center bg-white gap-3">
-                <AlertCircle className="w-6 h-6 text-rose-500" />
-                <span className="text-[10px] font-mono text-rose-500 uppercase tracking-widest">Matrix Calculation Failed</span>
+            <div className="w-full h-full flex flex-col items-center justify-center bg-card-bg gap-3">
+                <AlertCircle className="w-6 h-6 text-risk" />
+                <span className="text-[10px] font-mono text-risk uppercase tracking-widest">Matrix Calculation Failed</span>
             </div>
         );
     }
@@ -42,9 +42,67 @@ export const RevenueMatrix: React.FC = memo(() => {
         mw: 'Σ "MW"  (capacity)'
     };
     const DELTA_FORMULA: Record<'mom' | 'qoq' | 'yoy', string> = {
-        mom: 'Δ MoM = (month − prior month) ÷ prior month × 100',
-        qoq: 'Δ QoQ = (quarter − prior quarter) ÷ prior quarter × 100',
-        yoy: 'Δ YoY = (period − same period prior FY) ÷ prior × 100'
+        mom: 'MoM (Month-over-Month): each month vs the previous month. The current (in-progress) month is compared like-for-like — both months counted only up to the anchor day-of-month.',
+        qoq: 'QoQ (quarter-to-date): for each month, sums from the quarter\'s first month through that month, then compares with the same window of the previous fiscal year. The value grows within a quarter; the in-progress month is counted to the anchor day in both years.',
+        yoy: 'YoY (Year-over-Year): each month vs the same month last year. The current (in-progress) month is compared like-for-like — both years counted only up to the anchor day-of-month.'
+    };
+
+    const getCellTooltip = (key: 'mom' | 'qoq' | 'yoy', d: any, idx: number) => {
+        const anchorDate = stats.kpiAnchorDate ? new Date(stats.kpiAnchorDate) : new Date();
+        const curYear = anchorDate.getFullYear();
+        const curMonth = anchorDate.getMonth();
+        const anchorDay = anchorDate.getDate();
+        const curFYStartYear = curMonth >= 3 ? curYear : curYear - 1;
+
+        // Fiscal index of the anchor (in-progress) month — the only column whose data
+        // is partial, so the only one paced to the anchor day-of-month on both sides.
+        const anchorFiscalIdx = (curMonth + 9) % 12;
+        const isAnchorMonth = idx === anchorFiscalIdx;
+        // e.g. " (1–15)" — appended to a month that is counted only to the anchor day.
+        const cutoff = isAnchorMonth ? ` (1–${anchorDay})` : '';
+
+        const getMonthAndYear = (fiscalIdx: number) => {
+            const name = stats.matrix[fiscalIdx].month;
+            const year = fiscalIdx < 9 ? curFYStartYear : curFYStartYear + 1;
+            return { name, year };
+        };
+
+        const curInfo = getMonthAndYear(idx);
+
+        if (key === 'mom') {
+            const prevInfo = idx === 0
+                ? { name: 'Mar', year: curFYStartYear }
+                : getMonthAndYear(idx - 1);
+            // For the anchor month, the previous month is also counted to the anchor
+            // day-of-month (like-for-like), so the cutoff applies to BOTH terms.
+            return `${d.month} · Δ MoM = (${curInfo.name} ${curInfo.year}${cutoff} − ${prevInfo.name} ${prevInfo.year}${cutoff}) ÷ ${prevInfo.name} ${prevInfo.year}${cutoff} × 100`;
+        }
+
+        if (key === 'qoq') {
+            // The engine computes QoQ as quarter-TO-DATE: it sums from the quarter's
+            // first month THROUGH this month (getQTD), then compares with the same
+            // window one fiscal year earlier. So the value grows month-by-month within
+            // a quarter — the tooltip window must reflect that, or it can't reproduce
+            // the number shown (only the quarter's final month would ever match).
+            const qIdx = Math.floor(idx / 3);
+            const qName = ['Q1', 'Q2', 'Q3', 'Q4'][qIdx];
+            const qStartIdx = qIdx * 3;
+            const startName = stats.matrix[qStartIdx].month;
+            // The in-progress month inside the window is counted to the anchor day.
+            const endLabel = `${d.month}${cutoff}`;
+            const windowLabel = idx === qStartIdx ? endLabel : `${startName}–${endLabel}`;
+            const curFY = `FY${String(curFYStartYear).slice(-2)}`;
+            const prevFY = `FY${String(curFYStartYear - 1).slice(-2)}`;
+            return `${d.month} · Δ QoQ (${qName} to-date) = (${windowLabel} ${curFY} − ${windowLabel} ${prevFY}) ÷ ${windowLabel} ${prevFY} × 100`;
+        }
+
+        if (key === 'yoy') {
+            const prevYear = curInfo.year - 1;
+            // For the anchor month both years are counted to the anchor day-of-month.
+            return `${d.month} · Δ YoY = (${curInfo.name} ${curInfo.year}${cutoff} − ${curInfo.name} ${prevYear}${cutoff}) ÷ ${curInfo.name} ${prevYear}${cutoff} × 100`;
+        }
+
+        return '';
     };
 
     // The active metric drives the matrix: its row is pinned first and emphasized,
@@ -64,9 +122,23 @@ export const RevenueMatrix: React.FC = memo(() => {
     ];
 
     const renderDataRow = (label: string, key: 'valCr' | 'qty' | 'mw', formatter: (v: number | null) => string, isPrimary: boolean) => (
-        <tr key={key} className={`border-b border-hairline hover:bg-canvas h-12 ${isPrimary ? 'bg-emerald-50/50' : 'bg-white'}`}>
-            <td className={`px-3 border-r border-hairline text-[11px] font-extrabold uppercase tracking-widest whitespace-nowrap sticky left-0 z-30 ${isPrimary ? 'text-ink bg-emerald-50/50 border-l-2 border-l-emerald-600' : 'text-ink/60 bg-white'}`} style={{ width: '80px', minWidth: '80px' }}>
-                <span className="cursor-help" data-tooltip={ROW_FORMULA[key]}>{label}</span>
+        <tr key={key} className={`border-b border-hairline hover:bg-canvas h-12 ${isPrimary ? 'bg-success-bg' : 'bg-card-bg'}`}>
+            <td className={`px-3 border-r border-hairline text-[11px] font-extrabold uppercase tracking-widest whitespace-nowrap sticky left-0 z-30 ${isPrimary ? 'text-ink bg-success-bg border-l-2 border-l-success' : 'text-ink/60 bg-card-bg'}`} style={{ width: '80px', minWidth: '80px' }}>
+                <span className="cursor-help" data-tooltip={ROW_FORMULA[key]}>
+                    {key === 'valCr' ? (
+                        <>
+                            REV<span className="text-[9.5px] font-bold text-ink/60 tracking-tighter ml-0.5">(<span className="text-[10px]">₹</span>cr)</span>
+                        </>
+                    ) : key === 'qty' ? (
+                        <>
+                            VOL<span className="text-[9px] font-bold text-ink/50 tracking-tighter ml-0.5">(Qty)</span>
+                        </>
+                    ) : key === 'mw' ? (
+                        <>
+                            CAP<span className="text-[9px] font-bold text-ink/50 tracking-tighter ml-0.5">(MW)</span>
+                        </>
+                    ) : label}
+                </span>
             </td>
             {stats.matrix.map((d: any, idx: number) => {
                 const isTotal = d.month === 'Total';
@@ -77,19 +149,19 @@ export const RevenueMatrix: React.FC = memo(() => {
 
                 const borderCls = isQEnd ? 'border-r border-hairline' : '';
                 const textCls = isTotal
-                    ? `${isPrimary ? 'text-emerald-700' : 'text-emerald-700/60'} text-[13px] font-bold tracking-tight`
+                    ? `${isPrimary ? 'text-ink' : 'text-ink-secondary'} text-[11.5px] font-bold tracking-tighter`
                     : isSelectedMonth || isPartofSelectedQ
-                        ? `${isPrimary ? 'text-ink' : 'text-ink/80'} text-[12px] font-bold tracking-tight`
-                        : `${isPrimary ? 'text-ink' : 'text-ink/70'} text-[12px] font-medium tracking-tight`;
+                        ? `${isPrimary ? 'text-ink' : 'text-ink/80'} text-[10.5px] font-bold tracking-tighter`
+                        : `${isPrimary ? 'text-ink' : 'text-ink/70'} text-[10.5px] font-medium tracking-tighter`;
 
                 return (
                     <td
                         key={idx}
                         data-tooltip={`${d.month} · ${ROW_FORMULA[key]}`}
-                        className={`px-2 py-1 font-mono text-right relative transition-all duration-200 whitespace-nowrap cursor-help ${borderCls} ${isSelectedMonth || isPartofSelectedQ ? 'bg-canvas-deep/50' : ''}`}
+                        className={`px-1 py-1 font-mono text-right relative transition-all duration-200 whitespace-nowrap cursor-help ${borderCls} ${isSelectedMonth || isPartofSelectedQ ? 'bg-canvas-deep/50' : ''} ${isTotal ? 'bg-canvas-soft border-l border-hairline-strong' : ''}`}
                     >
                         <span className={`${textCls} relative z-10 pointer-events-none`}>
-                            {privacyMode ? '••••' : formatter(d[key])}
+                            {privacyMode ? '••••' : (d.hasStarted === false ? '—' : formatter(d[key]))}
                         </span>
                     </td>
                 );
@@ -97,11 +169,15 @@ export const RevenueMatrix: React.FC = memo(() => {
         </tr>
     );
 
-    const renderBadgeRow = (label: string, key: 'mom' | 'qoq' | 'yoy') => (
-        <tr className="border-b border-hairline bg-canvas-soft/40 h-10">
-            <td className="px-3 border-r border-hairline text-[10px] text-ink-faint font-bold uppercase tracking-widest whitespace-nowrap bg-canvas-soft/40 sticky left-0 z-30" style={{ width: '80px', minWidth: '80px' }}>
-                <span className="cursor-help" data-tooltip={DELTA_FORMULA[key]}>{label}</span>
-            </td>
+    const renderBadgeRow = (key: 'mom' | 'qoq' | 'yoy') => {
+        const title = key === 'mom' ? 'Δ MoM' : key === 'qoq' ? 'Δ QoQ' : 'Δ YoY';
+        return (
+            <tr className="border-b border-hairline bg-canvas-soft/40 h-10">
+                <td className="px-3 border-r border-hairline text-[10px] text-ink-faint font-bold uppercase tracking-widest whitespace-nowrap bg-canvas-soft/40 sticky left-0 z-30" style={{ width: '80px', minWidth: '80px' }}>
+                    <span className="cursor-help" data-tooltip={DELTA_FORMULA[key]}>
+                        {title}<span className="text-[8.5px] font-bold text-ink-faint/70 tracking-tighter ml-0.5">·{metricTag}</span>
+                    </span>
+                </td>
             {stats.matrix.map((d: any, idx: number) => {
                 const isTotal = d.month === 'Total';
                 const qIdxOfM = Math.floor(idx / 3);
@@ -111,38 +187,39 @@ export const RevenueMatrix: React.FC = memo(() => {
 
                 const borderCls = isQEnd ? 'border-r border-hairline' : '';
 
-                if (isTotal) return <td key={idx} className={`px-2 text-center whitespace-nowrap text-ink-faint text-[11px] font-mono ${borderCls}`}>—</td>;
+                if (isTotal) return <td key={idx} className={`px-1 text-center whitespace-nowrap text-ink-faint text-[10px] font-mono ${borderCls} bg-canvas-soft border-l border-hairline-strong`}>—</td>;
 
                 const val = d[key];
                 if (val === null || val === undefined) {
                     return (
-                        <td key={idx} className={`px-2 text-right text-ink-faint text-[11px] font-mono whitespace-nowrap ${borderCls} ${isSelectedMonth || isPartofSelectedQ ? 'bg-canvas-deep/50' : ''}`}>
-                            N/A
+                        <td key={idx} className={`px-1 text-right text-ink-faint text-[10px] font-mono whitespace-nowrap ${borderCls} ${isSelectedMonth || isPartofSelectedQ ? 'bg-canvas-deep/50' : ''}`}>
+                            {d.hasStarted === false ? '—' : 'N/A'}
                         </td>
                     );
                 }
 
                 const isPos = val > 0;
-                const colorCls = isPos ? 'text-emerald-500' : val < 0 ? 'text-rose-500' : 'text-ink-faint';
+                const colorCls = isPos ? 'text-success' : val < 0 ? 'text-risk' : 'text-ink-faint';
 
                 return (
                     <td
                         key={idx}
-                        data-tooltip={`${d.month} · ${DELTA_FORMULA[key]}`}
-                        className={`px-2 py-1 font-mono text-right relative transition-all duration-200 whitespace-nowrap cursor-help ${borderCls} ${isSelectedMonth || isPartofSelectedQ ? 'bg-canvas-deep/50' : ''}`}
+                        data-tooltip={getCellTooltip(key, d, idx)}
+                        className={`px-1 py-1 font-mono text-right relative transition-all duration-200 whitespace-nowrap cursor-help ${borderCls} ${isSelectedMonth || isPartofSelectedQ ? 'bg-canvas-deep/50' : ''} ${isTotal ? 'bg-canvas-soft border-l border-hairline-strong' : ''}`}
                     >
-                        <span className={`relative z-10 ${colorCls} text-[11px] font-bold tracking-tight`}>
-                            {privacyMode ? '••' : `${isPos ? '+' : ''}${val.toFixed(1)}%`}
+                        <span className={`relative z-10 ${colorCls} text-[10px] font-bold tracking-tighter`}>
+                            {privacyMode ? '••' : (d.hasStarted === false ? '—' : `${isPos ? '+' : ''}${val.toFixed(1)}%`)}
                         </span>
                     </td>
                 );
             })}
         </tr>
     );
+};
 
     return (
-        <div className="flex flex-col h-full w-full relative bg-white">
-            <div className="flex-1 overflow-auto no-scrollbar relative z-20 select-none bg-white" data-lenis-prevent="true">
+        <div className="flex flex-col h-full w-full relative bg-card-bg">
+            <div className="flex-1 overflow-auto no-scrollbar relative z-20 select-none bg-card-bg" data-lenis-prevent="true">
                 <table className="w-full border-collapse min-w-full relative" style={{ tableLayout: 'fixed' }}>
                     {/* The month header lives in the shared, fixed <MatrixHeader/> above the
                         view switch. This colgroup keeps the data columns aligned to it. */}
@@ -155,9 +232,9 @@ export const RevenueMatrix: React.FC = memo(() => {
                     <tbody className="bg-transparent">
                         {orderedRows.map((row) => renderDataRow(row.label, row.key, row.fmt, row.key === metricKey))}
 
-                        {renderBadgeRow(`Δ MoM · ${metricTag}`, 'mom')}
-                        {renderBadgeRow(`Δ QoQ · ${metricTag}`, 'qoq')}
-                        {renderBadgeRow(`Δ YoY · ${metricTag}`, 'yoy')}
+                        {renderBadgeRow('mom')}
+                        {renderBadgeRow('qoq')}
+                        {renderBadgeRow('yoy')}
                     </tbody>
                 </table>
             </div>

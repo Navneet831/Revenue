@@ -1,23 +1,28 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { GitBranch, ChevronLeft, ChevronRight, X, Loader2, Move } from 'lucide-react';
+import { useStore } from '@revenue/store/useStore';
+import { GitService } from '../../services/gitService';
 
 export const CommitDrilldown: React.FC = () => {
+    const { features } = useStore();
+
     const [commits, setCommits] = useState<any[]>([]);
     const [currentHash, setCurrentHash] = useState('');
     const [loading, setLoading] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
     const [error, setError] = useState('');
 
-    // Floating panel position (px from viewport top-left). The panel is draggable
-    // by its header so it can be parked anywhere over the dashboard while auditing.
-    const [pos, setPos] = useState({ x: 24, y: 88 });
+    // Single pos state drives both minimised pill and expanded panel.
+    // Initialised to bottom-left so the pill starts where the old fixed button was.
+    const [pos, setPos] = useState(() => ({
+        x: 24,
+        y: typeof window !== 'undefined' ? window.innerHeight - 80 : 600,
+    }));
     const panelRef = useRef<HTMLDivElement>(null);
 
     const fetchCommits = async () => {
         try {
-            const res = await fetch('/api/git/commits');
-            if (!res.ok) throw new Error('Failed to fetch history');
-            const data = await res.json();
+            const data = await GitService.getCommits();
             setCommits(data.commits);
             setCurrentHash(data.currentHash);
         } catch (err: any) {
@@ -31,6 +36,7 @@ export const CommitDrilldown: React.FC = () => {
 
     const startDrag = useCallback((e: React.MouseEvent) => {
         e.preventDefault();
+        e.stopPropagation();
         const rect = panelRef.current?.getBoundingClientRect();
         const offX = rect ? e.clientX - rect.left : 0;
         const offY = rect ? e.clientY - rect.top : 0;
@@ -48,23 +54,16 @@ export const CommitDrilldown: React.FC = () => {
         window.addEventListener('mouseup', onUp);
     }, []);
 
+    // ── All hooks above. Permission gate (from whitelist via store) goes here,
+    //    AFTER every hook, so the hook count never changes between renders. ──
+    if (!features.commit_drill_down) return null;
+
     const handleCheckout = async (hash: string) => {
         setLoading(true);
         setError('');
         try {
-            const res = await fetch('/api/git/checkout', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ hash })
-            });
-            if (!res.ok) {
-                const data = await res.json();
-                throw new Error(data.error || 'Checkout failed');
-            }
-            // Give the system a moment to reflect changes on disk
-            setTimeout(() => {
-                window.location.reload();
-            }, 500);
+            await GitService.checkoutCommit(hash);
+            setTimeout(() => window.location.reload(), 500);
         } catch (err: any) {
             setError(err.message);
             setLoading(false);
@@ -73,18 +72,36 @@ export const CommitDrilldown: React.FC = () => {
 
     const currentIndex = commits.findIndex(c => c.hash === currentHash);
 
+    // ── Minimised pill — draggable via grip, clickable via icon ──────────────────
     if (!isOpen) {
         return (
-            <button
-                onClick={() => setIsOpen(true)}
-                className="fixed bottom-6 left-6 z-[200] p-3 bg-white/80 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-500/50 rounded-full text-slate-400 hover:text-emerald-600 transition-all duration-300 shadow-lg backdrop-blur-md group"
-                title="Commit Drill-down"
+            <div
+                ref={panelRef}
+                style={{ left: pos.x, top: pos.y }}
+                className="fixed z-[200] flex items-center bg-white/90 border border-slate-200 rounded-full shadow-lg backdrop-blur-md select-none"
             >
-                <GitBranch className="w-5 h-5 group-hover:rotate-12 transition-transform" />
-            </button>
+                {/* Drag grip */}
+                <div
+                    onMouseDown={startDrag}
+                    className="cursor-move pl-3 py-2.5 text-slate-300 hover:text-slate-500 transition-colors"
+                    title="Drag to move"
+                >
+                    <Move className="w-3.5 h-3.5" />
+                </div>
+
+                {/* Open button */}
+                <button
+                    onClick={() => setIsOpen(true)}
+                    className="pr-3 pl-1.5 py-2.5 text-slate-400 hover:text-emerald-600 transition-colors group"
+                    title="Commit Drill-down"
+                >
+                    <GitBranch className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+                </button>
+            </div>
         );
     }
 
+    // ── Expanded panel — draggable via header ────────────────────────────────────
     return (
         <div
             ref={panelRef}
@@ -110,7 +127,7 @@ export const CommitDrilldown: React.FC = () => {
                         </div>
                     </div>
                     <button
-                        onMouseDown={(e) => e.stopPropagation()}
+                        onMouseDown={e => e.stopPropagation()}
                         onClick={() => setIsOpen(false)}
                         className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-900 transition-colors border border-slate-100"
                     >
@@ -158,9 +175,7 @@ export const CommitDrilldown: React.FC = () => {
                                 {!isCurrent && !loading && (
                                     <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-slate-900 transition-colors" />
                                 )}
-                                {loading && (
-                                    <Loader2 className="w-4 h-4 text-emerald-500 animate-spin" />
-                                )}
+                                {loading && <Loader2 className="w-4 h-4 text-emerald-500 animate-spin" />}
                             </button>
                         );
                     })}

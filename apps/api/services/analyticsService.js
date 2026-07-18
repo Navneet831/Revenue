@@ -1,5 +1,6 @@
 import { DataLogic, Format } from '@revenue/shared';
 import { RevenueService } from './revenueService.js';
+import { RevenueRepository } from '../repositories/revenueRepository.js';
 
 /**
  * SERVER-SIDE ANALYTICS — runs the SAME isomorphic engine the client worker used
@@ -35,6 +36,12 @@ async function getRows() {
             });
     }
     return _rowsPromise;
+}
+
+export function clearAnalyticsCache() {
+    _rowsCache = null;
+    _rowsCacheTime = 0;
+    _rowsPromise = null;
 }
 
 // Port of the worker's post-compute "executive stories" so the payload matches
@@ -91,7 +98,7 @@ export const AnalyticsService = {
         }
         const toLocalDate = (ms) => new Date(ms).toLocaleDateString('sv-SE');
         return {
-            latestDate: maxT !== -Infinity ? toLocalDate(maxT) : null,
+            latestDate: maxT !== -Infinity ? new Date(maxT).toISOString() : null,
             minDate: minT !== Infinity ? toLocalDate(minT) : null,
             maxDate: maxT !== -Infinity ? toLocalDate(maxT) : null,
             years: Array.from(years).sort((a, b) => b - a),
@@ -111,6 +118,8 @@ export const AnalyticsService = {
             if (t > maxT) maxT = t;
         }
         const latestDate = new Date(maxT);
+        const activeEnd = filters.endDate ? new Date(filters.endDate) : latestDate;
+        const mb51SalesPeriods = await RevenueRepository.getMb51Sales(activeEnd);
 
         const f = { ...filters, excludedSeries: new Set(filters.excludedSeries || []) };
         const stats = DataLogic.computeEngine(rows, f, latestDate);
@@ -137,6 +146,6 @@ export const AnalyticsService = {
             .sort((a, b) => b[0].localeCompare(a[0]))
             .map(([date, agg]) => ({ date, ...agg }));
 
-        return { ...stats, storyInsights, dailySeries };
+        return { ...stats, storyInsights, dailySeries, mb51SalesPeriods };
     }
 };

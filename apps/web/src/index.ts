@@ -1,6 +1,10 @@
 // Re-export App component
 export { App } from './App';
 
+// Re-export theme and constants
+export * from './theme';
+export * from './constants';
+
 // Re-export store
 export * from './store/useStore';
 
@@ -12,6 +16,7 @@ export * from './services/activityService';
 export * from './services/dbService';
 export * from './services/featureService';
 export * from './services/revenueService';
+export * from './services/gitService';
 
 // Re-export hooks
 export * from './hooks/useSectionData';

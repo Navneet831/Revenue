@@ -3,27 +3,33 @@
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
 
-/* B2 "GOLDEN LAYER" CANVAS
-   Warm ivory background (#FDFBF7) with pure-white cards that float above it.
-   Amber-gold (#D97706) is the primary action color; emerald is reserved for
-   semantic positive/growth indicators in financial data only. */
+/* METAL PLATE CANVAS
+   Cool slate background (theme('colors.slate.200')) with near-white metal plate cards floating above it.
+   Amber-gold (theme('colors.amber.600')) is reserved for active/selected states; emerald for positive
+   financial indicators only. */
 body {
-    background-color: #FDFBF7;
-    color: #1C1917;
+    background-color: theme('colors.canvas');
+    /* Depth, not flat: soft top glow + gentle vertical deepening (fixed so it
+       reads as ambient lighting behind the floating metal plates). */
+    background-image:
+        radial-gradient(130% 90% at 50% -15%, theme('colors.canvas-soft') 0%, transparent 55%),
+        linear-gradient(180deg, theme('colors.canvas') 0%, theme('colors.canvas-deep') 100%);
+    background-attachment: fixed;
+    color: theme('colors.ink');
     overflow: hidden;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     -webkit-user-select: none;
     user-select: none;
-    selection-background-color: #D97706;
-    selection-color: #1C1917;
+    selection-background-color: theme('colors.primary');
+    selection-color: theme('colors.stone.900');
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     letter-spacing: 0;
 }
 
 ::selection {
-    background: #FDE68A;
-    color: #1C1917;
+    background: theme('colors.primary-soft');
+    color: theme('colors.stone.900');
 }
 
 /* Tabular figures everywhere numbers live — aligned digits for auditable columns */
@@ -81,8 +87,8 @@ body {
     border-radius: 1.25rem;
 }
 #sidebar .sidebar-item:hover {
-    background: #FEF9F0;
-    border-color: #E7E5E4;
+    background: theme('colors.primary-ghost');
+    border-color: theme('colors.hairline-strong');
     box-shadow: 0 1px 3px rgba(28, 25, 23, 0.07);
 }
 
@@ -124,11 +130,11 @@ h3 {
     background: transparent;
 }
 .minimal-scroll::-webkit-scrollbar-thumb {
-    background: #D6D3D1;
+    background: theme('colors.stone.300');
     border-radius: 6px;
 }
 .minimal-scroll::-webkit-scrollbar-thumb:hover {
-    background: #A8A29E;
+    background: theme('colors.stone.400');
 }
 
 @keyframes fadeIn {
@@ -146,20 +152,20 @@ h3 {
 }
 
 input[type='checkbox'] {
-    accent-color: #D97706;
+    accent-color: theme('colors.primary');
     width: 14px;
     height: 14px;
     cursor: pointer;
     outline: none;
-    border: 1px solid #E7E5E4;
+    border: 1px solid theme('colors.hairline');
     border-radius: 4px;
 }
 
-/* QUANTITATIVE GRID PATTERN — warm tint */
+/* QUANTITATIVE GRID PATTERN — cool navy tint (institutional) */
 .bg-grid-pattern {
     background-image:
-        linear-gradient(to right, rgba(28, 25, 23, 0.04) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(28, 25, 23, 0.04) 1px, transparent 1px);
+        linear-gradient(to right, rgba(15, 23, 42, 0.035) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(15, 23, 42, 0.035) 1px, transparent 1px);
     background-size: 24px 24px;
     background-position: center top;
 }
@@ -177,34 +183,160 @@ input[type='checkbox'] {
 /* --- GOLDEN LAYER SURFACES ---
    Cards are pure white (#FFF) so they float above the warm ivory canvas.
    Buttons use a warm white base with amber active states. */
+
+/* ==========================================================
+   METAL PLATE / ENGRAVED 3D CARD SYSTEM
+   Industrial steel aesthetic — bright white top-edge light catch,
+   dark bottom-edge shadow. Raised plate over cool slate canvas.
+   ========================================================== */
+
+/* BASE CARD — KPI cards, list cards, small panels.
+   Raised metal plate: bright top-edge light catch (inset highlight) + dark
+   bottom-edge shadow + elevation drop shadow → clear 3D over the canvas. */
+.card-metal {
+    background: theme('colors.card-bg');
+    border: 1px solid #000000;
+    border-radius: 12px;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.95),
+        inset 0 -2px 3px rgba(15, 23, 42, 0.06),
+        0 1px 1px rgba(15, 23, 42, 0.05),
+        0 4px 8px -2px rgba(15, 23, 42, 0.12),
+        0 10px 18px -8px rgba(15, 23, 42, 0.10);
+    transition:
+        box-shadow 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+        transform 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+        background 0.22s ease;
+}
+.card-metal:hover {
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.95),
+        inset 0 -2px 3px rgba(15, 23, 42, 0.06),
+        0 2px 2px rgba(15, 23, 42, 0.06),
+        0 10px 18px -4px rgba(15, 23, 42, 0.16),
+        0 18px 30px -12px rgba(15, 23, 42, 0.14);
+    transform: translateY(-1px);
+}
+.card-metal.is-active,
+.card-metal[data-active="true"] {
+    background: theme('colors.canvas-soft');
+    border-color: #000000;
+    box-shadow:
+        inset 0 2px 4px rgba(15, 23, 42, 0.10),
+        0 1px 1px rgba(15, 23, 42, 0.05);
+}
+
+/* PANEL METAL — larger full-height panels (matrix, velocity, daily) */
+.panel-metal {
+    background: theme('colors.card-bg');
+    border: 1px solid #000000;
+    border-radius: 12px;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.95),
+        inset 0 -2px 3px rgba(15, 23, 42, 0.05),
+        0 1px 1px rgba(15, 23, 42, 0.05),
+        0 6px 12px -3px rgba(15, 23, 42, 0.12),
+        0 14px 24px -10px rgba(15, 23, 42, 0.10);
+    transition:
+        box-shadow 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+        background 0.22s ease;
+}
+.panel-metal:hover {
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.95),
+        inset 0 -2px 3px rgba(15, 23, 42, 0.05),
+        0 2px 2px rgba(15, 23, 42, 0.06),
+        0 12px 20px -4px rgba(15, 23, 42, 0.15),
+        0 22px 34px -14px rgba(15, 23, 42, 0.13);
+}
+
+/* METAL RECESSED — engraved inset elements (week pills, grouped inputs) */
+.metal-recessed {
+    background: theme('colors.slate.300');
+    border-top:    1px solid rgba(15, 23, 42, 0.12);
+    border-left:   1px solid rgba(15, 23, 42, 0.06);
+    border-right:  1px solid rgba(15, 23, 42, 0.06);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.80);
+    box-shadow: inset 0 2px 4px rgba(15, 23, 42, 0.15);
+    border-radius: 4px;
+    transition: opacity 0.15s ease;
+}
+.metal-recessed-active {
+    background: theme('colors.slate.800');
+    border-top:    1px solid theme('colors.slate.900');
+    border-left:   1px solid rgba(0, 0, 0, 0.20);
+    border-right:  1px solid rgba(0, 0, 0, 0.20);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.40);
+    border-radius: 4px;
+}
+
+/* METAL CHANNEL — etched progress bar track */
+.metal-channel {
+    background: theme('colors.slate.300');
+    box-shadow: inset 0 2px 4px rgba(15, 23, 42, 0.20);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.80);
+    border-radius: 99px;
+    overflow: hidden;
+}
+
+/* METAL BADGES — muted glass indicator pills */
+.metal-badge-green {
+    background: rgba(16, 185, 129, 0.10);
+    border: 1px solid rgba(16, 185, 129, 0.25);
+    color: theme('colors.success-deep');
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.60);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    font-family: 'JetBrains Mono', monospace;
+}
+.metal-badge-rose {
+    background: rgba(244, 63, 94, 0.08);
+    border: 1px solid rgba(244, 63, 94, 0.20);
+    color: theme('colors.rose.700');
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.60);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    font-family: 'JetBrains Mono', monospace;
+}
+
 .btn-3d {
     background: #FFFFFF;
     box-shadow: 0 1px 2px rgba(28, 25, 23, 0.05);
-    border: 1px solid #E7E5E4;
+    border: 1px solid theme('colors.stone.200');
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     border-radius: 6px;
 }
 .btn-3d:hover {
-    background: #FEF9F0;
-    border-color: #D6D3D1;
+    background: theme('colors.surface-warm');
+    border-color: theme('colors.stone.300');
     box-shadow: 0 1px 3px rgba(28, 25, 23, 0.09);
 }
 .btn-3d:active,
 .btn-3d.active-toggle {
-    background: #FEF3C7;
+    background: theme('colors.amber.100');
     box-shadow: inset 0 1px 2px rgba(28, 25, 23, 0.08) !important;
-    border-color: #D97706;
+    border-color: theme('colors.amber.600');
+    transform: translate(1px, 1px);
 }
 
 .card-3d {
     background: #FFFFFF;
-    border: 1px solid #E7E5E4;
+    border: 1px solid theme('colors.stone.200');
     box-shadow: 0 1px 4px rgba(28, 25, 23, 0.07);
     border-radius: 12px;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .card-3d:hover {
-    border-color: #D6D3D1;
+    border-color: theme('colors.stone.300');
     box-shadow: 0 2px 8px rgba(28, 25, 23, 0.09);
 }
 
@@ -277,7 +409,7 @@ input[type='checkbox'] {
 /* --- FLATPICKR: AMBER DATE PICKER --- */
 .flatpickr-calendar {
     background: #FFFFFF !important;
-    border: 1px solid #E7E5E4 !important;
+    border: 1px solid theme('colors.stone.200') !important;
     box-shadow: 0 8px 24px rgba(28, 25, 23, 0.09) !important;
     font-family: 'JetBrains Mono', monospace !important;
     border-radius: 12px !important;
@@ -285,42 +417,42 @@ input[type='checkbox'] {
 }
 .flatpickr-months {
     background: transparent !important;
-    border-bottom: 1px solid #EDE8E0;
+    border-bottom: 1px solid theme('colors.surface-warm-line');
     padding-bottom: 4px;
 }
 .flatpickr-month {
-    color: #1C1917 !important;
-    fill: #1C1917 !important;
+    color: theme('colors.stone.900') !important;
+    fill: theme('colors.stone.900') !important;
 }
 .flatpickr-current-month input.cur-year {
     font-weight: 700 !important;
-    color: #B45309 !important;
+    color: theme('colors.amber.700') !important;
 }
 .flatpickr-day {
-    color: #78716C !important;
+    color: theme('colors.stone.500') !important;
     border-radius: 6px !important;
 }
 .flatpickr-day:hover,
 .flatpickr-day:focus {
-    background: #FEF9F0 !important;
-    border-color: #E7E5E4 !important;
-    color: #1C1917 !important;
+    background: theme('colors.surface-warm') !important;
+    border-color: theme('colors.stone.200') !important;
+    color: theme('colors.stone.900') !important;
 }
 .flatpickr-day.selected,
 .flatpickr-day.selected:hover {
-    background: #D97706 !important;
-    border-color: #D97706 !important;
+    background: theme('colors.amber.600') !important;
+    border-color: theme('colors.amber.600') !important;
     color: #FFFFFF !important;
     font-weight: 700;
     box-shadow: 0 2px 8px rgba(217, 119, 6, 0.35);
 }
 .flatpickr-day.today {
-    border-color: #D97706 !important;
-    color: #D97706 !important;
+    border-color: theme('colors.amber.600') !important;
+    color: theme('colors.amber.600') !important;
 }
 span.flatpickr-weekday {
     background: transparent !important;
-    color: #A8A29E !important;
+    color: theme('colors.stone.400') !important;
     font-weight: 600 !important;
     font-size: 10px;
     letter-spacing: 0.05em;
@@ -461,7 +593,7 @@ span.flatpickr-weekday {
 /* --- HIGH-END AUTHENTICATION UI STYLES --- */
 .auth-loader {
     border: 2px solid rgba(217, 119, 6, 0.2);
-    border-top: 2px solid #D97706;
+    border-top: 2px solid theme('colors.amber.600');
     border-radius: 50%;
     width: 24px;
     height: 24px;
@@ -482,12 +614,12 @@ span.flatpickr-weekday {
 
 /* Amber primary button — financial gold gradient */
 .auth-btn-primary {
-    background: linear-gradient(180deg, #F59E0B 0%, #D97706 100%);
-    color: #1C1917;
+    background: linear-gradient(180deg, theme('colors.amber.500') 0%, theme('colors.amber.600') 100%);
+    color: theme('colors.stone.900');
     box-shadow:
         inset 0 1px 0.5px rgba(255, 255, 255, 0.4),
         0 4px 12px rgba(217, 119, 6, 0.25);
-    border: 1px solid #B45309;
+    border: 1px solid theme('colors.amber.700');
     transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 .auth-btn-primary:hover {
@@ -508,21 +640,21 @@ span.flatpickr-weekday {
 }
 
 .auth-btn-google {
-    background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
-    color: #f8fafc;
+    background: linear-gradient(180deg, theme('colors.slate.800') 0%, theme('colors.slate.900') 100%);
+    color: theme('colors.slate.50');
     box-shadow:
         inset 0 1px 0.5px rgba(255, 255, 255, 0.1),
         0 4px 10px rgba(0, 0, 0, 0.3);
-    border: 1px solid #334155;
+    border: 1px solid theme('colors.slate.700');
     transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 .auth-btn-google:hover {
-    background: linear-gradient(180deg, #334155 0%, #1e293b 100%);
+    background: linear-gradient(180deg, theme('colors.slate.700') 0%, theme('colors.slate.800') 100%);
     box-shadow:
         inset 0 1px 0.5px rgba(255, 255, 255, 0.15),
         0 6px 15px rgba(0, 0, 0, 0.5);
     transform: translateY(-1px);
-    border-color: #475569;
+    border-color: theme('colors.slate.600');
 }
 .auth-btn-google:active {
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
@@ -564,12 +696,207 @@ span.flatpickr-weekday {
         background 0.3s ease;
 }
 
+/* ==========================================================
+   PREMIUM VISUAL ENHANCEMENTS — Reference Design Patterns
+   Adapted from dark glassmorphism → warm ivory golden-layer
+   ========================================================== */
+
+/* AMBIENT BACKGROUND ORBS — cool slate depth */
+.ambient-orb-amber {
+    position: absolute;
+    top: -140px;
+    left: -100px;
+    width: 520px;
+    height: 520px;
+    background: radial-gradient(circle, rgba(148, 163, 184, 0.10) 0%, transparent 68%);
+    pointer-events: none;
+}
+.ambient-orb-teal {
+    position: absolute;
+    bottom: -120px;
+    right: -80px;
+    width: 440px;
+    height: 440px;
+    background: radial-gradient(circle, rgba(56, 189, 248, 0.05) 0%, transparent 68%);
+    pointer-events: none;
+}
+.ambient-orb-rose {
+    position: absolute;
+    top: 35%;
+    right: 15%;
+    width: 320px;
+    height: 320px;
+    background: radial-gradient(circle, rgba(100, 116, 139, 0.04) 0%, transparent 68%);
+    pointer-events: none;
+}
+
+/* GLASSMORPHISM OVERLAY — for drilldown panels and popup details */
+.glass-overlay {
+    background: rgba(253, 251, 247, 0.80);
+    backdrop-filter: blur(14px) saturate(1.5);
+    -webkit-backdrop-filter: blur(14px) saturate(1.5);
+    border: 1px solid rgba(231, 229, 228, 0.75);
+    box-shadow: 0 8px 32px rgba(28, 25, 23, 0.09), 0 2px 8px rgba(28, 25, 23, 0.05);
+}
+
+/* 3D OFFSET PRESS BUTTON — offset shadow + glossy shine + translate on press */
+.btn-3d-press {
+    position: relative;
+    overflow: hidden;
+    box-shadow: 3px 3px 0 0 theme('colors.amber.700');
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+.btn-3d-press::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        to bottom right,
+        rgba(255, 255, 255, 0.38) 0%,
+        rgba(255, 255, 255, 0.12) 30%,
+        rgba(255, 255, 255, 0) 60%
+    );
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: 1;
+}
+.btn-3d-press:active {
+    transform: translate(3px, 3px);
+    box-shadow: none !important;
+}
+
+/* AMBER 3D BUTTON — amber gradient with deep shadow + gloss */
+.btn-3d-amber {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(180deg, theme('colors.amber.400') 0%, theme('colors.amber.600') 100%);
+    color: theme('colors.stone.900');
+    border: 1px solid theme('colors.amber.700');
+    box-shadow: 4px 4px 0 0 theme('colors.amber.800');
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
+    font-weight: 700;
+}
+.btn-3d-amber::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        to bottom right,
+        rgba(255, 255, 255, 0.40) 0%,
+        rgba(255, 255, 255, 0) 55%
+    );
+    pointer-events: none;
+    border-radius: inherit;
+    z-index: 1;
+}
+.btn-3d-amber:active {
+    transform: translate(3px, 3px);
+    box-shadow: none !important;
+}
+
+/* CARD HOVER AMBER GLOW — from reference's glow-on-hover pattern */
+.card-glow-hover {
+    transition: box-shadow 0.25s ease, border-color 0.25s ease;
+}
+.card-glow-hover:hover {
+    box-shadow:
+        0 0 0 1px rgba(217, 119, 6, 0.16),
+        0 4px 24px rgba(217, 119, 6, 0.09),
+        0 1px 4px rgba(28, 25, 23, 0.06);
+    border-color: rgba(217, 119, 6, 0.20) !important;
+}
+
+/* SECTION CARD HEADER STRIP — amber left-accent + gradient tint */
+.card-strip-header {
+    background: linear-gradient(to right, rgba(217, 119, 6, 0.07) 0%, transparent 75%);
+    border-bottom: 1px solid theme('colors.stone.200');
+    border-left: 3px solid theme('colors.amber.600');
+    padding-left: 0.875rem;
+}
+
+/* FILTER PILL BUTTON — reference-inspired pill with clean active state */
+.btn-filter-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 12px;
+    border-radius: 9999px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border: 1px solid theme('colors.stone.200');
+    background: #FFFFFF;
+    color: theme('colors.stone.500');
+    cursor: pointer;
+    transition: all 0.12s ease;
+    white-space: nowrap;
+    user-select: none;
+}
+.btn-filter-pill:hover {
+    background: theme('colors.surface-warm');
+    border-color: theme('colors.stone.300');
+    color: theme('colors.stone.900');
+}
+.btn-filter-pill.active {
+    background: theme('colors.amber.600');
+    border-color: theme('colors.amber.700');
+    color: #FFFFFF;
+    box-shadow: 0 2px 8px rgba(217, 119, 6, 0.28), 2px 2px 0 0 theme('colors.amber.800');
+    font-weight: 800;
+}
+.btn-filter-pill.active:active {
+    transform: translate(2px, 2px);
+    box-shadow: none !important;
+}
+
+/* FLIP CARD ANIMATION — 3D card flip for alternate view toggle */
+.flip-container { perspective: 1200px; }
+.flip-container .flipper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.flip-container.is-flipped .flipper { transform: rotateY(180deg); }
+.flip-face {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    overflow: hidden;
+}
+.flip-face-back { transform: rotateY(180deg); }
+
+/* PROGRESS INDICATOR BARS — KPI relative-value bars */
+.metric-bar-track {
+    height: 3px;
+    border-radius: 9999px;
+    background: theme('colors.stone.200');
+    overflow: hidden;
+}
+.metric-bar-fill {
+    height: 100%;
+    border-radius: 9999px;
+    background: linear-gradient(90deg, theme('colors.amber.600'), theme('colors.amber.500'));
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* HIGH CONTRAST FIELD GROUP — inset container for grouped controls */
+.field-group-inset {
+    background: rgba(28, 25, 23, 0.035);
+    border: 1px solid theme('colors.stone.200');
+    box-shadow: inset 0 1px 3px rgba(28, 25, 23, 0.05);
+    border-radius: 10px;
+    padding: 0.5rem 0.75rem;
+}
+
 /* --- AG GRID EXCEL SPREADSHEET THEME OVERRIDES --- */
 .ag-theme-alpine {
-    --ag-header-background-color: #f1f5f9 !important; /* Excel-like grey header background */
-    --ag-header-foreground-color: #0f172a !important; /* Dark slate text */
-    --ag-border-color: #cbd5e1 !important; /* Cell borders like Excel */
-    --ag-row-border-color: #cbd5e1 !important;
+    --ag-header-background-color: theme('colors.slate.100') !important; /* Excel-like grey header background */
+    --ag-header-foreground-color: theme('colors.slate.900') !important; /* Dark slate text */
+    --ag-border-color: theme('colors.slate.300') !important; /* Cell borders like Excel */
+    --ag-row-border-color: theme('colors.slate.300') !important;
     --ag-odd-row-background-color: #ffffff !important;
     --ag-font-size: 11px !important;
     --ag-font-family: 'JetBrains Mono', 'Segoe UI', system-ui, sans-serif !important;
@@ -578,20 +905,20 @@ span.flatpickr-weekday {
 
 /* Enable vertical lines for Excel look */
 .ag-theme-alpine .ag-cell {
-    border-right: 1px solid #cbd5e1 !important;
+    border-right: 1px solid theme('colors.slate.300') !important;
 }
 .ag-theme-alpine .ag-header-cell {
-    border-right: 1px solid #cbd5e1 !important;
+    border-right: 1px solid theme('colors.slate.300') !important;
 }
 .ag-theme-alpine .ag-header {
-    border-bottom: 2px solid #94a3b8 !important;
+    border-bottom: 2px solid theme('colors.slate.400') !important;
 }
 
 /* Excel-like menu buttons */
 .ag-theme-alpine .ag-header-cell-menu-button {
-    opacity: 0.65 !important;
+    opacity: 1 !important; /* Fully visible, not translucent */
     margin-left: 4px !important;
-    transition: opacity 0.2s, background-color 0.2s;
+    transition: background-color 0.2s;
     border-radius: 4px;
     padding: 2px !important;
     display: flex !important;
@@ -599,7 +926,6 @@ span.flatpickr-weekday {
     justify-content: center !important;
 }
 .ag-theme-alpine .ag-header-cell-menu-button:hover {
-    opacity: 1 !important;
     background-color: rgba(15, 23, 42, 0.08) !important;
 }
 
@@ -609,5 +935,40 @@ span.flatpickr-weekday {
 }
 .ag-theme-alpine .ag-header-cell-sorted {
     background-color: rgba(59, 130, 246, 0.02) !important;
+}
+
+/* Enable header cell text wrap */
+.ag-theme-alpine .ag-header-cell-text {
+    white-space: normal !important;
+    text-overflow: clip !important;
+    word-break: break-word !important;
+}
+
+/* Hide default sort and filter icons inside the header label container to keep a single Excel-style icon */
+.ag-theme-alpine .ag-header-cell-label .ag-header-icon {
+    display: none !important;
+}
+
+/* Highlight the filter funnel icon in emerald green when a filter is active */
+.ag-theme-alpine .ag-header-cell-filtered .ag-header-cell-menu-button {
+    color: theme('colors.brand-green') !important; /* emerald-600 */
+}
+
+/* Excel funnel/caret toggle rules */
+.ag-theme-alpine .excel-funnel-icon {
+    display: none !important;
+}
+.ag-theme-alpine .excel-caret-icon {
+    display: inline-block !important;
+    color: theme('colors.slate.600') !important; /* Slate-600 */
+}
+
+/* When the column has an active filter */
+.ag-theme-alpine .ag-header-cell-filtered .excel-funnel-icon {
+    display: inline-block !important;
+    color: theme('colors.brand-green') !important; /* emerald-600 */
+}
+.ag-theme-alpine .ag-header-cell-filtered .excel-caret-icon {
+    color: theme('colors.brand-green') !important; /* emerald-600 */
 }
 

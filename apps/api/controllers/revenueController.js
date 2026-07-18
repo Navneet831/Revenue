@@ -1,8 +1,194 @@
+import { execFileSync } from 'child_process';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import Logger from '../../../monitoring/logging/index.js';
 import * as Metrics from '../../../monitoring/metrics/index.js';
 import Cache from '../services/cache.js';
-import { RevenueRepository } from '../repositories/revenueRepository.js';
+import { RevenueRepository, fetchDbConfig } from '../repositories/revenueRepository.js';
 import { AnalyticsService } from '../services/analyticsService.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Candidate git executables: PATH first, then common install locations. The
+// Node process often inherits a minimal PATH that omits a user-local Git
+// install, so `git` alone can fail with ENOENT even when Git is installed.
+const gitCandidates = () => {
+    const list = ['git'];
+    if (process.platform === 'win32') {
+        const roots = [process.env.LOCALAPPDATA, process.env.ProgramFiles, process.env['ProgramFiles(x86)']].filter(Boolean);
+        for (const r of roots) {
+            list.push(path.join(r, 'Programs', 'Git', 'cmd', 'git.exe'));
+            list.push(path.join(r, 'Git', 'cmd', 'git.exe'));
+        }
+    } else {
+        list.push('/usr/bin/git', '/usr/local/bin/git', '/opt/homebrew/bin/git');
+    }
+    return list;
+};
+
+// Strategy 1 — the git binary (most accurate). Args are passed as an array so
+// the `|` field separators in --format stay literal (no shell interpretation).
+const gitFromBinary = () => {
+    for (const exe of gitCandidates()) {
+        try {
+            const run = (args) => execFileSync(exe, args, { cwd: __dirname, timeout: 2500, stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
+            const branch = run(['rev-parse', '--abbrev-ref', 'HEAD']);
+            const raw = run(['log', '-5', '--format=%H|%s|%ai|%an']);
+            const commits = raw.split('\n').filter(Boolean).map((line) => {
+                const [hash, message, date, author] = line.split('|');
+                return { hash: (hash || '').slice(0, 7), message: message || '', date: date || '', author: author || '' };
+            });
+            return { branch, commits, error: null };
+        } catch {
+            // try the next candidate executable
+        }
+    }
+    return null;
+};
+
+// Locate the .git directory by walking up from this file. Supports a `.git`
+// file (worktrees / submodules) that points elsewhere via `gitdir:`.
+const findGitDir = () => {
+    let dir = __dirname;
+    for (let i = 0; i < 12; i++) {
+        const g = path.join(dir, '.git');
+        if (fs.existsSync(g)) {
+            if (fs.statSync(g).isDirectory()) return g;
+            const m = fs.readFileSync(g, 'utf8').trim().match(/^gitdir:\s*(.+)$/);
+            if (m) return path.resolve(dir, m[1]);
+        }
+        const parent = path.dirname(dir);
+        if (parent === dir) break;
+        dir = parent;
+    }
+    return null;
+};
+
+// Strategy 2 — read .git directly (no binary needed). Branch + HEAD hash from
+// HEAD/refs, recent history from the reflog (.git/logs/HEAD).
+const gitFromFilesystem = () => {
+    try {
+        const gitDir = findGitDir();
+        if (!gitDir) return null;
+
+        const head = fs.readFileSync(path.join(gitDir, 'HEAD'), 'utf8').trim();
+        const refMatch = head.match(/^ref:\s*(.+)$/);
+        const branch = refMatch ? refMatch[1].replace('refs/heads/', '') : 'detached';
+
+        const logFile = path.join(gitDir, 'logs', 'HEAD');
+        let commits = [];
+        if (fs.existsSync(logFile)) {
+            const lines = fs.readFileSync(logFile, 'utf8').split('\n').filter(Boolean);
+            commits = lines.slice(-5).reverse().map((line) => {
+                const tab = line.indexOf('\t');
+                const meta = (tab >= 0 ? line.slice(0, tab) : line).split(' ');
+                const action = tab >= 0 ? line.slice(tab + 1) : '';
+                const emailIdx = meta.findIndex((p) => p.startsWith('<'));
+                const author = emailIdx > 2 ? meta.slice(2, emailIdx).join(' ') : '';
+                const tsTok = emailIdx >= 0 ? meta[emailIdx + 1] : null;
+                const date = tsTok && /^\d+$/.test(tsTok) ? new Date(Number(tsTok) * 1000).toISOString() : '';
+                const message = action.includes(':') ? action.slice(action.indexOf(':') + 1).trim() : action;
+                return { hash: (meta[1] || '').slice(0, 7), message, date, author };
+            });
+        }
+        return { branch, commits, error: null };
+    } catch {
+        return null;
+    }
+};
+
+const getGitInfo = () =>
+    gitFromBinary() ||
+    gitFromFilesystem() ||
+    { branch: null, commits: [], error: 'Git metadata unavailable (git binary not found and no .git directory present).' };
+
+// Returns DB connection details (no password) + data logic summary.
+// Source priority: local .env — Supabase edge function secrets.
+export const getDbConfig = async (req, res) => {
+    let connection = null;
+    let source = null;
+    let connectionError = null;
+
+    // Resolve via the same helper the data path uses, so the reported DB always
+    // matches the one queries actually run against. Password is dropped here so
+    // it never reaches the client.
+    try {
+        const cfg = await fetchDbConfig();
+        connection = {
+            host: cfg.host,
+            port: Number(cfg.port || 5432),
+            user: cfg.user,
+            database: cfg.database,
+            ssl: cfg.ssl !== undefined
+                ? (cfg.ssl === true || cfg.ssl === 'true')
+                : (cfg.host !== 'localhost' && cfg.host !== '127.0.0.1'),
+        };
+        source = cfg.source;
+    } catch (err) {
+        connectionError = err.message;
+    }
+
+    // Live data stats from in-memory cache (zero extra DB round-trip)
+    let dataStats = null;
+    try {
+        const cached = RevenueRepository.allRowsCache;
+        if (cached && cached.length > 0) {
+            const range = await RevenueRepository.getDateRange();
+            const fmt = (d) => d ? new Date(d).toLocaleDateString('sv-SE') : null;
+            dataStats = {
+                totalRecords: cached.length,
+                minDate: fmt(range.min_date),
+                maxDate: fmt(range.max_date),
+                cacheStatus: 'warm',
+                fetchMode: source === 'local_env' ? 'direct_pg' : 'edge_function',
+            };
+        } else {
+            dataStats = {
+                totalRecords: null,
+                minDate: null,
+                maxDate: null,
+                cacheStatus: 'cold',
+                fetchMode: source === 'local_env' ? 'direct_pg' : 'edge_function',
+            };
+        }
+    } catch (_) {
+        dataStats = { cacheStatus: 'error' };
+    }
+
+    res.json({
+        connection,
+        source,
+        connectionError,
+        dataStats,
+        gitInfo: getGitInfo(),
+        dataLogic: {
+            table: 'public.revenue',
+            dateColumn: '"Invoice date"::date',
+            minDateFilter: `"Invoice date" > DATE '2022-12-25'`,
+            sqlQuery: `SELECT "Invoice date"::date AS "Invoice date", "Invoice No", "Invoice Type",\n  "Cust_code", "Cust_name", "Segment", "Sales Head", "Module WP",\n  "Material Code", "Mat Desc", "HSN CODE/SAC Code", "SalesQty",\n  "UnitPrice", "Taxable Value", "CGST Amount", "SGST Amount",\n  "IGST Amount", "Net Value", "UOM", "Plant", "Storage Location",\n  "Vehicle No.", "S.O.Number", "Incoterms", "Invoice Status",\n  "Revenue", "Eway Expiry", "MW"\nFROM public.revenue\nWHERE "Invoice date" > DATE '2022-12-25'`,
+            currencyDivider: '10,000,000 (Divide to get Crores)',
+            fiscalYearStart: 'April (month index 3)',
+            weekDefinition: 'ceil(day / 7), capped at 5',
+            columnMapping: {
+                '"Invoice date"': 'date (Date)',
+                '"Taxable Value"': 'val (number)',
+                '"SalesQty"': 'qty (number)',
+                '"MW"': 'mw (number)',
+                '"UnitPrice"': 'unitPrice (number)',
+                '"Segment"': 'segment (string)',
+                '"Sales Head"': 'salesHead (string)',
+                '"Cust_name"': 'customer (string)',
+                '"Module WP"': 'wp (string)',
+                '"Revenue"': 'revenueStatus / isPending (string / bool)',
+                '"CGST Amount"': 'cgst (number)',
+                '"SGST Amount"': 'sgst (number)',
+                '"IGST Amount"': 'igst (number)',
+                '"Net Value"': 'netValue (number)',
+            },
+        },
+    });
+};
 
 // Bootstrap metadata (dates, filter dimensions, record count) for the client.
 export const getMeta = async (req, res) => {

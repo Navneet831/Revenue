@@ -1,9 +1,17 @@
-export * from '@grew/shared';
-
 export class MetricFormatter {
     static formatValue(val: number, type: string, privacyMode: boolean = false): string {
         if (privacyMode) return '••••••';
-        return val.toString();
+        if (val === null || val === undefined || !isFinite(val)) return '—';
+        const t = (type || '').toLowerCase();
+        // Amounts are ₹ crores — KpiCard parses the exact `₹<n> Cr` shape.
+        if (t === 'amount' || t === 'valcr' || t === 'revenue') {
+            return `₹${val.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} Cr`;
+        }
+        if (t === 'mw') {
+            return `${val.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} MW`;
+        }
+        // Quantities / counts — whole units with Indian grouping
+        return Math.round(val).toLocaleString('en-IN');
     }
     static formatChartTooltip(val: number, type: string, privacyMode: boolean = false): string {
         return this.formatValue(val, type, privacyMode);
@@ -19,10 +27,52 @@ export const CONFIG = {
     FULL_MONTHS: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 };
 
+interface ColorDef { stop1: string; stop2: string; solid: string; fillFade: string; }
+
 export class ColorEngine {
-    static registerSkus(keys: string[]): void { }
-    static getColorFor(key: string, type: 'sku' | 'segment' | 'customer' = 'sku'): any {
-        return { stop1: '#e0f2fe', stop2: '#0ea5e9', solid: '#0284c7', fillFade: 'rgba(2, 132, 199, 0.15)' };
+    // Registries keyed by entity type — each type builds its own index independently.
+    private static readonly reg: Record<string, Map<string, number>> = {
+        sku: new Map(), segment: new Map(), customer: new Map(), saleshead: new Map(),
+    };
+
+    // Stagger palette entry-points per type so SKU-0 and segment-0 don't share a color.
+    private static readonly TYPE_OFFSET: Record<string, number> = {
+        sku: 0, segment: 7, customer: 14, saleshead: 3,
+    };
+
+    // 24 hues generated with the golden angle (137.508°) from a starting point of 200°.
+    // This distributes colors maximally far apart in perceptual space — consecutive indices
+    // never land on similar hues, so any two SKUs are visually distinct.
+    private static readonly PALETTE: ReadonlyArray<{ h: number; s: number; l: number }> =
+        Array.from({ length: 24 }, (_, i) => {
+            const h = Math.round((200 + i * 137.508) % 360);
+            // Alternate saturation and lightness slightly so palette doesn't feel flat.
+            const s = i % 2 === 0 ? 72 : 62;
+            const l = [50, 46, 53][i % 3];
+            return { h, s, l };
+        });
+
+    static registerSkus(keys: string[]): void {
+        const sorted = [...keys].sort();
+        const r = this.reg.sku;
+        r.clear();
+        sorted.forEach((k, idx) => r.set(k, idx));
+    }
+
+    static getColorFor(key: string, type: 'sku' | 'segment' | 'customer' | 'saleshead' = 'sku'): ColorDef {
+        const r = this.reg[type] ?? this.reg.sku;
+        let idx = r.get(key);
+        if (idx === undefined) {
+            idx = r.size;
+            r.set(key, idx);
+        }
+        const { h, s, l } = this.PALETTE[(idx + (this.TYPE_OFFSET[type] ?? 0)) % this.PALETTE.length];
+        return {
+            stop1:    `hsl(${h},${s - 12}%,${Math.min(l + 26, 88)}%)`,
+            stop2:    `hsl(${h},${s}%,${l}%)`,
+            solid:    `hsl(${h},${s}%,${l}%)`,
+            fillFade: `hsla(${h},${s}%,${l}%,0.15)`,
+        };
     }
 }
 

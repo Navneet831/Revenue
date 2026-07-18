@@ -9,20 +9,30 @@
 AppId={{5A8E192B-0F88-43C6-BA2E-5A1DDF0E53CC}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
+AppVerName={#MyAppName}
 AppPublisher={#MyAppPublisher}
-DefaultDirName={autopf}\{#MyAppName}
+; Default installation folder dynamically resolved by [Code] below
+DefaultDirName={code:GetDefaultDirName}
 PrivilegesRequired=lowest
-PrivilegesRequiredOverridesAllowed=dialog
+UninstallFilesDir={app}\uninst
+UsePreviousPrivileges=no
+UsePreviousAppDir=no
+DisableDirPage=no
 DisableProgramGroupPage=yes
 DefaultGroupName={#MyAppName}
-; Set output folder and filename
-OutputDir=installer_output
-OutputBaseFilename=GrewAnalytics_Setup
+; Refuse to install while the app is running (launcher creates this mutex)
+AppMutex=GrewAnalyticsAppMutex
+CloseApplications=yes
+UninstallDisplayIcon={app}\{#MyAppExeName}
+VersionInfoVersion={#MyAppVersion}
+; Set output folder and filename (outputs Setup directly to D:\GrewAnalytics)
+OutputDir=D:\GrewAnalytics
+OutputBaseFilename=GrewAnalytics Setup
 SetupIconFile=Logo.ico
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
-ArchitecturesInstallIn64BitMode=x64
+ArchitecturesInstallIn64BitMode=x64compatible
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
@@ -30,12 +40,25 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
+[InstallDelete]
+; Wipe the payload dir on upgrade so files removed between versions don't linger
+Type: filesandordirs; Name: "{app}\_internal"
+
 [Files]
 Source: "dist_staging\dist\GrewAnalytics\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
-Name: "{commondesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
+Name: "{userdesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
+
+[Code]
+function GetDefaultDirName(Param: String): String;
+begin
+  if DirExists('D:\') then
+    Result := 'D:\GrewAnalytics'
+  else
+    Result := ExpandConstant('{localappdata}\GrewAnalytics');
+end;

@@ -1,51 +1,9 @@
-import { get, set, del, clear } from 'idb-keyval';
-
-const CACHE_KEY = 'grew_analytics_data_v1';
-const CONFIG_KEY = 'grew_analytics_config';
-
+// IndexedDB caching is disabled — all data is fetched fresh from the
+// server on every load so no corporate financial data is persisted locally.
 export const dbService = {
-    /**
-     * Store raw revenue data in IndexedDB
-     */
-    setRawData: async (data: any[]) => {
-        try {
-            await set(CACHE_KEY, data);
-        } catch (e) {
-            console.error('[DB] Failed to cache data:', e);
-        }
-    },
-
-    /**
-     * Retrieve raw revenue data from IndexedDB
-     */
-    getRawData: async (): Promise<any[] | null> => {
-        try {
-            return (await get(CACHE_KEY)) ?? null;
-        } catch (e) {
-            return null;
-        }
-    },
-
-    /**
-     * Store app configuration
-     */
-    setConfig: async (config: any) => {
-        await set(CONFIG_KEY, config);
-    },
-
-    /**
-     * Retrieve app configuration
-     */
-    getConfig: async () => {
-        return await get(CONFIG_KEY);
-    },
-
-    /**
-     * Purge all cached data
-     */
-    purge: async () => {
-        await del(CACHE_KEY);
-        await del(CONFIG_KEY);
-        await clear();
-    }
+    setRawData: async (_data: any[]): Promise<void> => {},
+    getRawData: async (): Promise<any[] | null> => null,
+    setConfig: async (_config: any): Promise<void> => {},
+    getConfig: async (): Promise<any> => null,
+    purge: async (): Promise<void> => {},
 };

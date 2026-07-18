@@ -10,9 +10,10 @@ import helmet from 'helmet';
 import { rateLimit } from 'express-rate-limit';
 import { execFileSync } from 'child_process';
 import Logger from '../../monitoring/logging/index.js';
-import Metrics from '../../monitoring/metrics/index.js';
 import revenueRoutes from './routes/revenueRoutes.js';
-import { RevenueRepository } from './repositories/revenueRepository.js';
+import { RevenueRepository, clearRepositoryCache, fetchDbConfig } from './repositories/revenueRepository.js';
+import { clearAnalyticsCache } from './services/analyticsService.js';
+import Cache from './services/cache.js';
 import { FEATURES } from '@revenue/shared';
 import { FeatureService } from './services/featureService.js';
 
@@ -20,6 +21,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+export default app; // Exported for Vercel serverless entry (api/index.js)
 
 // Global request logger
 app.use((req, res, next) => {
@@ -30,18 +32,20 @@ app.use((req, res, next) => {
 app.use(compression());
 app.use(helmet({ contentSecurityPolicy: false, hsts: false }));
 
-// CORS: only the origins we explicitly trust (comma-separated CORS_ORIGINS env override)
-const allowedOrigins = (process.env.CORS_ORIGINS || 'http://127.0.0.1:5173,http://localhost:5173,http://127.0.0.1:8000,http://localhost:8000')
-    .split(',')
-    .map((o) => {
-        try {
-            const url = new URL(o.trim());
-            return url.origin;
-        } catch {
-            return o.trim();
+// CORS: if CORS_ORIGINS is set in .env (comma-separated), only those origins are
+// allowed; unset or "*" = allow any origin (supports ngrok tunnels, Vercel, and LAN devices).
+const corsOrigins = (process.env.CORS_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
+const corsAllowAll = corsOrigins.length === 0 || corsOrigins.includes('*');
+app.use(cors({
+    origin: (origin, callback) => {
+        if (corsAllowAll || !origin || corsOrigins.includes(origin)) {
+            return callback(null, true);
         }
-    });
-app.use(cors({ origin: allowedOrigins }));
+        Logger.warn('cors_rejected', { origin });
+        callback(new Error('Not allowed by CORS'));
+    },
+    credentials: true
+}));
 app.use(express.json());
 
 // --- RATE LIMITING ---
@@ -54,19 +58,70 @@ const apiLimiter = rateLimit({
     }
 });
 
-// --- AUTHENTICATION (BYPASSED) ---
+// --- AUTHENTICATION ---
+const TOKEN_CACHE_TTL_MS = 60 * 1000;
+const tokenCache = new Map();
+
 const authenticateJWT = async (req, res, next) => {
-    // Authentication completely removed as per request
-    req.user = { id: 'admin', email: 'admin@grew.energy' };
-    next();
+    const enableAuth = process.env.FEATURE_ENABLE_AUTH !== undefined
+        ? process.env.FEATURE_ENABLE_AUTH === 'true'
+        : FEATURES.enable_auth;
+
+    if (!enableAuth) {
+        req.user = { id: 'admin', email: 'admin@grew.energy' };
+        return next();
+    }
+
+    const authHeader = req.headers.authorization || '';
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+
+    if (!token) {
+        Logger.warn('auth_missing_token', { ip: req.ip, url: req.originalUrl });
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const cached = tokenCache.get(token);
+    if (cached && cached.expires > Date.now()) {
+        req.user = cached.user;
+        return next();
+    }
+
+    try {
+        const supabaseUrl = process.env.VITE_SUPABASE_URL;
+        const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
+
+        if (!supabaseUrl || !supabaseKey) {
+            throw new Error('Supabase URL or Anon Key is missing from the environment');
+        }
+
+        const verifyRes = await fetch(`${supabaseUrl}/auth/v1/user`, {
+            headers: {
+                apikey: supabaseKey,
+                Authorization: `Bearer ${token}`
+            }
+        });
+
+        if (!verifyRes.ok) {
+            Logger.warn('auth_invalid_token', { ip: req.ip, url: req.originalUrl, status: verifyRes.status });
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
+
+        const userData = await verifyRes.json();
+        const user = { id: userData.id, email: userData.email };
+
+        if (tokenCache.size > 1000) tokenCache.clear();
+        tokenCache.set(token, { user, expires: Date.now() + TOKEN_CACHE_TTL_MS });
+
+        req.user = user;
+        Logger.info('auth_verified', { email: user.email, url: req.originalUrl, ip: req.ip });
+        next();
+    } catch (err) {
+        Logger.error('auth_verification_failed', { message: err.message });
+        res.status(503).json({ error: 'Authentication service unavailable' });
+    }
 };
 
 app.use('/api/', apiLimiter);
-
-// --- OBSERVABILITY ---
-app.get('/metrics', async (req, res) => {
-    await Metrics(req, res);
-});
 
 // --- FEATURE FLAGS ---
 app.get('/api/features', async (req, res) => {
@@ -82,6 +137,41 @@ app.get('/api/features', async (req, res) => {
             commitDrilldown: false,
             enable_auth: false
         });
+    }
+});
+
+// --- DB SWITCH ENDPOINT ---
+// POST /api/v1/db/switch  — call after updating Supabase secrets to apply immediately.
+// Clears ALL three cache layers (repository rows, analytics rows, controller response cache)
+// and resets the credential TTL so the next request re-fetches from the edge function.
+app.post('/api/v1/db/switch', async (req, res) => {
+    try {
+        clearRepositoryCache();   // row cache + PG pool + credential TTL
+        clearAnalyticsCache();    // sanitized-row cache
+        await Cache.flush();      // controller-level response cache (meta + analytics keys)
+        Logger.info('db_switch_triggered', { ip: req.ip });
+        res.json({ ok: true, message: 'All caches cleared. Next request re-fetches credentials from Supabase edge function and connects to the newly configured DB.' });
+    } catch (err) {
+        res.status(500).json({ ok: false, error: err.message });
+    }
+});
+
+// GET /api/v1/db/status — shows which DB the data path is actually configured to
+// use (same resolver: local .env first, else the db-credentials edge function).
+app.get('/api/v1/db/status', async (req, res) => {
+    try {
+        const cfg = await fetchDbConfig();
+        res.json({
+            configured: true,
+            source: cfg.source,
+            host: cfg.host,
+            port: cfg.port,
+            database: cfg.database,
+            user: cfg.user,
+            password: cfg.password ? '***' : '(not set)',
+        });
+    } catch (err) {
+        res.status(502).json({ error: err.message });
     }
 });
 
@@ -116,6 +206,19 @@ if (!process.env.HIDE_GIT_ENDPOINTS) {
         }
         try {
             execFileSync('git', ['checkout', hash]);
+            try {
+                // Restore Commit Drill-down related files from main so the UI & API remain functional to navigate back and forth
+                execFileSync('git', [
+                    'checkout',
+                    'main',
+                    '--',
+                    'apps/web/src/modules/shared/CommitDrilldown.tsx',
+                    'apps/api/index.js',
+                    'apps/web/src/App.tsx'
+                ]);
+            } catch (restoreErr) {
+                Logger.error('git_restore_drilldown_failed', restoreErr);
+            }
             gitCommitsCache = null;
             res.json({ ok: true, hash });
         } catch (err) {
@@ -139,27 +242,43 @@ app.use((req, res, next) => {
     res.sendFile(path.join(distPath, 'index.html'));
 });
 
-const PORT = Number(process.env.PORT) || 8000;
-const HOST = process.env.HOST || '127.0.0.1';
-const server = app.listen(PORT, HOST, () => {
-    const displayHost = HOST === '0.0.0.0' ? '127.0.0.1' : HOST;
-    Logger.info('server_started', {
-        port: PORT,
-        host: HOST,
-        url: `http://${displayHost}:${PORT}/`
+// Only listen + install lifecycle when run directly (not as Vercel serverless import).
+const __isDirectRun = process.argv[1]?.replace(/\\/g, '/').includes('apps/api/index.js');
+if (__isDirectRun) {
+    const PORT = Number(process.env.PORT) || 8000;
+    const HOST = process.env.HOST || '0.0.0.0';
+    const server = app.listen(PORT, HOST, () => {
+        const displayHost = HOST === '0.0.0.0' ? '127.0.0.1' : HOST;
+        Logger.info('server_started', {
+            port: PORT,
+            host: HOST,
+            url: `http://${displayHost}:${PORT}/`
+        });
+        console.log(`\n🚀 Revenue Analytics running at: http://${displayHost}:${PORT}/\n`);
     });
-    console.log(`\n🚀 Revenue Analytics running at: http://${displayHost}:${PORT}/\n`);
-});
 
-// --- LIFECYCLE MANAGEMENT ---
-const shutdownGracefully = (signal) => {
-    Logger.info('shutdown_initiated', { signal });
-    server.close(async () => {
-        await RevenueRepository.close();
-        Logger.info('resources_drained');
-        process.exit(0);
+    // --- LIFECYCLE MANAGEMENT ---
+    const shutdownGracefully = (signal) => {
+        Logger.info('shutdown_initiated', { signal });
+        server.close(async () => {
+            await RevenueRepository.close();
+            Logger.info('resources_drained');
+            process.exit(0);
+        });
+        setTimeout(() => process.exit(1), 10000);
+    };
+    process.on('SIGTERM', () => shutdownGracefully('SIGTERM'));
+    process.on('SIGINT', () => shutdownGracefully('SIGINT'));
+
+    // Keep the process alive on unexpected errors — without these, an unhandled
+    // rejection (e.g. a pg pool error) crashes the server and every subsequent
+    // browser request shows "TypeError: Failed to fetch".
+    process.on('unhandledRejection', (reason) => {
+        Logger.error('unhandled_rejection', reason instanceof Error ? reason : new Error(String(reason)));
     });
-    setTimeout(() => process.exit(1), 10000);
-};
-process.on('SIGTERM', () => shutdownGracefully('SIGTERM'));
-process.on('SIGINT', () => shutdownGracefully('SIGINT'));
+    process.on('uncaughtException', (err) => {
+        Logger.error('uncaught_exception', err);
+    });
+}
+
+// Trigger reload for rebuilt @revenue/shared package

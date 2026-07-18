@@ -1,4 +1,5 @@
 import { ApiClient } from './apiClient';
+import { API_ENDPOINTS } from '../constants';
 
 export interface RevenueRawRecord {
     id: number | string;
@@ -47,7 +48,7 @@ export class RevenueService {
         await this.api.initialize();
         
         try {
-            const rawData = await this.api.get<RevenueRawRecord[]>('/api/v1/revenue');
+            const rawData = await this.api.get<RevenueRawRecord[]>(API_ENDPOINTS.revenue.all);
             
             if (!Array.isArray(rawData)) {
                 throw new Error('Invalid data format received from production gateway.');
@@ -57,6 +58,19 @@ export class RevenueService {
         } catch (error: any) {
             console.error('[RevenueService] Critical Data Acquisition Failure:', error);
             // MIT Engineering: Bubble up the error to trigger the ErrorBoundary or Global UI failure state.
+            throw error;
+        }
+    }
+
+    /**
+     * Fetches database and environment configuration.
+     */
+    public static async getDbConfig(): Promise<any> {
+        await this.api.initialize();
+        try {
+            return await this.api.get<any>(API_ENDPOINTS.revenue.dbConfig);
+        } catch (error) {
+            console.error('[RevenueService] Failed to fetch database config:', error);
             throw error;
         }
     }

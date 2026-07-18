@@ -79,7 +79,7 @@ export const ExecutiveStories: React.FC<{ isOpen: boolean; onClose: () => void }
                 
                 {/* Top Bars (Progress) */}
                 <div className="absolute top-4 left-6 right-6 z-20 flex gap-1.5">
-                    {stories.map((_, i) => (
+                    {stories.map((_: unknown, i: number) => (
                         <div key={i} className="h-1 flex-1 bg-slate-200 rounded-full overflow-hidden">
                             <div 
                                 className="h-full bg-emerald-500 transition-none"

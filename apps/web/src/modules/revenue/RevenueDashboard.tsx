@@ -17,14 +17,10 @@ import { SectionBoundary } from '../shared/SectionBoundary';
 import { Breadcrumbs } from '../shared/Header/Breadcrumbs';
 import { FYShortcuts } from '../shared/Header/FYShortcuts';
 
-// Intelligence overlays are deferred: their code is not part of the module's
-// critical rendering path and loads in the background after first paint.
 const InsightsPanel = React.lazy(() =>
     import('../dashboard/InsightsPanel').then((m) => ({ default: m.InsightsPanel }))
 );
-const ExecutiveStories = React.lazy(() =>
-    import('../dashboard/ExecutiveStories').then((m) => ({ default: m.ExecutiveStories }))
-);
+
 
 /**
  * REVENUE INTELLIGENCE — bounded-context entry point.
@@ -61,29 +57,49 @@ export const RevenueDashboard: React.FC = () => {
         setGovStats({ total: meta.totalRecords, valid: meta.totalRecords, rejected: 0 });
         // One-time default selection: current FY range + Weekly view anchored to latest month.
         // Without matrixMonth, Weekly mode renders an empty canvas until FY shortcut is clicked.
+        const latestDateObj = new Date(meta.latestDate);
+        const latestDateStr = DataSanitizer.formatDate(latestDateObj);
+        const matrixMonth = CONFIG.CALENDAR_MONTHS[latestDateObj.getMonth()];
+
+        const solarSegment = meta.segments.find((s: string) => {
+            const sLower = s.toLowerCase();
+            return sLower.includes('solar module') && !sLower.includes('internal');
+        });
+
+        const filterUpdates: any = {};
         if (!filters.startDate) {
-            const latestDateObj = new Date(meta.latestDate);
-            // Use the LOCAL calendar date (not the UTC split), so the To date
-            // matches the "Last updated on …" footer and the anchor reflects the
-            // true latest invoice day.
-            const latestDateStr = DataSanitizer.formatDate(latestDateObj);
-            const matrixMonth = CONFIG.CALENDAR_MONTHS[latestDateObj.getMonth()];
-            updateFilters({
-                startDate:    DataSanitizer.getFYStart(latestDateStr),
-                endDate:      latestDateStr,
-                matrixMonth,
-                velocityMode: 'Weekly',
-            });
+            filterUpdates.startDate = DataSanitizer.getFYStart(latestDateStr);
+            filterUpdates.endDate = latestDateStr;
+            filterUpdates.matrixMonth = matrixMonth;
+            filterUpdates.velocityMode = 'Weekly';
+        }
+        if (filters.segment.length === 0 && solarSegment) {
+            filterUpdates.segment = [solarSegment];
+        }
+
+        if (Object.keys(filterUpdates).length > 0) {
+            updateFilters(filterUpdates);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [meta]);
 
     // Drives the analytics fetch (server-side engine) + the health-banner state.
     const { isError, error } = useSectionData('RevenueDashboard');
+    const [isRefreshing, setIsRefreshing] = React.useState(false);
 
-    const refetch = () => {
-        queryClient.invalidateQueries({ queryKey: ['revenue-analytics'] });
-        queryClient.invalidateQueries({ queryKey: ['revenue-meta'] });
+    const handleRefresh = async () => {
+        setIsRefreshing(true);
+        try {
+            await AnalyticsApi.clearCache();
+        } catch (err) {
+            console.error('Failed to clear server cache:', err);
+        } finally {
+            await Promise.all([
+                queryClient.invalidateQueries({ queryKey: ['revenue-meta'] }),
+                queryClient.invalidateQueries({ queryKey: ['revenue-analytics'] })
+            ]);
+            setIsRefreshing(false);
+        }
     };
 
     const handleMetricChange = (metric: 'Amount' | 'MW' | 'Qty') => updateFilters({ metric });
@@ -94,12 +110,12 @@ export const RevenueDashboard: React.FC = () => {
                 <div className="flex items-center gap-3 overflow-x-auto flex-1 min-w-0 no-scrollbar pb-1 lg:pb-0 w-full">
                     <FYShortcuts />
                     <div className="flex items-center gap-2 shrink-0">
-                        <div className="flex items-center bg-white rounded-md overflow-hidden border border-hairline shadow-sm">
-                            <input type="date" min="2022-12-26" value={filters.startDate || ''} onChange={(e) => updateFilters({ startDate: e.target.value })} className="bg-transparent text-ink-mute text-[12px] p-1.5 outline-none font-mono" />
+                        <div className="card-metal flex items-center rounded-md overflow-hidden">
+                            <input type="date" min={meta?.minDate || "2022-12-26"} max={meta?.maxDate || undefined} value={filters.startDate || ''} onChange={(e) => updateFilters({ startDate: e.target.value })} className="bg-transparent text-ink-mute text-[12px] p-1.5 outline-none font-mono" />
                         </div>
                         <span className="text-ink-faint text-xs font-medium">–</span>
-                        <div className="flex items-center bg-white rounded-md overflow-hidden border border-hairline shadow-sm">
-                            <input type="date" min="2022-12-26" value={filters.endDate || ''} onChange={(e) => updateFilters({ endDate: e.target.value })} className="bg-transparent text-ink text-[12px] p-1.5 outline-none font-mono" />
+                        <div className="card-metal flex items-center rounded-md overflow-hidden">
+                            <input type="date" min={meta?.minDate || "2022-12-26"} max={meta?.maxDate || undefined} value={filters.endDate || ''} onChange={(e) => updateFilters({ endDate: e.target.value })} className="bg-transparent text-ink text-[12px] p-1.5 outline-none font-mono" />
                         </div>
                     </div>
                     <div className="hidden lg:block w-px h-4 bg-hairline shrink-0 mx-2" />
@@ -111,7 +127,20 @@ export const RevenueDashboard: React.FC = () => {
                             <button key={m} onClick={() => handleMetricChange(m)} className={`px-4 py-1 text-[12px] font-medium rounded-full transition-all uppercase ${filters.metric === m ? 'bg-white text-primary border border-hairline shadow-sm' : 'text-ink-mute hover:text-ink'}`}>{m}</button>
                         ))}
                     </div>
-                    <button onClick={() => updateUIState({ insightsOpen: !ui.insightsOpen })} className={`flex items-center justify-center transition-all ${!insightsSeen ? 'text-primary scale-110' : 'text-ink-faint hover:text-primary'}`}>
+                    <button 
+                        onClick={() => handleRefresh()} 
+                        disabled={isRefreshing}
+                        className={`flex items-center justify-center p-1.5 rounded-full transition-colors border border-hairline bg-canvas-soft hover:bg-canvas-deep hover:text-primary ${isRefreshing ? 'opacity-50 cursor-not-allowed text-primary' : 'text-ink-faint'}`}
+                        data-tooltip="Refresh Data (Clear Server Cache)"
+                    >
+                        <RotateCcw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                    </button>
+                    <button
+                        onClick={() => updateUIState({ insightsOpen: !ui.insightsOpen })}
+                        className={`flex items-center justify-center transition-all ${!insightsSeen ? 'text-primary scale-110' : 'text-ink-faint hover:text-primary'}`}
+                        data-tooltip="Intelligence Board"
+                        aria-label="Toggle Intelligence Board"
+                    >
                         <IntelligenceBoardIcon className="w-5 h-5" />
                     </button>
                 </div>
@@ -122,10 +151,10 @@ export const RevenueDashboard: React.FC = () => {
                     <div className="flex items-center gap-2 min-w-0">
                         <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
                         <span className="text-[10px] font-bold text-rose-600 uppercase tracking-widest shrink-0">Data Feed Degraded</span>
-                        <span className="text-[10px] text-ink-mute font-mono truncate">{error}</span>
+                        <span className="text-[10px] text-ink-mute font-mono truncate">{error || 'Unknown error'}</span>
                     </div>
-                    <button onClick={() => refetch()} className="flex items-center gap-1.5 px-3 py-1.5 bg-[#3ecf8e] text-[#171717] hover:bg-[#24b47e] rounded-md text-[13px] font-medium shrink-0 transition-colors">
-                        <RotateCcw className="w-3 h-3" /> Retry
+                    <button onClick={() => handleRefresh()} disabled={isRefreshing} className="flex items-center gap-1.5 px-3 py-1.5 bg-[#3ecf8e] text-[#171717] hover:bg-[#24b47e] rounded-md text-[13px] font-medium shrink-0 transition-colors disabled:opacity-50">
+                        <RotateCcw className={`w-3 h-3 ${isRefreshing ? 'animate-spin' : ''}`} /> {isRefreshing ? 'Refreshing...' : 'Retry'}
                     </button>
                 </div>
             )}
@@ -138,9 +167,9 @@ export const RevenueDashboard: React.FC = () => {
 
             <div className="flex-1 p-3 flex flex-row gap-4 w-full min-h-0 animate-in fade-in duration-300">
                 <div className="flex-1 flex flex-col gap-4 min-w-0">
-                    <div id="w-master" className="w-full bg-white rounded-xl border border-hairline flex flex-col overflow-hidden relative shrink-0 shadow-sm" style={{ height: '320px' }}>
+                    <div id="w-master" className="panel-metal w-full rounded-xl flex flex-col overflow-hidden relative shrink-0" style={{ height: '360px' }}>
                         <div className="chart-noise-layer opacity-[0.02]" />
-                        <div className="p-1 px-3 border-b border-hairline bg-canvas-soft/40 flex justify-between items-center z-50 shrink-0 h-9">
+                        <div className="card-strip-header p-1 pr-3 flex justify-between items-center z-50 shrink-0 h-9">
                             <div className="flex items-center gap-2 overflow-hidden flex-1">
                                 <div className="flex items-center shrink-0">
                                     <LayoutDashboard className="w-3.5 h-3.5 text-emerald-600 mr-2" />
@@ -175,13 +204,6 @@ export const RevenueDashboard: React.FC = () => {
                 <DailySalesPanel />
             </div>
 
-            {features.story && (
-                <Suspense fallback={null}>
-                    <SectionBoundary name="Executive Stories">
-                        <ExecutiveStories isOpen={ui.storiesOpen} onClose={() => updateUIState({ storiesOpen: false })} />
-                    </SectionBoundary>
-                </Suspense>
-            )}
             <Suspense fallback={null}>
                 <SectionBoundary name="Intelligence Board">
                     <InsightsPanel />

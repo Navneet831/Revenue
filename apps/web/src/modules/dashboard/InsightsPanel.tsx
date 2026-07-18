@@ -93,7 +93,7 @@ export const InsightsPanel: React.FC = () => {
                             No analytical anomalies identified.
                         </div>
                     ) : (
-                        stats.insights.map((insight, idx) => {
+                        stats.insights.map((insight: { t: string; l: string; txt: string; cta?: unknown }, idx: number) => {
                             let borderCls = 'border-emerald-500 text-emerald-600 bg-emerald-50/30';
                             let icon = <ShieldCheck className="w-3.5 h-3.5 mt-0.5" />;
 

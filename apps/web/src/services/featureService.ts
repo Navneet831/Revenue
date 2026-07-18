@@ -1,11 +1,8 @@
 import { ApiClient } from './apiClient';
 
-export interface AppFeatures {
-    agentation: boolean;
-    story: boolean;
-    commitDrilldown: boolean;
-    enable_auth: boolean;
-}
+// Platform-level feature flags from the backend /api/features endpoint.
+// Per-user feature flags come from the whitelist table via authService.
+export type AppFeatures = Record<string, boolean>;
 
 export class FeatureService {
     private static api = ApiClient.getInstance();
@@ -15,12 +12,7 @@ export class FeatureService {
             return await this.api.get<AppFeatures>('/api/features');
         } catch (error) {
             console.warn('[FeatureService] Failed to fetch features, using defaults:', error);
-            return {
-                agentation: false,
-                story: false,
-                commitDrilldown: true,
-                enable_auth: false
-            };
+            return { enable_auth: false };
         }
     }
 }

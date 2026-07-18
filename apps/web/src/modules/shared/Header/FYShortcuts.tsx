@@ -33,7 +33,8 @@ export const FYShortcuts: React.FC = () => {
         // Cap the end date at the global data ceiling
         let finalEndDate = fyEnd;
         if (globalMaxDate) {
-            const maxStr = globalMaxDate.toISOString().split('T')[0];
+            // Use sv-SE locale which gives YYYY-MM-DD in local timezone (avoids UTC off-by-one in IST)
+            const maxStr = globalMaxDate.toLocaleDateString('sv-SE');
             finalEndDate = fyEnd > maxStr ? maxStr : fyEnd;
         }
 
