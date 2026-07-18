@@ -39,8 +39,8 @@
             "@revenue/assets": ["./src/assets"],
             "@revenue/assets/*": ["./src/assets/*"],
             "@grew/shared": ["./src/shared.ts"],
-            "@grew/auth": ["../../../../packages/auth/src/index.ts"],
-            "@grew/auth/*": ["../../../../packages/auth/src/*"],
+            "@grew/auth": ["../../packages/auth/src/index.ts"],
+            "@grew/auth/*": ["../../packages/auth/src/*"],
             "react": ["../../node_modules/@types/react"],
             "react/jsx-runtime": ["../../node_modules/@types/react/jsx-runtime"],
             "lucide-react": ["../../node_modules/lucide-react"],
@@ -51,6 +51,6 @@
             "zustand/*": ["../../node_modules/zustand/*"]
         }
     },
-    "include": ["src", "worker.js", "../../../../packages/auth/src/**/*.ts", "../../../../packages/auth/src/**/*.tsx"],
+    "include": ["src", "worker.js", "../../packages/auth/src/**/*.ts", "../../packages/auth/src/**/*.tsx"],
     "exclude": ["node_modules", "dist"]
 }

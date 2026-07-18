@@ -12,7 +12,7 @@ export default defineConfig({
             '@revenue/services': path.resolve(__dirname, './src/services'),
             '@revenue/hooks': path.resolve(__dirname, './src/hooks'),
             '@revenue/assets': path.resolve(__dirname, './src/assets'),
-            '@grew/auth': path.resolve(__dirname, '../../../../packages/auth/src'),
+            '@grew/auth': path.resolve(__dirname, '../../packages/auth/src'),
             // Force single-copy resolution for deps used by packages/auth/src
             // (hoisted to workspace root, not duplicated in apps/web/node_modules)
             '@supabase/supabase-js': path.resolve(__dirname, '../../node_modules/@supabase/supabase-js'),

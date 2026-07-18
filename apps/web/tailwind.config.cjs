@@ -7,10 +7,10 @@ module.exports = {
     content: [
         './index.html',
         './src/**/*.{js,ts,jsx,tsx}',
-        // The shared @grew/auth package (Login.tsx) lives out-of-tree in
-        // packages/auth/src. Without this entry, Tailwind purges all the
-        // utility classes used by the login page and it renders unstyled.
-        '../../../../packages/auth/src/**/*.{ts,tsx}',
+        // The shared @grew/auth package lives in packages/auth/src within the repo.
+        // Without this entry, Tailwind purges all the utility classes used by the
+        // login page and it renders unstyled.
+        '../../packages/auth/src/**/*.{ts,tsx}',
     ],
     theme: {
         extend: {
