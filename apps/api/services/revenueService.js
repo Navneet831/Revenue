@@ -1,5 +1,5 @@
 import { RevenueRepository } from '../repositories/revenueRepository.js';
-import { DataLogic } from '@revenue/shared';
+import { DataLogic } from '../../../packages/shared/dist/index.js';
 
 /**
  * SERVICE LAYER: Orchestrates Repository data and Shared Domain logic.

@@ -1,4 +1,4 @@
-import { DataLogic, Format } from '@revenue/shared';
+import { DataLogic, Format } from '../../../packages/shared/dist/index.js';
 import { RevenueService } from './revenueService.js';
 import { RevenueRepository } from '../repositories/revenueRepository.js';
 

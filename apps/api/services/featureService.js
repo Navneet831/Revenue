@@ -1,5 +1,5 @@
 import Logger from '../../../monitoring/logging/index.js';
-import { FEATURES } from '@revenue/shared';
+import { FEATURES } from '../../../packages/shared/dist/index.js';
 
 /**
  * FeatureService: Handles dynamic feature toggling and user-specific permissions.

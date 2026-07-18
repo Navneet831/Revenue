@@ -14,7 +14,7 @@ import revenueRoutes from './routes/revenueRoutes.js';
 import { RevenueRepository, clearRepositoryCache, fetchDbConfig } from './repositories/revenueRepository.js';
 import { clearAnalyticsCache } from './services/analyticsService.js';
 import Cache from './services/cache.js';
-import { FEATURES } from '@revenue/shared';
+import { FEATURES } from '../../packages/shared/dist/index.js';
 import { FeatureService } from './services/featureService.js';
 
 const __filename = fileURLToPath(import.meta.url);
