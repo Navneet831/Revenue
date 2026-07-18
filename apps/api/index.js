@@ -20,6 +20,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+export default app; // Exported for Vercel serverless entry (api/index.js)
 
 // Global request logger
 app.use((req, res, next) => {
@@ -241,39 +242,43 @@ app.use((req, res, next) => {
     res.sendFile(path.join(distPath, 'index.html'));
 });
 
-const PORT = Number(process.env.PORT) || 8000;
-const HOST = process.env.HOST || '0.0.0.0';
-const server = app.listen(PORT, HOST, () => {
-    const displayHost = HOST === '0.0.0.0' ? '127.0.0.1' : HOST;
-    Logger.info('server_started', {
-        port: PORT,
-        host: HOST,
-        url: `http://${displayHost}:${PORT}/`
+// Only listen + install lifecycle when run directly (not as Vercel serverless import).
+const __isDirectRun = process.argv[1]?.replace(/\\/g, '/').includes('apps/api/index.js');
+if (__isDirectRun) {
+    const PORT = Number(process.env.PORT) || 8000;
+    const HOST = process.env.HOST || '0.0.0.0';
+    const server = app.listen(PORT, HOST, () => {
+        const displayHost = HOST === '0.0.0.0' ? '127.0.0.1' : HOST;
+        Logger.info('server_started', {
+            port: PORT,
+            host: HOST,
+            url: `http://${displayHost}:${PORT}/`
+        });
+        console.log(`\n🚀 Revenue Analytics running at: http://${displayHost}:${PORT}/\n`);
     });
-    console.log(`\n🚀 Revenue Analytics running at: http://${displayHost}:${PORT}/\n`);
-});
 
-// --- LIFECYCLE MANAGEMENT ---
-const shutdownGracefully = (signal) => {
-    Logger.info('shutdown_initiated', { signal });
-    server.close(async () => {
-        await RevenueRepository.close();
-        Logger.info('resources_drained');
-        process.exit(0);
+    // --- LIFECYCLE MANAGEMENT ---
+    const shutdownGracefully = (signal) => {
+        Logger.info('shutdown_initiated', { signal });
+        server.close(async () => {
+            await RevenueRepository.close();
+            Logger.info('resources_drained');
+            process.exit(0);
+        });
+        setTimeout(() => process.exit(1), 10000);
+    };
+    process.on('SIGTERM', () => shutdownGracefully('SIGTERM'));
+    process.on('SIGINT', () => shutdownGracefully('SIGINT'));
+
+    // Keep the process alive on unexpected errors — without these, an unhandled
+    // rejection (e.g. a pg pool error) crashes the server and every subsequent
+    // browser request shows "TypeError: Failed to fetch".
+    process.on('unhandledRejection', (reason) => {
+        Logger.error('unhandled_rejection', reason instanceof Error ? reason : new Error(String(reason)));
     });
-    setTimeout(() => process.exit(1), 10000);
-};
-process.on('SIGTERM', () => shutdownGracefully('SIGTERM'));
-process.on('SIGINT', () => shutdownGracefully('SIGINT'));
-
-// Keep the process alive on unexpected errors — without these, an unhandled
-// rejection (e.g. a pg pool error) crashes the server and every subsequent
-// browser request shows "TypeError: Failed to fetch".
-process.on('unhandledRejection', (reason) => {
-    Logger.error('unhandled_rejection', reason instanceof Error ? reason : new Error(String(reason)));
-});
-process.on('uncaughtException', (err) => {
-    Logger.error('uncaught_exception', err);
-});
+    process.on('uncaughtException', (err) => {
+        Logger.error('uncaught_exception', err);
+    });
+}
 
 // Trigger reload for rebuilt @revenue/shared package

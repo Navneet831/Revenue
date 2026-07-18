@@ -270,7 +270,7 @@ export const App: React.FC<{ embedded?: boolean; activeTab?: string }> = ({ embe
                     </GrewGPTErrorBoundary>
                 </div>
 
-                {!embedded && <AppFooter />}
+                <AppFooter />
 
                 {!embedded && features.agentation && AgentationToolbar && (
                     <Suspense fallback={null}>

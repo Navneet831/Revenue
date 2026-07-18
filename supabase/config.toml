@@ -9,8 +9,15 @@ max_rows = 1000
 
 [auth]
 enabled = true
+# Local dev only — Supabase CLI reads this for supabase start.
+# For production (Vercel) you must set these in the Supabase Dashboard:
+#   Authentication → URL Configuration:
+#     Site URL:        https://grewsales.vercel.app
+#     Redirect URLs:   https://grewsales.vercel.app/auth/callback
+# (config.toml is IGNORED by the hosted Supabase project — only the Dashboard matters.)
 site_url = "http://127.0.0.1:8000"
-additional_redirect_urls = []
+# Add the production URL here if you run supabase start in CI or preview deploys.
+additional_redirect_urls = ["https://grewsales.vercel.app/auth/callback"]
 
 [functions.revenue-data]
 verify_jwt = true

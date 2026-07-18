@@ -410,7 +410,7 @@ export const KpiCard: React.FC<KpiCardProps> = memo(({
     return (
         <div
             id={id}
-            className={`kpi-module card-metal border border-black ${id === 'w-kpi-weeks' || id === 'w-kpi-mtd' ? 'min-w-[340px] flex-[1.6]' : 'min-w-[210px] flex-1'} flex-shrink-0 h-[120px] rounded-2xl flex flex-col relative group overflow-hidden transition-all duration-300 ${
+            className={`kpi-module card-metal ${id === 'w-kpi-weeks' || id === 'w-kpi-mtd' ? 'min-w-[340px] flex-[1.6]' : 'min-w-[210px] flex-1'} flex-shrink-0 h-[120px] rounded-2xl flex flex-col relative group overflow-hidden transition-all duration-300 ${
                 isInteractive ? 'cursor-pointer' : ''
             } ${detailOpen ? 'is-active' : ''}`}
             onClick={() => isInteractive && onToggleDetail && onToggleDetail()}

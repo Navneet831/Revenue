@@ -26,18 +26,8 @@ class AnalyticsService:
 
     @classmethod
     async def _load_rows(cls) -> list:
-        """Load rows from RevenueService and parse date strings back to datetime."""
-        raw = await RevenueService.get_clean_revenue()
-        rows: list = []
-        for r in raw:
-            r_copy = dict(r)
-            if isinstance(r_copy.get('date'), str):
-                try:
-                    r_copy['date'] = datetime.fromisoformat(r_copy['date'])
-                except (ValueError, TypeError):
-                    continue
-            rows.append(r_copy)
-        return rows
+        """Load rows from RevenueService directly with datetime objects."""
+        return await RevenueService.get_clean_revenue(iso_dates=False)
 
     @classmethod
     async def _get_rows(cls) -> list:

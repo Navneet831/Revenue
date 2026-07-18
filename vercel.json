@@ -1,0 +1,25 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "name": "grewsales",
+  "framework": "vite",
+  "buildCommand": "npm run build:shared && npm run build -w apps/web",
+  "outputDirectory": "apps/web/dist",
+  "installCommand": "npm install",
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api" },
+    { "source": "/(.*)", "destination": "/" }
+  ],
+  "functions": {
+    "api/index.js": {
+      "runtime": "nodejs@20.x",
+      "maxDuration": 30,
+      "memory": 1024
+    }
+  },
+  "git": {
+    "deploymentEnabled": {
+      "main": true,
+      "fix/mom-pacing-and-ui": false
+    }
+  }
+}

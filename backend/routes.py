@@ -17,7 +17,6 @@ router = APIRouter()
 
 
 @router.get("/")
-@router.get("")
 async def get_all_revenue():
     """Returns all sanitized revenue data."""
     try:
