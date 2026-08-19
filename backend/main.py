@@ -162,8 +162,8 @@ async def authenticate(request: Request) -> dict:
     
     # Enforce user-wise permissions
     if path.startswith("/api/v1/revenue/analytics") or path.startswith("/api/v1/revenue/meta") or path.startswith("/api/v1/revenue/summary") or path.startswith("/api/v1/revenue/daily-series"):
-        if "dashboard" in features and not features.get("dashboard"):
-            raise HTTPException(status_code=403, detail="Forbidden: Dashboard access required")
+        if "Command Center" in features and not features.get("Command Center"):
+            raise HTTPException(status_code=403, detail="Forbidden: Command Center access required")
     elif path.startswith("/api/v1/revenue/history") or path.startswith("/api/v1/db/load-history"):
         if "audit" in features and not features.get("audit"):
             raise HTTPException(status_code=403, detail="Forbidden: Audit access required")

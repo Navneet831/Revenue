@@ -104,6 +104,16 @@ export const RevenueDashboard: React.FC = () => {
 
     const handleMetricChange = (metric: 'Amount' | 'MW' | 'Qty') => updateFilters({ metric });
 
+    if (features.dashboard === false) {
+        return (
+            <div className="w-full h-full flex flex-col items-center justify-center bg-canvas">
+                <AlertTriangle className="w-8 h-8 text-rose-500 mb-3 opacity-80" />
+                <h2 className="text-sm font-bold text-ink uppercase tracking-widest">Command Center Access Denied</h2>
+                <p className="text-xs text-ink-mute mt-1">You do not have permission to view the Revenue Command Center.</p>
+            </div>
+        );
+    }
+
     return (
         <div className="flex flex-col min-h-full">
             <header className="bg-canvas border-b border-hairline flex flex-col lg:flex-row justify-between items-start lg:items-center px-4 py-2 shrink-0 z-40 relative gap-3 min-w-0 w-full max-w-full">
