@@ -134,7 +134,40 @@ async def authenticate(request: Request) -> dict:
         logger.error("auth_verification_failed: %s", e)
         raise HTTPException(status_code=503, detail="Authentication service unavailable")
 
-    user = {"id": data.get("id"), "email": data.get("email")}
+    user_email = data.get("email")
+    user = {"id": data.get("id"), "email": user_email, "features": {}}
+
+    try:
+        import urllib.parse
+        encoded_email = urllib.parse.quote(user_email)
+        whitelist_req = urllib.request.Request(
+            f"{url}/rest/v1/whitelist?select=*&email=eq.{encoded_email}",
+            headers={"apikey": key, "Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+        )
+        with urllib.request.urlopen(whitelist_req, timeout=5) as w_resp:
+            w_data = json.loads(w_resp.read().decode())
+            if w_data and isinstance(w_data, list) and len(w_data) > 0:
+                row = w_data[0]
+                for k, v in row.items():
+                    if k != 'email':
+                        if isinstance(v, bool):
+                            user["features"][k] = v
+                        elif isinstance(v, str):
+                            user["features"][k] = v.lower() == 'true'
+    except Exception as e:
+        logger.error("whitelist_fetch_failed: %s", e)
+
+    path = request.url.path
+    features = user["features"]
+    
+    # Enforce user-wise permissions
+    if path.startswith("/api/v1/revenue/analytics") or path.startswith("/api/v1/revenue/meta") or path.startswith("/api/v1/revenue/summary") or path.startswith("/api/v1/revenue/daily-series"):
+        if "dashboard" in features and not features.get("dashboard"):
+            raise HTTPException(status_code=403, detail="Forbidden: Dashboard access required")
+    elif path.startswith("/api/v1/revenue/history") or path.startswith("/api/v1/db/load-history"):
+        if "audit" in features and not features.get("audit"):
+            raise HTTPException(status_code=403, detail="Forbidden: Audit access required")
+
     if len(_token_cache) > 1000:
         _token_cache.clear()
     _token_cache[token] = (user, time.time() + _TOKEN_TTL)
