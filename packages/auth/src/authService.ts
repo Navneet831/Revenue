@@ -81,8 +81,10 @@ export async function verifyWhitelistAndSetUser(
 
     console.log('[AuthService] Extracted features:', JSON.stringify(features));
 
+    const userName = data?.name || (email.split('@')[0].replace('.', ' ').replace(/\b\w/g, l => l.toUpperCase()));
+
     const { setUser, setAuthenticated } = useAuthStore.getState();
-    setUser({ email, features });
+    setUser({ email, name: userName, features });
     setAuthenticated(true);
     return { ok: true };
 }

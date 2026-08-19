@@ -2,6 +2,7 @@ import { create } from 'zustand';
 
 export interface AuthUser {
     email: string;
+    name?: string;
     features: Record<string, boolean>;
 }
 
