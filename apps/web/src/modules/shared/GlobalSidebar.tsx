@@ -209,18 +209,16 @@ const GlobalSidebarContent: React.FC<GlobalSidebarProps> = ({ onOpenHelp, onOpen
 
                     <div className="w-8 border-t border-hairline my-0.5" />
 
-                    {/* Dark Mode Toggle */}
+                    {/* Day / Night Mode Toggle */}
                     <div
                         onClick={toggleTheme}
                         className="p-1.5 rounded-md cursor-pointer transition-colors text-ink-faint hover:text-amber-500 hover:bg-amber-50 dark:hover:text-amber-400 dark:hover:bg-amber-900/30"
-                        data-tooltip={theme === 'dark' ? 'Switch to Light Mode' : theme === 'light' ? 'Switch to System' : 'Switch to Dark Mode'}
+                        data-tooltip={theme === 'dark' ? 'Switch to Day Mode' : 'Switch to Night Mode'}
                     >
                         {theme === 'dark' ? (
-                            <Moon className="w-5 h-5" />
-                        ) : theme === 'light' ? (
                             <Sun className="w-5 h-5" />
                         ) : (
-                            <Monitor className="w-5 h-5" />
+                            <Moon className="w-5 h-5" />
                         )}
                     </div>
 
