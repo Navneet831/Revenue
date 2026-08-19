@@ -100,10 +100,10 @@ export const ListCard: React.FC<ListCardProps> = ({ id, title, icon, cardKey, fi
             categoryPercentage: 0.9,
             borderRadius: 8,
             borderSkipped: false,
-            borderColor: '#ffffff',
-            borderWidth: 1.5
-        }];
-    } else {
+                    borderColor: 'var(--color-hairline)',
+                    borderWidth: 1.5
+                }];
+            } else {
         const uniqueKeys = new Set<string>();
         topData.forEach((d: any) => Object.keys(d.plotKeys || {}).forEach(k => uniqueKeys.add(k)));
         datasets = Array.from(uniqueKeys)
@@ -129,7 +129,7 @@ export const ListCard: React.FC<ListCardProps> = ({ id, title, icon, cardKey, fi
                     categoryPercentage: 0.9,
                     borderRadius: 8,
                     borderSkipped: false,
-                    borderColor: '#ffffff',
+                    borderColor: 'var(--color-hairline)',
                     borderWidth: 1.5,
                     stack: 'Stack 0'
                 };
@@ -144,10 +144,10 @@ export const ListCard: React.FC<ListCardProps> = ({ id, title, icon, cardKey, fi
         plugins: {
             legend: { display: false },
             tooltip: {
-                backgroundColor: 'rgba(255,255,255,0.9)',
-                titleColor: '#0f172a',
-                bodyColor: '#475569',
-                borderColor: 'rgba(0,0,0,0.1)',
+                backgroundColor: 'var(--color-card-bg)',
+                titleColor: 'var(--color-ink)',
+                bodyColor: 'var(--color-ink-secondary)',
+                borderColor: 'var(--color-hairline)',
                 borderWidth: 1,
                 padding: 10,
                 cornerRadius: 10,
@@ -164,11 +164,11 @@ export const ListCard: React.FC<ListCardProps> = ({ id, title, icon, cardKey, fi
         scales: {
             x: {
                 stacked: cardKey !== 'sku',
-                grid: { color: '#EAE3D6' },
+                grid: { color: 'var(--color-hairline)' },
                 beginAtZero: true,
                 min: 0,
                 ticks: {
-                    color: '#000000',
+                    color: 'var(--color-ink-secondary)',
                     font: { size: 10, weight: 'bold' as const },
                     callback: (v: any) => {
                         if (privacyMode) return '••••••';
@@ -180,7 +180,7 @@ export const ListCard: React.FC<ListCardProps> = ({ id, title, icon, cardKey, fi
                 stacked: cardKey !== 'sku',
                 grid: { display: false },
                 ticks: {
-                    color: '#000000',
+                    color: 'var(--color-ink-secondary)',
                     font: { size: 9, weight: 'bold' as const },
                     autoSkip: false,
                     callback: function (this: any, value: any) {
@@ -209,13 +209,13 @@ export const ListCard: React.FC<ListCardProps> = ({ id, title, icon, cardKey, fi
         return absValues.reduce((sum: number, v: number) => sum + Math.pow((v / totalAbs) * 100, 2), 0);
     })() : 0;
 
-    let hhiBadgeClass = 'bg-slate-100 text-slate-700 border-slate-200';
+    let hhiBadgeClass = 'bg-canvas-soft text-ink-secondary border-hairline';
     let hhiTooltip = 'Diversified concentration';
     if (hhi >= 2500) {
-        hhiBadgeClass = 'bg-slate-200 text-slate-800 border-slate-300';
+        hhiBadgeClass = 'bg-risk-bg text-risk border-hairline';
         hhiTooltip = 'Highly concentrated (HHI >= 2500)';
     } else if (hhi >= 1500) {
-        hhiBadgeClass = 'bg-blue-50 text-blue-700 border-blue-200';
+        hhiBadgeClass = 'bg-brand-soft text-brand border-brand/20';
         hhiTooltip = 'Moderate concentration (1500 <= HHI < 2500)';
     }
 
@@ -225,10 +225,10 @@ export const ListCard: React.FC<ListCardProps> = ({ id, title, icon, cardKey, fi
             <div className="card-strip-header p-2 pr-3 flex justify-between items-center z-50 shrink-0">
                 <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pr-2">
                     {icon}
-                    <span className="text-[11px] font-bold text-black uppercase tracking-tight flex items-center whitespace-nowrap">
+                    <span className="text-[11px] font-bold text-ink uppercase tracking-tight flex items-center whitespace-nowrap">
                         {title}
                         {count !== undefined && (
-                            <span className="ml-1 text-black/40 font-mono text-[9px]">({count})</span>
+                            <span className="ml-1 text-ink-faint font-mono text-[9px]">({count})</span>
                         )}
                     </span>
                     {preparedData.length > 0 && (
@@ -241,10 +241,10 @@ export const ListCard: React.FC<ListCardProps> = ({ id, title, icon, cardKey, fi
                     )}
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-[9px] font-bold text-emerald-700 uppercase tracking-widest">{metricLabel}</span>
+                    <span className="text-[9px] font-bold text-success uppercase tracking-widest">{metricLabel}</span>
                     <button
                         onClick={() => setCardView(cardKey, isVisual ? 'tabular' : 'visual')}
-                        className="p-1 px-1.5 bg-white text-ink hover:bg-canvas border border-hairline rounded-md transition-all shadow-sm cursor-pointer"
+                        className="p-1 px-1.5 bg-card-bg text-ink hover:bg-canvas-soft border border-hairline rounded-md transition-all shadow-sm cursor-pointer"
                         data-tooltip="Toggle Table/Chart View"
                     >
                         {isVisual
@@ -254,19 +254,19 @@ export const ListCard: React.FC<ListCardProps> = ({ id, title, icon, cardKey, fi
                     {onToggleExpand && (
                         <button
                             onClick={() => onToggleExpand(id)}
-                            className="p-1 px-1.5 bg-white border border-hairline text-ink hover:bg-canvas rounded-md hidden md:flex items-center justify-center cursor-pointer shadow-sm"
+                            className="p-1 px-1.5 bg-card-bg border border-hairline text-ink hover:bg-canvas-soft rounded-md hidden md:flex items-center justify-center cursor-pointer shadow-sm"
                             data-tooltip={isExpanded ? 'Collapse' : 'Expand'}
                         >
                             {isExpanded
                                 ? <Minimize2 className="w-3.5 h-3.5 text-amber-500" />
-                                : <Maximize2 className="w-3.5 h-3.5 text-black/40" />
+                                : <Maximize2 className="w-3.5 h-3.5 text-ink-faint" />
                             }
                         </button>
                     )}
                 </div>
             </div>
 
-            <div className="flex-1 w-full relative bg-white overflow-hidden min-h-[280px]">
+            <div className="flex-1 w-full relative bg-card-bg overflow-hidden min-h-[280px]">
                 {/* Standard Scrollable Table container */}
                 <div
                     className="absolute inset-0 transition-opacity duration-300 overflow-y-auto no-scrollbar"
@@ -284,7 +284,7 @@ export const ListCard: React.FC<ListCardProps> = ({ id, title, icon, cardKey, fi
                                     : colorDef.fillFade;
                                 const rowStyle = {
                                     boxShadow: isSelected ? `inset 0 0 0 1px ${colorDef.solid}` : 'none',
-                                    borderBottom: '1px solid #E7E5E4'
+                                    borderBottom: '1px solid var(--color-hairline)'
                                 };
                                 const subtext = cardKey === 'saleshead'
                                     ? `${r.comps ? (Array.isArray(r.comps) ? r.comps.length : r.comps.size || 0) : 0} UNIQUE COMP`
@@ -295,11 +295,11 @@ export const ListCard: React.FC<ListCardProps> = ({ id, title, icon, cardKey, fi
                                         key={r.n}
                                         onClick={(e) => handleRowClick(r.n, e.ctrlKey)}
                                         style={rowStyle}
-                                        className="cursor-pointer transition-all duration-200 hover:bg-slate-50 flex items-center select-none"
+                                        className="cursor-pointer transition-all duration-200 hover:bg-canvas-soft flex items-center select-none"
                                     >
                                         <div
                                             className={`flex-1 p-2 text-[10px] pl-3 tracking-wide truncate ${isSelected ? 'font-bold' : 'font-medium'}`}
-                                            style={{ color: isSelected ? colorDef.solid : '#000000' }}
+                                            style={{ color: isSelected ? colorDef.solid : 'var(--color-ink)' }}
                                             data-tooltip={r.n}
                                         >
                                             {i + 1}. {r.n}
@@ -307,14 +307,14 @@ export const ListCard: React.FC<ListCardProps> = ({ id, title, icon, cardKey, fi
                                         <div className="p-2 pr-3 flex flex-col items-end shrink-0 w-32">
                                             <span
                                                 className="text-[11px] font-mono font-bold tracking-tight"
-                                                style={{ color: isSelected ? colorDef.solid : '#000000' }}
+                                                style={{ color: isSelected ? colorDef.solid : 'var(--color-ink)' }}
                                             >
                                                 {privacyMode ? '••••••' : MetricFormatter.formatValue(r.displayV, filters.metric, privacyMode)}
                                             </span>
-                                            <span className="text-[8.5px] font-sans text-black/50 tracking-widest mt-[1px] uppercase whitespace-nowrap mb-1">
+                                            <span className="text-[8.5px] font-sans text-ink-faint tracking-widest mt-[1px] uppercase whitespace-nowrap mb-1">
                                                 {subtext}
                                             </span>
-                                            <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden flex justify-end">
+                                            <div className="w-full h-1 bg-canvas-soft rounded-full overflow-hidden flex justify-end">
                                                 <div 
                                                     className="h-full rounded-full" 
                                                     style={{ width: `${r.pct}%`, backgroundColor: colorDef.solid }} 
@@ -330,7 +330,7 @@ export const ListCard: React.FC<ListCardProps> = ({ id, title, icon, cardKey, fi
 
                 {/* Chart container */}
                 <div
-                    className="absolute inset-0 flex flex-col overflow-y-auto no-scrollbar bg-white transition-opacity duration-300"
+                    className="absolute inset-0 flex flex-col overflow-y-auto no-scrollbar bg-card-bg transition-opacity duration-300"
                     style={{ zIndex: isVisual ? 20 : 10, opacity: isVisual ? 1 : 0, pointerEvents: isVisual ? 'auto' : 'none' }}
                 >
                     <div className="chart-noise-layer opacity-[0.02]" />

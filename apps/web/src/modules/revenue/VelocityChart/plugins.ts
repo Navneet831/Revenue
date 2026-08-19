@@ -1,4 +1,5 @@
 import { Format } from '@revenue/shared';
+import { ink, inkSecondary } from '../../../theme/cssVar';
 
 export const createTopLabelsPlugin = (filters: any, privacyMode: boolean) => ({
     id: 'topLabels',
@@ -33,7 +34,7 @@ export const createTopLabelsPlugin = (filters: any, privacyMode: boolean) => ({
 
         metaSums.forEach((sum) => {
             if (sum.hasData && sum.total > 0) {
-                ctx.fillStyle = '#000000';
+                ctx.fillStyle = ink();
                 ctx.font = 'bold 11px Inter';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'bottom';
@@ -109,12 +110,12 @@ export const createRightLabelsPlugin = (filters: any, privacyMode: boolean) => (
                     startX = row.maxX - 6 - totalTextWidth;
                 }
 
-                ctx.fillStyle = '#000000';
+                ctx.fillStyle = ink();
                 ctx.textAlign = 'left';
                 ctx.fillText(valText, startX, row.y);
 
                 if (pctText) {
-                    ctx.fillStyle = '#475569';
+                    ctx.fillStyle = inkSecondary();
                     ctx.fillText(pctText, startX + valWidth, row.y);
                 }
 

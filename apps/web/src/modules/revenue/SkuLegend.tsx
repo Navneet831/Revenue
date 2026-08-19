@@ -42,7 +42,7 @@ export const SkuLegend: React.FC = () => {
                         className={`flex items-center gap-1.5 cursor-pointer shrink-0 transition-all hover:opacity-70 ${isExcluded ? 'opacity-30 grayscale line-through' : 'opacity-100'}`}
                     >
                         <div className="w-2 h-2 rounded-[2px]" style={{ background: colorDef.solid }} />
-                        <span className="text-[8.5px] text-black font-mono tracking-tight whitespace-nowrap">{key}</span>
+                        <span className="text-[8.5px] text-ink-secondary font-mono tracking-tight whitespace-nowrap">{key}</span>
                     </div>
                 );
             })}

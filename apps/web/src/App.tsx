@@ -33,9 +33,9 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
     render() {
         if (this.state.hasError) {
             return (
-                <div className="w-screen h-screen flex flex-col items-center justify-center bg-white text-rose-500 p-8 text-center font-mono">
+                <div className="w-screen h-screen flex flex-col items-center justify-center bg-white dark:bg-dark-base text-rose-500 p-8 text-center font-mono">
                     <h1 className="text-xl font-bold mb-4 uppercase tracking-widest">Critical Matrix Failure</h1>
-                    <p className="text-xs text-slate-500 max-w-md">{this.state.error?.message}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md">{this.state.error?.message}</p>
                     <button onClick={() => window.location.reload()} className="mt-8 px-6 py-2 bg-rose-500/10 border border-rose-500/20 rounded-full text-[10px] uppercase font-bold tracking-widest hover:bg-rose-500/20 transition-all">Reboot System</button>
                 </div>
             );
@@ -78,10 +78,12 @@ export const App: React.FC<{ embedded?: boolean; activeTab?: string }> = ({ embe
 
     // Sync per-user whitelist features into Revenue's combined feature store
     // whenever the authenticated user changes.
+    // Merge: global features (from /api/features) are preserved, whitelist
+    // features override when present (per-user takes precedence).
     useEffect(() => {
         if (authUser?.features) {
-            const { enable_auth } = useStore.getState().features;
-            setFeatures({ enable_auth, ...authUser.features });
+            const globalFeatures = useStore.getState().features;
+            setFeatures({ ...globalFeatures, ...authUser.features });
         }
     }, [authUser, setFeatures]);
 
@@ -190,7 +192,7 @@ export const App: React.FC<{ embedded?: boolean; activeTab?: string }> = ({ embe
         // Block ALL rendering until features + auth are resolved.
         if (isBootstrapping) {
             return (
-                <div className="w-screen h-screen flex items-center justify-center bg-[#05070A]">
+                <div className="w-screen h-screen flex items-center justify-center bg-[#05070A] dark:bg-dark-base">
                     <div className="flex flex-col items-center gap-4">
                         <div className="w-10 h-10 border-[3px] border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin" />
                         <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest animate-pulse">
@@ -218,12 +220,12 @@ export const App: React.FC<{ embedded?: boolean; activeTab?: string }> = ({ embe
 
     return (
         <Wrapper>
-            <div className={embedded ? 'w-full h-full relative flex flex-col bg-canvas overflow-hidden' : 'w-screen h-screen relative flex flex-col bg-canvas overflow-hidden'}>
+                <div className={embedded ? 'w-full h-full relative flex flex-col bg-canvas dark:bg-dark-base overflow-hidden' : 'w-screen h-screen relative flex flex-col bg-canvas dark:bg-dark-base overflow-hidden'}>
                 <div id="core-app" className="flex-1 flex w-full relative overflow-hidden font-sans antialiased text-[11px] font-medium tracking-wide text-ink">
                     <div className="flex h-full w-full relative select-none overflow-hidden">
                         <GlobalSidebar onOpenStories={() => updateUIState({ storiesOpen: true })} />
 
-                        <main className="flex-1 flex flex-col min-w-0 bg-canvas relative z-10 overflow-y-auto">
+                        <main className="flex-1 flex flex-col min-w-0 bg-canvas dark:bg-dark-base relative z-10 overflow-y-auto">
                             {/* Ambient gradient orbs — warm depth effect */}
                             <div className="pointer-events-none absolute inset-0 overflow-hidden z-0" aria-hidden="true">
                                 <div className="ambient-orb-amber" />

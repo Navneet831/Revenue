@@ -30,7 +30,7 @@ export const DetailLists: React.FC<DetailListsProps> = ({ onToggleExpand, expand
 
     if (isError) {
         return (
-            <div className="w-full flex items-center justify-center bg-white rounded-2xl border border-rose-100 h-[320px]">
+            <div className="w-full flex items-center justify-center bg-card-bg rounded-2xl border border-risk/20 h-[320px]">
                 <div className="flex flex-col items-center gap-3">
                     <AlertCircle className="w-6 h-6 text-rose-500" />
                     <span className="text-[10px] font-mono text-rose-500 uppercase tracking-widest">Detail List Error</span>

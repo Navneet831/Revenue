@@ -163,28 +163,28 @@ export const getDbConfig = async (req, res) => {
         dataStats,
         gitInfo: getGitInfo(),
         dataLogic: {
-            table: 'public.revenue',
-            dateColumn: '"Invoice date"::date',
-            minDateFilter: `"Invoice date" > DATE '2022-12-25'`,
-            sqlQuery: `SELECT "Invoice date"::date AS "Invoice date", "Invoice No", "Invoice Type",\n  "Cust_code", "Cust_name", "Segment", "Sales Head", "Module WP",\n  "Material Code", "Mat Desc", "HSN CODE/SAC Code", "SalesQty",\n  "UnitPrice", "Taxable Value", "CGST Amount", "SGST Amount",\n  "IGST Amount", "Net Value", "UOM", "Plant", "Storage Location",\n  "Vehicle No.", "S.O.Number", "Incoterms", "Invoice Status",\n  "Revenue", "Eway Expiry", "MW"\nFROM public.revenue\nWHERE "Invoice date" > DATE '2022-12-25'`,
+            table: 'revenue.revenue',
+            dateColumn: 'invoice_date',
+            minDateFilter: `invoice_date > DATE '2022-12-25'`,
+            sqlQuery: `SELECT invoice_date::date AS invoice_date, invoice_no, invoice_type,\n  cust_code, cust_name, segment, sales_head, module_wp,\n  material_code, mat_desc, hsn_code_sac_code, sales_qty,\n  unit_price, taxable_value, cgst_amount, sgst_amount,\n  igst_amount, net_value, uom, plant, storage_location,\n  vehicle_no, so_number, incoterms, invoice_status,\n  revenue, eway_expiry, mw\nFROM revenue.revenue\nWHERE invoice_date > DATE '2022-12-25'`,
             currencyDivider: '10,000,000 (Divide to get Crores)',
             fiscalYearStart: 'April (month index 3)',
             weekDefinition: 'ceil(day / 7), capped at 5',
             columnMapping: {
-                '"Invoice date"': 'date (Date)',
-                '"Taxable Value"': 'val (number)',
-                '"SalesQty"': 'qty (number)',
-                '"MW"': 'mw (number)',
-                '"UnitPrice"': 'unitPrice (number)',
-                '"Segment"': 'segment (string)',
-                '"Sales Head"': 'salesHead (string)',
-                '"Cust_name"': 'customer (string)',
-                '"Module WP"': 'wp (string)',
-                '"Revenue"': 'revenueStatus / isPending (string / bool)',
-                '"CGST Amount"': 'cgst (number)',
-                '"SGST Amount"': 'sgst (number)',
-                '"IGST Amount"': 'igst (number)',
-                '"Net Value"': 'netValue (number)',
+                'invoice_date': 'date (Date)',
+                'taxable_value': 'val (number)',
+                'sales_qty': 'qty (number)',
+                'mw': 'mw (number)',
+                'unit_price': 'unitPrice (number)',
+                'segment': 'segment (string)',
+                'sales_head': 'salesHead (string)',
+                'cust_name': 'customer (string)',
+                'module_wp': 'wp (string)',
+                'revenue': 'revenueStatus / isPending (numeric)',
+                'cgst_amount': 'cgst (number)',
+                'sgst_amount': 'sgst (number)',
+                'igst_amount': 'igst (number)',
+                'net_value': 'netValue (number)',
             },
         },
     });
@@ -310,24 +310,24 @@ export const getRevenueSummary = async (req, res) => {
 
         // Filter rows based on start date, end date, and other query filters
         const baseRows = allRows.filter(row => {
-            const date = row["Invoice date"];
+            const date = row["invoice_date"];
             if (!date) return false;
             const dateMs = date.getTime();
             if (dateMs < startMs || dateMs > endMs) return false;
 
-            if (segments.length > 0 && !segments.includes(row["Segment"])) return false;
+            if (segments.length > 0 && !segments.includes(row["segment"])) return false;
             
             if (salesHeads.length > 0) {
-                const sh = row["Sales Head"];
+                const sh = row["sales_head"];
                 if (!salesHeads.includes(sh) && !(salesHeads.includes('Direct/Unmapped') && !sh)) {
                     return false;
                 }
             }
 
-            if (customers.length > 0 && !customers.includes(row["Cust_name"])) return false;
+            if (customers.length > 0 && !customers.includes(row["cust_name"])) return false;
 
             if (excluded.length > 0) {
-                const wp = row["Module WP"] || 'Generic';
+                const wp = row["module_wp"] || 'Generic';
                 if (excluded.includes(String(wp))) return false;
             }
 
@@ -335,7 +335,7 @@ export const getRevenueSummary = async (req, res) => {
         });
 
         const isPendingRow = (row) => {
-            const rev = String(row["Revenue"] || '').toLowerCase();
+            const rev = String(row["revenue"] || '').toLowerCase();
             return rev.includes('pending');
         };
 
@@ -349,15 +349,15 @@ export const getRevenueSummary = async (req, res) => {
         let total_mw = 0;
         let total_qty = 0;
         viewRows.forEach(row => {
-            total_val += parseFloat(row["Taxable Value"] || 0);
-            total_mw += parseFloat(row["MW"] || 0);
-            total_qty += parseFloat(row["SalesQty"] || 0);
+            total_val += parseFloat(row["taxable_value"] || 0);
+            total_mw += parseFloat(row["mw"] || 0);
+            total_qty += parseFloat(row["sales_qty"] || 0);
         });
 
         let pending_val = 0;
         baseRows.forEach(row => {
             if (isPendingRow(row)) {
-                pending_val += parseFloat(row["Taxable Value"] || 0);
+                pending_val += parseFloat(row["taxable_value"] || 0);
             }
         });
 
@@ -371,12 +371,12 @@ export const getRevenueSummary = async (req, res) => {
         const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
         viewRows.forEach(row => {
-            const val = parseFloat(row["Taxable Value"] || 0);
-            const mw = parseFloat(row["MW"] || 0);
-            const qty = parseFloat(row["SalesQty"] || 0);
+            const val = parseFloat(row["taxable_value"] || 0);
+            const mw = parseFloat(row["mw"] || 0);
+            const qty = parseFloat(row["sales_qty"] || 0);
 
             // Segment
-            const seg = row["Segment"] || '';
+            const seg = row["segment"] || '';
             if (seg) {
                 if (!segmentMap[seg]) segmentMap[seg] = { val: 0, mw: 0, qty: 0 };
                 segmentMap[seg].val += val;
@@ -385,28 +385,28 @@ export const getRevenueSummary = async (req, res) => {
             }
 
             // Sales Head
-            const sh = row["Sales Head"] || 'Direct/Unmapped';
+            const sh = row["sales_head"] || 'Direct/Unmapped';
             if (!salesHeadMap[sh]) salesHeadMap[sh] = { val: 0, mw: 0, qty: 0 };
             salesHeadMap[sh].val += val;
             salesHeadMap[sh].mw += mw;
             salesHeadMap[sh].qty += qty;
 
             // Customer
-            const cust = row["Cust_name"] || 'Unidentified';
+            const cust = row["cust_name"] || 'Unidentified';
             if (!customerMap[cust]) customerMap[cust] = { val: 0, mw: 0, qty: 0 };
             customerMap[cust].val += val;
             customerMap[cust].mw += mw;
             customerMap[cust].qty += qty;
 
             // WP
-            const wp = row["Module WP"] || 'Generic';
+            const wp = row["module_wp"] || 'Generic';
             if (!wpMap[wp]) wpMap[wp] = { val: 0, mw: 0, qty: 0 };
             wpMap[wp].val += val;
             wpMap[wp].mw += mw;
             wpMap[wp].qty += qty;
 
             // Monthly
-            const date = row["Invoice date"];
+            const date = row["invoice_date"];
             if (date) {
                 const monthIdx = date.getMonth(); // 0-11
                 const monthName = months[monthIdx];

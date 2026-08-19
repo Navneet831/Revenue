@@ -23,15 +23,15 @@ DOI_FLOOR = '2022-12-25'
 
 REVENUE_QUERY = '''
     SELECT
-        "Invoice date", "Invoice No", "Invoice Type", "Cust_code", "Cust_name",
-        "Segment", "Sales Head", "Module WP", "Material Code",
-        "Mat Desc", "HSN CODE/SAC Code", "SalesQty", "UnitPrice",
-        "Taxable Value", "CGST Amount", "SGST Amount", "IGST Amount",
-        "Net Value", "UOM", "Plant", "Storage Location", "Vehicle No.",
-        "S.O.Number", "Incoterms", "Invoice Status", "Revenue", "Eway Expiry",
-        "MW"
-    FROM public.revenue
-    WHERE "Invoice date" > %s::timestamp
+        invoice_date, invoice_no, invoice_type, cust_code, cust_name,
+        segment, sales_head, module_wp, material_code,
+        mat_desc, hsn_code_sac_code, sales_qty, unit_price,
+        taxable_value, cgst_amount, sgst_amount, igst_amount,
+        net_value, uom, plant, storage_location, vehicle_no,
+        so_number, incoterms, invoice_status, revenue, eway_expiry,
+        mw
+    FROM revenue.revenue
+    WHERE invoice_date > %s::timestamp
 '''
 
 _PLATFORM_REPO: Optional[IRepository] = None
@@ -205,12 +205,12 @@ class RevenueRepository:
         if cls._all_rows_cache is not None:
             return cls._all_rows_cache
         rows = fetch_dict(REVENUE_QUERY, (DOI_FLOOR,))
-        # Map 'Invoice date' to Python datetime
+        # Map invoice_date to Python datetime
         for row in rows:
-            dt = row.get('Invoice date')
+            dt = row.get('invoice_date')
             if dt and not isinstance(dt, datetime):
                 try:
-                    row['Invoice date'] = datetime.fromisoformat(str(dt))
+                    row['invoice_date'] = datetime.fromisoformat(str(dt))
                 except (ValueError, TypeError):
                     pass
         cls._all_rows_cache = rows
@@ -225,7 +225,7 @@ class RevenueRepository:
             return {'min_date': '2022-12-26', 'max_date': '2022-12-26'}
         dates = []
         for r in rows:
-            d = r.get('Invoice date')
+            d = r.get('invoice_date')
             if isinstance(d, datetime):
                 dates.append(d)
         if not dates:
@@ -254,3 +254,25 @@ class RevenueRepository:
         cls._all_rows_cache = None
         cls._date_range_cache = None
         logger.info('Revenue repository cache cleared')
+
+    def get_mb51_sales(self, customer_codes: list, from_date: str, to_date: str) -> list:
+        """Aggregate MB51 sales (posting-level) for given customers & date range.
+        Returns rows of (customer_code, dd.mm.yyyy posting date, abs amount in local currency).
+        """
+        if not customer_codes:
+            return []
+        placeholders = ",".join(["%s"] * len(customer_codes))
+        sql = f"""
+            SELECT "Customer" AS customer_code,
+                   to_char("Posting Date", 'DD.MM.YYYY') AS posting_date,
+                   ABS(SUM("Amt.in Loc.Cur.")) AS amount,
+                   ABS(SUM("Qty")) AS qty,
+                   ABS(SUM("MW")) AS mw
+            FROM revenue.mb51
+            WHERE "Customer" IN ({placeholders})
+              AND "Posting Date" >= %s AND "Posting Date" <= %s
+              AND "Movement Type" IN ('601', '602')
+            GROUP BY 1, 2
+        """
+        params = customer_codes + [from_date, to_date]
+        return fetch_dict(sql, params)

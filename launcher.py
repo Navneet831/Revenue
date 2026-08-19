@@ -107,9 +107,95 @@ def build_env(data_root: Path, exe_dir: Path) -> dict:
                 k, _, v = line.partition('=')
                 k = k.strip()
                 if k and k not in os.environ:   # only if not already set
-                    env[k] = v.strip()
+                    env[k] = v.strip().strip('"').strip("'")
 
     return env
+
+
+def ensure_cert(data_root: Path) -> tuple:
+    """
+    Ensure a self-signed certificate exists for HTTPS on 127.0.0.1.
+    Returns (cert_path, key_path) as absolute Paths, or (None, None) if the
+    certificate could not be produced (caller then falls back to plain HTTP).
+    Skips regeneration when certs/cert.pem + certs/key.pem already exist.
+    """
+    certs_dir = data_root / 'certs'
+    cert_path = certs_dir / 'cert.pem'
+    key_path  = certs_dir / 'key.pem'
+
+    if cert_path.exists() and key_path.exists():
+        print(f"  TLS cert  : {cert_path} (exists, reusing)")
+        return cert_path, key_path
+
+    print("  TLS cert  : generating self-signed cert for 127.0.0.1 ...")
+    certs_dir.mkdir(parents=True, exist_ok=True)
+
+    # 1) Prefer openssl if available on PATH.
+    try:
+        import shutil
+        if shutil.which('openssl'):
+            subprocess.run(
+                ['openssl', 'req', '-x509', '-newkey', 'rsa:2048',
+                 '-keyout', str(key_path), '-out', str(cert_path),
+                 '-days', '825', '-nodes', '-subj', '/CN=127.0.0.1',
+                 '-addext', 'subjectAltName=IP:127.0.0.1,DNS:localhost'],
+                check=True, capture_output=True, timeout=60,
+            )
+            if cert_path.exists() and key_path.exists():
+                return cert_path, key_path
+    except Exception as exc:
+        print(f"    openssl failed: {exc} — trying cryptography")
+
+    # 2) Fallback: python cryptography.
+    try:
+        import datetime
+        import ipaddress
+        from cryptography import x509
+        from cryptography.hazmat.primitives import hashes, serialization
+        from cryptography.hazmat.primitives.asymmetric import rsa
+        from cryptography.x509.oid import NameOID
+
+        key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+        name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, '127.0.0.1')])
+        now = datetime.datetime.now(datetime.timezone.utc)
+        cert = (
+            x509.CertificateBuilder()
+            .subject_name(name)
+            .issuer_name(name)
+            .public_key(key.public_key())
+            .serial_number(x509.random_serial_number())
+            .not_valid_before(now)
+            .not_valid_after(now + datetime.timedelta(days=825))
+            .add_extension(
+                x509.SubjectAlternativeName([
+                    x509.IPAddress(ipaddress.ip_address('127.0.0.1')),
+                    x509.DNSName('localhost'),
+                ]),
+                critical=False,
+            )
+            .add_extension(x509.BasicConstraints(ca=True, path_length=None), critical=True)
+            .sign(key, hashes.SHA256())
+        )
+        key_path.write_bytes(key.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.TraditionalOpenSSL,
+            encryption_algorithm=serialization.NoEncryption(),
+        ))
+        cert_path.write_bytes(cert.public_bytes(serialization.Encoding.PEM))
+        return cert_path, key_path
+    except Exception as exc:
+        print(f"    cryptography failed: {exc}")
+
+    # 3) Last resort: try installing cryptography, then retry once.
+    try:
+        subprocess.run([sys.executable, '-m', 'pip', 'install', 'cryptography'],
+                       check=True, capture_output=True, timeout=300)
+        return ensure_cert(data_root) if key_path.exists() is False else (cert_path, key_path)
+    except Exception as exc:
+        print(f"    pip install cryptography failed: {exc}")
+
+    print("  WARNING: could not generate TLS certificate — falling back to http.")
+    return None, None
 
 
 def main():
@@ -142,12 +228,25 @@ def main():
     env = build_env(data_root, exe_dir)
     port = env.get('PORT', '8000')
     host = env.get('HOST', '127.0.0.1')
-    url = f'http://127.0.0.1:{port}'
+
+    # TLS: self-signed cert for 127.0.0.1 (generated on demand, never crashes).
+    cert_path, key_path = ensure_cert(data_root)
+    scheme = 'https' if cert_path and key_path else 'http'
+    url = f'{scheme}://127.0.0.1:{port}'
 
     try:
         creationflags = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
+        uvicorn_cmd = [
+            python_exe, '-m', 'uvicorn', 'backend.main:app',
+            '--host', host, '--port', str(port),
+        ]
+        if cert_path and key_path:
+            uvicorn_cmd += [
+                '--ssl-certfile', str(cert_path),
+                '--ssl-keyfile', str(key_path),
+            ]
         proc = subprocess.Popen(
-            [python_exe, '-m', 'uvicorn', 'backend.main:app', '--host', host, '--port', str(port)],
+            uvicorn_cmd,
             cwd=str(data_root),
             env=env,
             stdout=subprocess.PIPE,

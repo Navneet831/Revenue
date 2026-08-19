@@ -48,7 +48,7 @@ const sql = postgres({
   connect_timeout: 10,
 });
 
-const MIN_DATE_SERIAL = 44929; // Day after company DOI 2022-12-25
+const MIN_DATE = '2022-12-25'; // Day before company DOI
 
 Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method !== "GET") {
@@ -61,16 +61,16 @@ Deno.serve(async (req: Request): Promise<Response> => {
   try {
     const rows = await sql`
       SELECT
-        (DATE '1899-12-30' + "Invoice date" * INTERVAL '1 day')::date AS "Invoice date",
-        "Invoice No", "Invoice Type", "Cust_code", "Cust_name",
-        "Segment", "Sales Head", "Module WP", "Material Code",
-        "Mat Desc", "HSN CODE/SAC Code", "SalesQty", "UnitPrice",
-        "Taxable Value", "CGST Amount", "SGST Amount", "IGST Amount",
-        "Net Value", "UOM", "Plant", "Storage Location", "Vehicle No.",
-        "S.O.Number", "Incoterms", "Invoice Status", "Revenue", "Eway Expiry",
-        "MW"
-      FROM public.revenue
-      WHERE "Invoice date" > ${MIN_DATE_SERIAL}
+        invoice_date,
+        invoice_no, invoice_type, cust_code, cust_name,
+        segment, sales_head, module_wp, material_code,
+        mat_desc, hsn_code_sac_code, sales_qty, unit_price,
+        taxable_value, cgst_amount, sgst_amount, igst_amount,
+        net_value, uom, plant, storage_location, vehicle_no,
+        so_number, incoterms, invoice_status, revenue, eway_expiry,
+        mw
+      FROM revenue.revenue
+      WHERE invoice_date > ${MIN_DATE}
     `;
 
     return new Response(JSON.stringify(rows), {

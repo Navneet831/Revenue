@@ -29,11 +29,11 @@ export const MatrixHeader: React.FC = () => {
     };
 
     return (
-        <div className="flex w-full shrink-0 border-b-2 border-slate-200 bg-slate-50 select-none z-40">
+        <div className="flex w-full shrink-0 border-b-2 border-hairline bg-canvas-soft select-none z-40">
             <div className="shrink-0 flex items-center justify-center border-r border-hairline h-9" style={{ width: '80px' }}>
                 <button
                     onClick={(e) => { e.stopPropagation(); updateFilters({ pendingOnly: !filters.pendingOnly }); }}
-                    className="p-1 inline-flex items-center justify-center bg-white hover:bg-canvas-deep border border-hairline rounded transition-colors"
+                    className="p-1 inline-flex items-center justify-center bg-card-bg hover:bg-canvas-soft border border-hairline rounded transition-colors"
                     data-tooltip="Toggle Dispatched vs Pending Pipeline"
                 >
                     {filters.pendingOnly ? <CheckCircle className="w-3 h-3 text-primary" /> : <Truck className="w-3 h-3 text-ink-faint" />}
@@ -49,12 +49,12 @@ export const MatrixHeader: React.FC = () => {
                 const isDisabledMonth = d.hasStarted === false;
 
                 const borderCls = isQEnd ? 'border-r border-hairline' : '';
-                const totalCls = isTotal ? 'text-slate-900 font-bold bg-slate-50 border-l border-slate-200' : '';
+                const totalCls = isTotal ? 'text-ink font-bold bg-canvas-soft border-l border-hairline' : '';
                 const selCls = isSelectedMonth || isPartofSelectedQ
-                    ? 'text-[#1C1917] border-b-2 border-amber-600 font-black bg-amber-50/60'
+                    ? 'text-ink border-b-2 border-brand font-black bg-brand-soft'
                     : isDisabledMonth
-                        ? 'text-[#78716C]/40 cursor-not-allowed opacity-55'
-                        : 'text-[#78716C] hover:text-[#1C1917] hover:bg-[#FEF9F0]';
+                        ? 'text-ink-faint/50 cursor-not-allowed opacity-55'
+                        : 'text-ink-secondary hover:text-ink hover:bg-brand/5';
 
                 return (
                     <div

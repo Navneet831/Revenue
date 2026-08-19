@@ -1,12 +1,18 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { useStore } from '@revenue/store/useStore';
 
 export const GlobalTooltip: React.FC = () => {
     const [content, setContent] = useState<string | null>(null);
     const [visible, setVisible] = useState(false);
     const [pos, setPos] = useState({ x: 0, y: 0 });
     const ttRef = useRef<HTMLDivElement>(null);
+    const tooltipsEnabled = useStore((s) => s.tooltipsEnabled);
 
     useEffect(() => {
+        if (!tooltipsEnabled) {
+            setVisible(false);
+            return;
+        }
         const handleMouseMove = (e: MouseEvent) => {
             const target = e.target as HTMLElement;
             const tooltipAttr = target.closest('[data-tooltip]')?.getAttribute('data-tooltip');
@@ -38,14 +44,14 @@ export const GlobalTooltip: React.FC = () => {
 
         window.addEventListener('mousemove', handleMouseMove);
         return () => window.removeEventListener('mousemove', handleMouseMove);
-    }, []);
+    }, [tooltipsEnabled]);
 
-    if (!content) return null;
+    if (!content || !tooltipsEnabled) return null;
 
     return (
         <div
             ref={ttRef}
-            className={`fixed z-[999999] bg-white border border-[#E7E5E4] p-3 rounded-xl shadow-[0_8px_24px_rgba(28,25,23,0.09)] max-w-xs pointer-events-none transition-opacity duration-150 text-[12px] font-sans text-[#1C1917] leading-relaxed ${
+            className={`fixed z-[999999] bg-card-bg border border-hairline p-3 rounded-xl shadow-[0_8px_24px_rgba(0,0,0,0.45)] max-w-xs pointer-events-none transition-opacity duration-150 text-[12px] font-sans text-ink leading-relaxed ${
                 visible ? 'opacity-100' : 'opacity-0'
             }`}
             style={{

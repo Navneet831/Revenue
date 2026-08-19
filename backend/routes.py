@@ -242,9 +242,9 @@ async def get_db_config():
         "dataStats": data_stats,
         "gitInfo": git_info,
         "dataLogic": {
-            "table": "public.revenue",
-            "dateColumn": '"Invoice date"::date',
-            "minDateFilter": '"Invoice date" > DATE \'2022-12-25\'',
+            "table": "revenue.revenue",
+            "dateColumn": "invoice_date",
+            "minDateFilter": "invoice_date > DATE '2022-12-25'",
             "currencyDivider": "10,000,000 (Divide to get Crores)",
             "fiscalYearStart": "April (month index 3)",
         },

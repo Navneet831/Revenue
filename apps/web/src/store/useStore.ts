@@ -29,6 +29,7 @@ export interface AppState {
     };
     stats: AnalyticalOutput | null;
     insightsSeen: boolean;
+    tooltipsEnabled: boolean;
     activeApp: 'REVENUE' | 'INVENTORY' | 'LOGISTICS';
     activeMainView: 'DASHBOARD' | 'LEDGER' | 'AUDIT' | 'DEV' | 'GREWGPT';
     unviewedStories: boolean;
@@ -61,6 +62,7 @@ export interface AppState {
     setColorRegistry: (registry: AppState['COLOR_REGISTRY']) => void;
     setStats: (stats: AnalyticalOutput | null) => void;
     setInsightsSeen: (seen: boolean) => void;
+    setTooltipsEnabled: (enabled: boolean) => void;
     setUnviewedStories: (unviewed: boolean) => void;
     setActiveMainView: (view: 'DASHBOARD' | 'LEDGER' | 'AUDIT' | 'DEV' | 'GREWGPT') => void;
     setActiveApp: (app: 'REVENUE' | 'INVENTORY' | 'LOGISTICS') => void;
@@ -124,6 +126,7 @@ export const useStore = create<AppState>((set) => ({
     COLOR_REGISTRY: { sku: {}, customer: {}, segment: {}, saleshead: {} },
     stats: null,
     insightsSeen: false,
+    tooltipsEnabled: false,
     activeApp: 'REVENUE',
     activeMainView: 'DASHBOARD',
     unviewedStories: true,
@@ -214,6 +217,7 @@ export const useStore = create<AppState>((set) => ({
     setColorRegistry: (COLOR_REGISTRY) => set({ COLOR_REGISTRY }),
     setStats: (stats) => set({ stats }),
     setInsightsSeen: (insightsSeen) => set({ insightsSeen }),
+    setTooltipsEnabled: (tooltipsEnabled) => set({ tooltipsEnabled }),
     setUnviewedStories: (unviewedStories) => set({ unviewedStories }),
     setActiveMainView: (activeMainView) => set({ activeMainView }),
     setActiveApp: (activeApp) => set({ activeApp }),

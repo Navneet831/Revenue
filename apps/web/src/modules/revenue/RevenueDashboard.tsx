@@ -124,7 +124,7 @@ export const RevenueDashboard: React.FC = () => {
                 <div className="flex items-center gap-3 shrink-0">
                     <div className="flex items-center bg-canvas-soft rounded-full p-[3px] border border-hairline">
                         {(['Amount', 'MW', 'Qty'] as const).map(m => (
-                            <button key={m} onClick={() => handleMetricChange(m)} className={`px-4 py-1 text-[12px] font-medium rounded-full transition-all uppercase ${filters.metric === m ? 'bg-white text-primary border border-hairline shadow-sm' : 'text-ink-mute hover:text-ink'}`}>{m}</button>
+                            <button key={m} onClick={() => handleMetricChange(m)} className={`px-4 py-1 text-[12px] font-medium rounded-full transition-all uppercase ${filters.metric === m ? 'bg-card-bg text-ink border border-hairline shadow-sm' : 'text-ink-mute hover:text-ink'}`}>{m}</button>
                         ))}
                     </div>
                     <button 
@@ -173,7 +173,7 @@ export const RevenueDashboard: React.FC = () => {
                             <div className="flex items-center gap-2 overflow-hidden flex-1">
                                 <div className="flex items-center shrink-0">
                                     <LayoutDashboard className="w-3.5 h-3.5 text-emerald-600 mr-2" />
-                                    <span className="text-[10px] font-bold text-black uppercase tracking-tight whitespace-nowrap">{cardViews.master === 'visual' ? 'Velocity' : 'Matrix'}</span>
+                                    <span className="text-[10px] font-bold text-ink uppercase tracking-tight whitespace-nowrap">{cardViews.master === 'visual' ? 'Velocity' : 'Matrix'}</span>
                                 </div>
                                 <SkuLegend />
                             </div>
@@ -181,7 +181,7 @@ export const RevenueDashboard: React.FC = () => {
                                 {cardViews.master === 'visual' && (['Daily', 'Weekly', 'Monthly', 'Quarterly'] as const).map((tMode) => (
                                     <button key={tMode} onClick={() => updateFilters({ velocityMode: tMode })} className={`px-2 py-0.5 rounded-full text-[11px] font-medium transition-all ${filters.velocityMode === tMode ? 'bg-[#3ecf8e] text-[#171717]' : 'text-[#9a9a9a] hover:text-[#171717]'}`}>{tMode[0]}</button>
                                 ))}
-                                <button data-tooltip="Toggle Matrix/Velocity View" onClick={() => setCardView('master', cardViews.master === 'visual' ? 'tabular' : 'visual')} className="p-1 px-2 bg-white text-[#707070] hover:text-[#171717] border border-[#dfdfdf] rounded-md transition-colors">
+                                <button data-tooltip="Toggle Matrix/Velocity View" onClick={() => setCardView('master', cardViews.master === 'visual' ? 'tabular' : 'visual')} className="p-1 px-2 bg-card-bg text-ink-secondary hover:text-ink border border-hairline rounded-md transition-colors">
                                     {cardViews.master === 'visual' ? <LayoutDashboard className="w-3.5 h-3.5" /> : <PieChart className="w-3.5 h-3.5" />}
                                 </button>
                             </div>

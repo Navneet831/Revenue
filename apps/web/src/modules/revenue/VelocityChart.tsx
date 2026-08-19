@@ -12,7 +12,7 @@ const ChartCore = lazy(() => import('./VelocityChart/ChartCore'));
 const ZoomResetButton: React.FC<{ onReset: () => void }> = ({ onReset }) => (
     <button
         onClick={onReset}
-        className="absolute top-2 right-2 p-1.5 flex items-center justify-center rounded-xl bg-white text-ink hover:bg-canvas transition-all cursor-pointer border border-hairline z-20 shadow-sm"
+        className="absolute top-2 right-2 p-1.5 flex items-center justify-center rounded-xl bg-card-bg text-ink hover:bg-canvas-soft transition-all cursor-pointer border border-hairline z-20 shadow-sm"
         data-tooltip="Reset Zoom Scale"
     >
         <RotateCcw className="w-3.5 h-3.5" />
@@ -104,7 +104,7 @@ export const VelocityChart: React.FC = memo(() => {
 
     if (isLoading) {
         return (
-            <div className="w-full h-full flex flex-col items-center justify-center bg-white gap-3">
+            <div className="w-full h-full flex flex-col items-center justify-center bg-card-bg gap-3">
                 <Loader2 className="w-6 h-6 text-primary animate-spin" />
                 <span className="text-[10px] font-mono text-ink-mute uppercase tracking-widest">Streaming Velocity Data...</span>
             </div>
@@ -113,7 +113,7 @@ export const VelocityChart: React.FC = memo(() => {
 
     if (isError) {
         return (
-            <div className="w-full h-full flex flex-col items-center justify-center bg-white gap-3">
+            <div className="w-full h-full flex flex-col items-center justify-center bg-card-bg gap-3">
                 <AlertCircle className="w-6 h-6 text-rose-500" />
                 <span className="text-[10px] font-mono text-rose-500 uppercase tracking-widest">Visual Engine Crash</span>
             </div>
@@ -242,7 +242,7 @@ export const VelocityChart: React.FC = memo(() => {
                     gradient.addColorStop(1, colorDef.stop2);
                     return gradient;
                 },
-                borderColor: '#ffffff',
+                borderColor: 'var(--color-hairline)',
                 borderWidth: mode === 'Daily' ? 2 : 1,
                 borderRadius: mode === 'Daily' ? 0 : 6,
                 barPercentage: 0.75,
@@ -253,7 +253,7 @@ export const VelocityChart: React.FC = memo(() => {
                 pointRadius: mode === 'Daily' ? 2 : 3,
                 pointHoverRadius: 5,
                 pointBackgroundColor: mode === 'Daily' ? colorDef.solid : undefined,
-                pointBorderColor: mode === 'Daily' ? '#ffffff' : undefined,
+                pointBorderColor: mode === 'Daily' ? 'var(--color-hairline)' : undefined,
                 pointBorderWidth: 1.5,
                 spanGaps: true,
                 stack: mode === 'Daily' ? undefined : 'Stack 0'
@@ -268,7 +268,7 @@ export const VelocityChart: React.FC = memo(() => {
     const rightLabelsPlugin = isHighDensity ? null : createRightLabelsPlugin(filters, privacyMode);
 
     return (
-        <div className="h-full w-full relative bg-white flex flex-col min-h-0">
+        <div className="h-full w-full relative bg-card-bg flex flex-col min-h-0">
             <div className="chart-noise-layer opacity-[0.02]" />
             {expandedId === 'w-master' && <ZoomResetButton onReset={resetZoom} />}
             {(mode === 'Weekly' || mode === 'Daily') && <ModeIndicator month={activeMatrixMonth || 'Full Year'} mode={mode} />}

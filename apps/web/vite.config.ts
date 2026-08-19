@@ -45,7 +45,7 @@ export default defineConfig({
         // Proxy all /api/* calls to the Express backend
         proxy: {
             '/api': {
-                target: 'http://127.0.0.1:8000',
+                target: 'https://127.0.0.1:8000',
                 changeOrigin: true,
                 secure: false,
                 configure: (proxy) => {

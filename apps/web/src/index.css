@@ -3,6 +3,69 @@
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
 
+/* ============================================================
+   SEMANTIC CSS CUSTOM PROPERTIES
+   Light (default) + Dark (when .dark on <html>)
+   All Tailwind semantic tokens reference these via var()
+   ============================================================ */
+:root {
+    /* Surfaces */
+    --color-canvas: #f0f0f5;
+    --color-canvas-soft: #f5f5fa;
+    --color-canvas-deep: #e5e5ec;
+    --color-card-bg: #fafafe;
+    --color-card-border: #e2e2ea;
+    /* Text */
+    --color-ink: #1e1e2e;
+    --color-ink-secondary: #4a4a5e;
+    --color-ink-mute: #7a7a90;
+    --color-ink-faint: #b0b0c0;
+    --color-on-primary: #fafafe;
+    /* Borders */
+    --color-hairline: #d8d8e2;
+    --color-hairline-strong: #b0b0c0;
+    /* Brand */
+    --color-brand: #17a38a;
+    --color-brand-deep: #0f8a74;
+    --color-brand-soft: #d1fae5;
+    /* Status */
+    --color-success: #17a38a;
+    --color-success-bg: rgba(23, 163, 138, 0.1);
+    --color-risk: #dc2626;
+    --color-risk-bg: rgba(220, 38, 38, 0.1);
+    --color-strategic: #4f6d8a;
+    --color-strategic-bg: rgba(79, 109, 138, 0.1);
+}
+
+.dark {
+    /* Surfaces — clear hierarchy: canvas darkest, cards elevated */
+    --color-canvas: #0a0e1a;
+    --color-canvas-soft: #121a2b;
+    --color-canvas-deep: #060911;
+    --color-card-bg: #1c2540;
+    --color-card-border: #2e3b5c;
+    /* Text — high contrast, readable on dark (slate-tinted, not grey) */
+    --color-ink: #f8fafc;
+    --color-ink-secondary: #c6d2e6;
+    --color-ink-mute: #93a3bd;
+    --color-ink-faint: #66758f;
+    --color-on-primary: #ffffff;
+    /* Borders — visible separation */
+    --color-hairline: #2a3654;
+    --color-hairline-strong: #3d4c6e;
+    /* Brand — vibrant on dark */
+    --color-brand: #34d399;
+    --color-brand-deep: #10b981;
+    --color-brand-soft: rgba(52, 211, 153, 0.15);
+    /* Status */
+    --color-success: #34d399;
+    --color-success-bg: rgba(52, 211, 153, 0.12);
+    --color-risk: #f87171;
+    --color-risk-bg: rgba(248, 113, 113, 0.12);
+    --color-strategic: #60a5fa;
+    --color-strategic-bg: rgba(96, 165, 250, 0.12);
+}
+
 /* METAL PLATE CANVAS
    Cool slate background (theme('colors.slate.200')) with near-white metal plate cards floating above it.
    Amber-gold (theme('colors.amber.600')) is reserved for active/selected states; emerald for positive
@@ -25,6 +88,16 @@ body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     letter-spacing: 0;
+}
+
+/* Dark mode body override */
+.dark body {
+    background-color: theme('colors.canvas-night');
+    background-image:
+        radial-gradient(130% 90% at 50% -15%, theme('colors.canvas-night-soft') 0%, transparent 55%),
+        linear-gradient(180deg, theme('colors.canvas-night') 0%, theme('colors.dark-base') 100%);
+    color: theme('colors.slate.200');
+    selection-color: theme('colors.slate.50');
 }
 
 ::selection {
@@ -648,6 +721,16 @@ span.flatpickr-weekday {
     border: 1px solid theme('colors.slate.700');
     transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
+
+/* Dark mode: auth primary button */
+.dark .auth-btn-primary {
+    background: linear-gradient(180deg, theme('colors.amber.600') 0%, theme('colors.amber.700') 100%);
+    color: theme('colors.slate.50');
+    border-color: theme('colors.amber.500');
+    box-shadow:
+        inset 0 1px 0.5px rgba(255, 255, 255, 0.15),
+        0 4px 12px rgba(217, 119, 6, 0.35);
+}
 .auth-btn-google:hover {
     background: linear-gradient(180deg, theme('colors.slate.700') 0%, theme('colors.slate.800') 100%);
     box-shadow:
@@ -970,5 +1053,261 @@ span.flatpickr-weekday {
 }
 .ag-theme-alpine .ag-header-cell-filtered .excel-caret-icon {
     color: theme('colors.brand-green') !important; /* emerald-600 */
+}
+
+/* ==========================================================
+   DARK MODE — activated by .dark class on <html>
+   Semantic tokens auto-toggle via CSS custom properties.
+   This block handles third-party components (AG Grid,
+   Flatpickr) and metal plate classes only.
+   ========================================================== */
+
+/* --- Dark: Metal Card/Panel backgrounds --- */
+.dark .card-metal,
+.dark .panel-metal,
+.dark .card-3d {
+    background: var(--color-card-bg);
+    border-color: var(--color-card-border);
+}
+.dark .card-metal {
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.04),
+        0 1px 2px rgba(0, 0, 0, 0.3),
+        0 4px 12px -2px rgba(0, 0, 0, 0.4);
+}
+.dark .card-metal:hover {
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.04),
+        0 2px 4px rgba(0, 0, 0, 0.35),
+        0 12px 24px -4px rgba(0, 0, 0, 0.45);
+}
+.dark .card-metal.is-active,
+.dark .card-metal[data-active="true"] {
+    background: #0f1625;
+    border-color: #34d399;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(52, 211, 153, 0.2);
+}
+.dark .panel-metal:hover {
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.06),
+        0 2px 4px rgba(0, 0, 0, 0.3),
+        0 14px 28px -4px rgba(0, 0, 0, 0.45);
+}
+.dark .card-3d:hover {
+    border-color: #3a4a6a;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+}
+
+/* --- Dark: Recessed / Channel --- */
+.dark .metal-recessed {
+    background: #111827;
+    border-color: #263049;
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+.dark .metal-recessed-active {
+    background: #0a0e1a;
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.7);
+}
+.dark .metal-channel {
+    background: #111827;
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+/* --- Dark: Badges --- */
+.dark .metal-badge-green {
+    background: rgba(52, 211, 153, 0.15);
+    border-color: rgba(52, 211, 153, 0.35);
+    color: #6ee7b7;
+}
+.dark .metal-badge-rose {
+    background: rgba(248, 113, 113, 0.15);
+    border-color: rgba(248, 113, 113, 0.3);
+    color: #fca5a5;
+}
+
+/* --- Dark: Buttons --- */
+.dark .btn-3d {
+    background: #1a2236;
+    border-color: #2a3550;
+    color: #b0bdd0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+.dark .btn-3d:hover {
+    background: #222d45;
+    border-color: #3a4a6a;
+    color: #f1f5f9;
+}
+.dark .btn-3d:active,
+.dark .btn-3d.active-toggle {
+    background: #78350f;
+    border-color: #d97706;
+    color: #fbbf24;
+}
+
+.dark .btn-filter-pill {
+    background: #1a2236;
+    border-color: #2a3550;
+    color: #7e8ea4;
+}
+.dark .btn-filter-pill:hover {
+    background: #222d45;
+    border-color: #3a4a6a;
+    color: #f1f5f9;
+}
+.dark .btn-filter-pill.active {
+    background: #d97706;
+    border-color: #f59e0b;
+    color: #FFFFFF;
+    box-shadow: 0 2px 10px rgba(217, 119, 6, 0.4);
+}
+
+/* --- Dark: Field Group --- */
+.dark .field-group-inset {
+    background: rgba(0, 0, 0, 0.25);
+    border-color: #263049;
+    box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+/* --- Dark: Glass Overlay --- */
+.dark .glass-overlay {
+    background: rgba(10, 14, 26, 0.9);
+    backdrop-filter: blur(16px) saturate(1.2);
+    border-color: rgba(42, 53, 80, 0.6);
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5), 0 2px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* --- Dark: Card Expanded Backdrop --- */
+.dark .card-expanded {
+    box-shadow:
+        0 0 0 100vw rgba(0, 0, 0, 0.7),
+        0 20px 60px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* --- Dark: Scrollbar --- */
+.dark .minimal-scroll::-webkit-scrollbar-thumb {
+    background: #3a4a6a;
+    border-radius: 4px;
+}
+.dark .minimal-scroll::-webkit-scrollbar-thumb:hover {
+    background: #556478;
+}
+
+/* --- Dark: AG Grid --- */
+.dark .ag-theme-alpine {
+    --ag-header-background-color: #111827 !important;
+    --ag-header-foreground-color: #b0bdd0 !important;
+    --ag-border-color: #263049 !important;
+    --ag-row-border-color: #1e2a42 !important;
+    --ag-odd-row-background-color: #0f1625 !important;
+    --ag-foreground-color: #f1f5f9 !important;
+    --ag-background-color: #0a0e1a !important;
+    --ag-secondary-background-color: #111827 !important;
+    --ag-secondary-foreground-color: #b0bdd0 !important;
+    --ag-selected-row-background-color: rgba(52, 211, 153, 0.15) !important;
+    --ag-range-selection-background-color: rgba(52, 211, 153, 0.1) !important;
+    --ag-input-focus-border-color: #34d399 !important;
+}
+.dark .ag-theme-alpine .ag-cell {
+    border-right-color: #1e2a42 !important;
+    color: #f1f5f9;
+}
+.dark .ag-theme-alpine .ag-header-cell {
+    border-right-color: #263049 !important;
+    color: #b0bdd0;
+}
+.dark .ag-theme-alpine .ag-header {
+    border-bottom-color: #2a3550 !important;
+}
+.dark .ag-theme-alpine .ag-row-even {
+    background-color: #0a0e1a;
+}
+.dark .ag-theme-alpine .ag-row-odd {
+    background-color: #0f1625;
+}
+.dark .ag-theme-alpine .ag-row:hover {
+    background-color: #162035 !important;
+}
+.dark .ag-theme-alpine .ag-cell-focus {
+    border-color: #34d399 !important;
+}
+.dark .ag-theme-alpine .ag-sort-ascending-icon,
+.dark .ag-theme-alpine .ag-sort-descending-icon {
+    color: #34d399;
+}
+.dark .ag-theme-alpine .ag-paging-description,
+.dark .ag-theme-alpine .ag-paging-row-summary-panel {
+    color: #7e8ea4;
+}
+
+/* --- Dark: Flatpickr --- */
+.dark .flatpickr-calendar {
+    background: #1a2236 !important;
+    border-color: #2a3550 !important;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5) !important;
+}
+.dark .flatpickr-month {
+    color: #f1f5f9 !important;
+    fill: #f1f5f9 !important;
+}
+.dark .flatpickr-current-month input.cur-year {
+    color: #fbbf24 !important;
+}
+.dark .flatpickr-day {
+    color: #b0bdd0 !important;
+}
+.dark .flatpickr-day:hover,
+.dark .flatpickr-day:focus {
+    background: #222d45 !important;
+    border-color: #3a4a6a !important;
+    color: #f1f5f9 !important;
+}
+.dark .flatpickr-day.selected,
+.dark .flatpickr-day.selected:hover {
+    background: #d97706 !important;
+    border-color: #d97706 !important;
+    color: #FFFFFF !important;
+}
+.dark .flatpickr-day.today {
+    border-color: #f59e0b !important;
+    color: #fbbf24 !important;
+}
+.dark span.flatpickr-weekday {
+    color: #556478 !important;
+}
+.dark .flatpickr-calendar.arrowTop:before,
+.dark .flatpickr-calendar.arrowTop:after {
+    border-bottom-color: #1a2236 !important;
+}
+.dark .flatpickr-calendar.arrowBottom:before,
+.dark .flatpickr-calendar.arrowBottom:after {
+    border-top-color: #1a2236 !important;
+}
+
+/* --- Dark: Metric Bar --- */
+.dark .metric-bar-track {
+    background: #111827;
+}
+
+/* --- Dark: Auth buttons --- */
+.dark .auth-btn-google {
+    background: linear-gradient(180deg, #222d45 0%, #1a2236 100%);
+    color: #f1f5f9;
+    border-color: #2a3550;
+}
+
+/* --- Dark: Checkbox --- */
+.dark input[type='checkbox'] {
+    border-color: #3a4a6a;
+}
+
+/* --- Dark: Progress fill --- */
+.dark .progress-fill {
+    filter: brightness(1.15);
+}
+
+/* --- Dark: Selection --- */
+.dark ::selection {
+    background: rgba(52, 211, 153, 0.25);
+    color: #f1f5f9;
 }
 

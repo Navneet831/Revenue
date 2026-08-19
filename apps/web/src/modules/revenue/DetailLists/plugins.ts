@@ -1,3 +1,5 @@
+import { ink, inkSecondary } from '../../../theme/cssVar';
+
 export const createRightLabelsPlugin = (privacyMode: boolean) => ({
     id: 'rightLabels',
     afterDatasetsDraw(chart: any) {
@@ -50,12 +52,12 @@ export const createRightLabelsPlugin = (privacyMode: boolean) => ({
                     startX = row.maxX - 6 - totalTextWidth;
                 }
                 
-                ctx.fillStyle = '#000000';
+                ctx.fillStyle = ink();
                 ctx.textAlign = 'left';
                 ctx.fillText(valText, startX, row.y);
                 
                 if (pctText) {
-                    ctx.fillStyle = '#475569'; 
+                    ctx.fillStyle = inkSecondary(); 
                     ctx.fillText(pctText, startX + valWidth, row.y);
                 }
                 

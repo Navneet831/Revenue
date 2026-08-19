@@ -78,6 +78,8 @@ async def test_anchor_date_sales_custom_period():
     
     with patch.object(AnalyticsService, '_get_rows', return_value=MOCK_ROWS):
         stats = await AnalyticsService.analytics(filters)
-        # Custom period sum of sales in May 2024 (2024-05-15 and 2024-05-20):
-        # 20,000,000 + 30,000,000 = 50,000,000, which in crores is 5.0
-        assert stats['kpi']['periodSales'] == 5.0
+        # TS parity: periodSales = anchor-day sales (customStartDate is never sent).
+        # Anchor date clamps to latest available date: min(endDate 2024-05-25, latest 2024-05-20)
+        # = 2024-05-20, which has sales of 30,000,000. In crores, that is 3.0.
+        assert stats['kpi']['periodSales'] == 3.0
+        assert stats['kpiAnchorDate'].startswith('2024-05-20')

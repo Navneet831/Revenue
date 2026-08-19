@@ -1,4 +1,5 @@
 import { Format } from '@revenue/shared';
+import { ink, inkSecondary, hairline, cardBg, cardBorder } from '../../../../theme/cssVar';
 
 export function useVelocityChartConfig(mode: string, filters: any, privacyMode: boolean, handleChartClick: any) {
     const chartConfig: any = {
@@ -14,12 +15,12 @@ export function useVelocityChartConfig(mode: string, filters: any, privacyMode: 
         plugins: {
             legend: { display: false },
             tooltip: {
-                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                backgroundColor: cardBg(),
                 backdropFilter: 'blur(8px)',
-                titleColor: '#000',
-                bodyColor: '#334155',
-                footerColor: '#059669',
-                borderColor: 'rgba(0, 0, 0, 0.1)',
+                titleColor: ink(),
+                bodyColor: inkSecondary(),
+                footerColor: '#34d399',
+                borderColor: hairline(),
                 borderWidth: 1,
                 padding: 12,
                 cornerRadius: 12,
@@ -68,7 +69,7 @@ export function useVelocityChartConfig(mode: string, filters: any, privacyMode: 
                 },
                 ticks: {
                     display: true,
-                    color: '#000',
+                    color: ink(),
                     font: { size: 10, weight: 'bold' as const },
                     maxRotation: 0,
                     autoSkip: true,
@@ -84,7 +85,7 @@ export function useVelocityChartConfig(mode: string, filters: any, privacyMode: 
                 },
                 grid: {
                     color: (ctx: any) => {
-                        return ctx.tick?.value === 0 ? '#cbd5e1' : '#eef2f6';
+                        return ctx.tick?.value === 0 ? hairline() : hairline() + '40';
                     },
                     tickColor: 'transparent'
                 },
@@ -92,7 +93,7 @@ export function useVelocityChartConfig(mode: string, filters: any, privacyMode: 
                 min: 0,
                 afterFit: (axis: any) => { axis.width = 80; },
                 ticks: {
-                    color: '#000',
+                    color: ink(),
                     font: { size: 10, weight: 'bold' as const },
                     padding: 8,
                     callback: function (v: number) {
@@ -107,8 +108,8 @@ export function useVelocityChartConfig(mode: string, filters: any, privacyMode: 
 
     // For Daily mode (line chart), adjust some settings
     if (mode === 'Daily') {
-        chartConfig.scales.x.grid = { ...chartConfig.scales.x.grid, color: '#eef2f6' };
-        chartConfig.scales.x.ticks = { ...chartConfig.scales.x.ticks, color: '#000', font: { size: 9, weight: 'bold' } };
+        chartConfig.scales.x.grid = { ...chartConfig.scales.x.grid, color: hairline() + '40' };
+        chartConfig.scales.x.ticks = { ...chartConfig.scales.x.ticks, color: ink(), font: { size: 9, weight: 'bold' } };
     }
 
     return chartConfig;

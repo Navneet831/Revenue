@@ -75,7 +75,7 @@ function buildSchemaBlock(columns: SchemaColumn[]): string {
   const lines = columns.map(c =>
     `  "${c.column_name}" ${c.data_type.padEnd(8)} — ${c.business_label}. ${c.description}`
   );
-  return `ALLOWED SCHEMA:\nTable: public.revenue\n${lines.join("\n")}`;
+  return `ALLOWED SCHEMA:\nTable: revenue.revenue\n${lines.join("\n")}`;
 }
 
 function buildGlossaryBlock(terms: SemanticTerm[]): string {
@@ -118,11 +118,11 @@ RULES — READ CAREFULLY:
    Example: USE_TEMPLATE:ytd_by_segment
 2. Otherwise output ONLY the raw SQL query — no markdown, no explanation, no commentary.
 3. ONLY SELECT statements. NEVER INSERT, UPDATE, DELETE, DROP, ALTER, CREATE, GRANT, REVOKE, COPY, TRUNCATE, EXECUTE, MERGE, or CALL.
-4. Date filter: (DATE '1899-12-30' + "Invoice date" * INTERVAL '1 day')::date
-5. Revenue in Crores: ROUND(SUM("Net Value")::numeric / 10000000, 2) AS revenue_cr
+4. Date filter: invoice_date > DATE '2022-12-25'
+5. Revenue in Crores: ROUND(SUM(net_value)::numeric / 10000000, 2) AS revenue_cr
 6. Always ROUND numeric results to 2 decimal places.
 7. Use LIMIT 50 for row-level lists; omit LIMIT for aggregates.
-8. Use clear column aliases. COALESCE("Sales Head", 'Unassigned') for nullable fields.
+8. Use clear column aliases. COALESCE(sales_head, 'Unassigned') for nullable fields.
 9. If the question CANNOT be answered from the allowed schema, output exactly: UNSUPPORTED`;
 }
 

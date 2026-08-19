@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
-import { Layers, TableProperties, ShieldCheck, LogOut, Sparkles, Cpu } from 'lucide-react';
+import { Layers, TableProperties, ShieldCheck, LogOut, Sparkles, Cpu, Moon, Sun, Monitor, MessageCircleQuestion } from 'lucide-react';
 import { useStore } from '@revenue/store/useStore';
+import { useTheme } from '../../hooks/useTheme';
 import { supabase, useAuthStore } from '@grew/auth';
 import { SolarModuleIcon, InternalIcon, RMIcon, ScrapIcon } from '../../assets/CustomIcons';
 
@@ -21,9 +22,12 @@ const GlobalSidebarContent: React.FC<GlobalSidebarProps> = ({ onOpenHelp, onOpen
         unviewedStories,
         activeMainView,
         setActiveMainView,
+        tooltipsEnabled,
+        setTooltipsEnabled,
     } = useStore();
 
     const { setUser, setAuthenticated } = useAuthStore();
+    const { theme, toggleTheme } = useTheme();
 
     const filteredSegments = allSegments.filter((s: string) => {
         const sLower = s.toLowerCase();
@@ -85,13 +89,13 @@ const GlobalSidebarContent: React.FC<GlobalSidebarProps> = ({ onOpenHelp, onOpen
         <div className="flex h-full shrink-0 z-[100]">
             <aside
                 id="sidebar"
-                className="flex h-full w-14 flex-col bg-canvas border-r border-hairline relative transition-all duration-300"
+                className="flex h-full w-14 flex-col bg-canvas dark:bg-dark-base border-r border-hairline dark:border-dark-border relative transition-all duration-300"
             >
                 {/* Logo Section with Story Ring */}
                 <div
                     onClick={handleLogoClick}
                     data-tooltip={features.story && unviewedStories && activeMainView === 'DASHBOARD' ? "View Executive Stories" : "Revenue Dashboard (Ctrl+B)"}
-                    className="w-full flex items-center justify-center shrink-0 border-b border-hairline bg-canvas-soft py-4 px-2 relative overflow-hidden group select-none cursor-pointer hover:bg-canvas-deep transition-colors h-14"
+                    className="w-full flex items-center justify-center shrink-0 border-b border-hairline dark:border-dark-border bg-canvas-soft dark:bg-dark-card py-4 px-2 relative overflow-hidden group select-none cursor-pointer hover:bg-canvas-deep dark:hover:bg-slate-700 transition-colors h-14"
                 >
                     <div className={`w-10 h-10 shrink-0 flex items-center justify-center transition-all duration-300 group-hover:scale-110 relative rounded-full ${features.story && unviewedStories && activeMainView === 'DASHBOARD' ? 'p-[2px] bg-gradient-to-tr from-emerald-400 via-teal-500 to-emerald-600 animate-pulse' : ''}`}>
                         <div className="w-full h-full bg-canvas rounded-full flex items-center justify-center overflow-hidden">
@@ -114,8 +118,8 @@ const GlobalSidebarContent: React.FC<GlobalSidebarProps> = ({ onOpenHelp, onOpen
                         const isScrap = sLower.includes('scrap');
 
                         const activeCls = isSelected
-                            ? 'text-[#1C1917] bg-[#D97706] shadow-sm'
-                            : 'text-[#78716C] hover:text-[#1C1917] hover:bg-[#FEF3C7]';
+                            ? 'text-white bg-amber-600 shadow-sm'
+                            : 'text-ink-mute hover:text-ink hover:bg-amber-50 dark:hover:bg-amber-900/30 dark:hover:text-amber-200';
 
                         let IconComp = <Layers className="w-5 h-5" />;
                         if (isSolar) IconComp = <SolarModuleIcon className={isSelected ? "w-5 h-5 fill-current" : "w-5 h-5"} />;
@@ -138,7 +142,17 @@ const GlobalSidebarContent: React.FC<GlobalSidebarProps> = ({ onOpenHelp, onOpen
                 </div>
 
                 {/* Bottom Actions */}
-                <div className="shrink-0 flex flex-col items-center pb-3 gap-2 border-t border-hairline pt-3 bg-canvas/50">
+                <div className="shrink-0 flex flex-col items-center pb-3 gap-2 border-t border-hairline dark:border-dark-border pt-3 bg-canvas/50 dark:bg-dark-base/50">
+                    {features.story && onOpenStories && (
+                        <div
+                            onClick={onOpenStories}
+                            className={`p-1.5 rounded-md cursor-pointer transition-colors ${unviewedStories ? 'text-emerald-500' : 'text-ink-faint hover:text-ink'}`}
+                            data-tooltip="Executive Stories"
+                        >
+                            <Sparkles className={`w-5 h-5 ${unviewedStories ? 'animate-pulse' : ''}`} />
+                        </div>
+                    )}
+
                     {features.Ledger && (
                         <div
                             onClick={() => setActiveMainView('LEDGER')}
@@ -185,6 +199,34 @@ const GlobalSidebarContent: React.FC<GlobalSidebarProps> = ({ onOpenHelp, onOpen
                             <Cpu className="w-5 h-5" />
                         </div>
                     )}
+
+                    <div className="w-8 border-t border-hairline my-0.5" />
+
+                    {/* Dark Mode Toggle */}
+                    <div
+                        onClick={toggleTheme}
+                        className="p-1.5 rounded-md cursor-pointer transition-colors text-ink-faint hover:text-amber-500 hover:bg-amber-50 dark:hover:text-amber-400 dark:hover:bg-amber-900/30"
+                        data-tooltip={theme === 'dark' ? 'Switch to Light Mode' : theme === 'light' ? 'Switch to System' : 'Switch to Dark Mode'}
+                    >
+                        {theme === 'dark' ? (
+                            <Moon className="w-5 h-5" />
+                        ) : theme === 'light' ? (
+                            <Sun className="w-5 h-5" />
+                        ) : (
+                            <Monitor className="w-5 h-5" />
+                        )}
+                    </div>
+
+                    <div className="w-8 border-t border-hairline my-0.5" />
+
+                    {/* Tooltip Toggle */}
+                    <div
+                        onClick={() => setTooltipsEnabled(!tooltipsEnabled)}
+                        className={`p-1.5 rounded-md cursor-pointer transition-colors ${tooltipsEnabled ? 'text-brand bg-brand-soft' : 'text-ink-faint hover:text-ink'}`}
+                        data-tooltip={tooltipsEnabled ? 'Disable Hover Tooltips' : 'Enable Hover Tooltips'}
+                    >
+                        <MessageCircleQuestion className="w-5 h-5" />
+                    </div>
 
                     <div className="w-8 border-t border-hairline my-0.5" />
 

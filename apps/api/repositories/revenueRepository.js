@@ -18,22 +18,22 @@ const DOI_FLOOR = '2022-12-25';
 
 const REVENUE_QUERY = `
     SELECT
-        "Invoice date",
-        "Invoice No", "Invoice Type", "Cust_code", "Cust_name",
-        "Segment", "Sales Head", "Module WP", "Material Code",
-        "Mat Desc", "HSN CODE/SAC Code", "SalesQty", "UnitPrice",
-        "Taxable Value", "CGST Amount", "SGST Amount", "IGST Amount",
-        "Net Value", "UOM", "Plant", "Storage Location", "Vehicle No.",
-        "S.O.Number", "Incoterms", "Invoice Status", "Revenue", "Eway Expiry",
-        "MW"
-    FROM public.revenue
-    WHERE "Invoice date" > $1::timestamp
+        invoice_date,
+        invoice_no, invoice_type, cust_code, cust_name,
+        segment, sales_head, module_wp, material_code,
+        mat_desc, hsn_code_sac_code, sales_qty, unit_price,
+        taxable_value, cgst_amount, sgst_amount, igst_amount,
+        net_value, uom, plant, storage_location, vehicle_no,
+        so_number, incoterms, invoice_status, revenue, eway_expiry,
+        mw
+    FROM revenue.revenue
+    WHERE invoice_date > $1::timestamp
 `;
 
 let _pool = null;
 let _credsFetchedAt = 0;
 let _credHash = '';
-const CREDS_TTL_MS = 10 * 60 * 1000; // re-fetch credentials every 10 minutes
+const CREDS_TTL_MS = 10 * 1000; // re-fetch credentials every 10 seconds (short for debugging; revert later)
 
 // Module-level so getPool() can clear them when DB credentials change.
 let _allRowsCache = null;
@@ -48,13 +48,25 @@ export async function fetchDbConfig() {
     // whitespace-only or partial PG_* values fall through to the edge function
     // instead of producing a broken pool that never connects.
     const env = (k) => (process.env[k] || '').trim();
-    if (env('PG_HOST') && env('PG_USER') && env('PG_PASSWORD') && env('PG_DATABASE')) {
+    const pgHost = env('PG_HOST');
+    const pgUser = env('PG_USER');
+    const pgPass = env('PG_PASSWORD');
+    const pgDb   = env('PG_DATABASE');
+    const pgPort = env('PG_PORT');
+    Logger.info('db_config_env_check', {
+        PG_HOST: pgHost || '(not set)',
+        PG_USER: pgUser ? '(set)' : '(not set)',
+        PG_PASSWORD: pgPass ? '(set)' : '(not set)',
+        PG_DATABASE: pgDb || '(not set)',
+        PG_PORT: pgPort || '(not set, default 5432)',
+    });
+    if (pgHost && pgUser && pgPass && pgDb) {
         const config = {
-            host:     env('PG_HOST'),
-            port:     parseInt(env('PG_PORT') || '5432', 10),
-            user:     env('PG_USER'),
-            password: env('PG_PASSWORD'),
-            database: env('PG_DATABASE'),
+            host:     pgHost,
+            port:     parseInt(pgPort || '5432', 10),
+            user:     pgUser,
+            password: pgPass,
+            database: pgDb,
             source:   'local_env',
         };
         Logger.info('db_credentials_from_env', { host: config.host, port: config.port, database: config.database });
@@ -124,6 +136,15 @@ async function getPool() {
     }
 
     const config = await fetchDbConfig();
+
+    Logger.info('db_config_used_for_pool', {
+        host: config.host,
+        port: config.port,
+        database: config.database,
+        user: config.user,
+        source: config.source,
+        isLocalhost: config.host === 'localhost' || config.host === '127.0.0.1',
+    });
 
     // Detect DB switch: if host/database changed, discard row cache immediately
     // so the next findAll() fetches fresh data from the new DB.
@@ -218,7 +239,7 @@ export class RevenueRepository {
 
         const mappedRows = rows.map((row) => ({
             ...row,
-            'Invoice date': row['Invoice date'] ? new Date(row['Invoice date']) : null,
+            'invoice_date': row['invoice_date'] ? new Date(row['invoice_date']) : null,
         }));
 
         _allRowsCache = mappedRows;
@@ -232,7 +253,7 @@ export class RevenueRepository {
                 return { min_date: '2022-12-26', max_date: '2022-12-26' };
             }
             const dates = rows
-                .map((r) => r['Invoice date'])
+                .map((r) => r['invoice_date'])
                 .filter((d) => d && !isNaN(d.getTime()))
                 .map((d) => d.getTime());
             if (dates.length === 0) {
@@ -307,7 +328,7 @@ export class RevenueRepository {
                     ABS(COALESCE(SUM(CASE WHEN "Posting Date" >= $4::date AND "Posting Date" <= $1::date THEN "Amt.in Loc.Cur." ELSE 0 END), 0)) AS ytd_amount,
                     ABS(COALESCE(SUM(CASE WHEN "Posting Date" >= $4::date AND "Posting Date" <= $1::date THEN "Qty" ELSE 0 END), 0)) AS ytd_qty,
                     ABS(COALESCE(SUM(CASE WHEN "Posting Date" >= $4::date AND "Posting Date" <= $1::date THEN "MW" ELSE 0 END), 0)) AS ytd_mw
-                FROM public.mb51
+                FROM revenue.mb51
                 WHERE "Movement Type" IN ('601', '602');
             `, [anchorStr, mtdStr, qtdStr, ytdStr]);
             
