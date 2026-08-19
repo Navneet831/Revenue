@@ -60,7 +60,18 @@ export async function verifyWhitelistAndSetUser(
             
             // Normalize keys to match the frontend expectations
             const lowerKey = key.toLowerCase();
-            if (lowerKey === 'agentation') features['agentation'] = boolValue;
+            if (lowerKey === 'authentication') {
+                features['Authentication'] = boolValue;
+                if (!boolValue) {
+                    console.warn(`[AuthService] Access revoked for user: ${email}`);
+                    const { setUser, setAuthenticated, setAuthError } = useAuthStore.getState();
+                    setUser(null);
+                    setAuthenticated(false);
+                    setAuthError('Access Denied: Your account is disabled in the whitelist.');
+                    await supabase.auth.signOut();
+                    return { ok: false, errorMsg: 'Access Denied: Your account is disabled in the whitelist.' };
+                }
+            } else if (lowerKey === 'agentation') features['agentation'] = boolValue;
             else if (lowerKey === 'grewgpt') features['GrewGpt'] = boolValue;
             else if (lowerKey === 'audit') features['audit'] = boolValue;
             else if (lowerKey === 'ledger') features['Ledger'] = boolValue;

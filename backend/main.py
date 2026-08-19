@@ -161,6 +161,9 @@ async def authenticate(request: Request) -> dict:
     features = user["features"]
     
     # Enforce user-wise permissions
+    if "Authentication" in features and not features.get("Authentication"):
+        raise HTTPException(status_code=403, detail="Forbidden: Account authentication is disabled in whitelist")
+
     if path.startswith("/api/v1/revenue/analytics") or path.startswith("/api/v1/revenue/meta") or path.startswith("/api/v1/revenue/summary") or path.startswith("/api/v1/revenue/daily-series"):
         if "Command Center" in features and not features.get("Command Center"):
             raise HTTPException(status_code=403, detail="Forbidden: Command Center access required")
