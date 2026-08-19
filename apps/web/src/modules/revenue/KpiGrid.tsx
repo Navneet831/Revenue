@@ -5,6 +5,7 @@ import { useAuthStore } from '@grew/auth';
 import { useSectionData } from '@revenue/hooks/useSectionData';
 import { AlertCircle, Loader2, ShieldOff } from 'lucide-react';
 import { CONFIG } from '@revenue/shared';
+import { sourceJson } from '../../theme/sourceMeta';
 
 export const KpiGrid: React.FC = () => {
     // ── ALL hooks unconditionally at the top (Rules of Hooks) ─────────────────
@@ -191,6 +192,20 @@ export const KpiGrid: React.FC = () => {
 
     const showSalesVsMb51 = user?.features ? user.features["Sales Vs Mb51"] !== false : true;
 
+    // ── Data Provenance: build source metadata for each KPI ──────────────
+    const metricCol = filters.metric === 'Amount' ? 'Taxable Value' : filters.metric === 'MW' ? 'MW' : 'SalesQty';
+    const metricUnit = filters.metric === 'Amount' ? '₹ Cr' : filters.metric === 'MW' ? 'MW' : 'Qty';
+    const dateRange = filters.startDate && filters.endDate
+        ? `${filters.startDate} to ${filters.endDate}`
+        : filters.endDate || filters.startDate || 'All available';
+    const segment = filters.segment?.length ? filters.segment.join(', ') : 'All segments';
+    const salesHead = filters.salesHead?.length ? `Sales Head: ${filters.salesHead.join(', ')}` : '';
+
+    const periodSource = sourceJson({ table: 'revenue.revenue', column: metricCol, aggregation: `SUM(${metricCol}) · filtered by date + segment`, dateRange, segment, note: salesHead || undefined });
+    const mtdSource = sourceJson({ table: 'revenue.revenue', column: metricCol, aggregation: `SUM(${metricCol}) · month-to-date`, dateRange: `MTD ${filters.matrixMonth || ''}`, segment, note: salesHead || undefined });
+    const qtdSource = sourceJson({ table: 'revenue.revenue', column: metricCol, aggregation: `SUM(${metricCol}) · quarter-to-date`, dateRange: `QTD ${filters.selectedQuarter !== undefined ? 'Q' + (filters.selectedQuarter + 1) : ''}`, segment, note: salesHead || undefined });
+    const ytdSource = sourceJson({ table: 'revenue.revenue', column: metricCol, aggregation: `SUM(${metricCol}) · year-to-date (Apr–${filters.matrixMonth || 'now'})`, dateRange: 'YTD FY25-26', segment, note: salesHead || undefined });
+
     return (
         <div className="flex w-full h-32 shrink-0 gap-3 pb-2 overflow-x-auto no-scrollbar" data-lenis-prevent="true">
             <KpiCard
@@ -202,6 +217,7 @@ export const KpiGrid: React.FC = () => {
                 breakdown={kpi.periodBreakdown}
                 momentum={momentum}
                 variance={showSalesVsMb51 ? variances.today : undefined}
+                dataSource={periodSource}
             />
 
             <KpiCard
@@ -226,6 +242,7 @@ export const KpiGrid: React.FC = () => {
                     weekNum: w.weekNum
                 }))}
                 variance={showSalesVsMb51 ? variances.mtd : undefined}
+                dataSource={mtdSource}
             />
 
             <KpiCard
@@ -240,6 +257,7 @@ export const KpiGrid: React.FC = () => {
                 onToggleDetail={() => handleToggleDetail('qtd')}
                 breakdown={kpi.qtdBreakdown}
                 variance={showSalesVsMb51 ? variances.qtd : undefined}
+                dataSource={qtdSource}
             />
 
             <KpiCard
@@ -264,6 +282,7 @@ export const KpiGrid: React.FC = () => {
                     weekNum: w.weekNum
                 }))}
                 variance={showSalesVsMb51 ? variances.ytd : undefined}
+                dataSource={ytdSource}
             />
         </div>
     );

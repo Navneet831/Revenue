@@ -3,6 +3,7 @@ import { useStore } from '@revenue/store/useStore';
 import { useSectionData } from '@revenue/hooks/useSectionData';
 import { CONFIG } from '@revenue/shared';
 import { Loader2, AlertCircle } from 'lucide-react';
+import { sourceJson } from '../../theme/sourceMeta';
 
 export const RevenueMatrix: React.FC = memo(() => {
     const {
@@ -158,6 +159,7 @@ export const RevenueMatrix: React.FC = memo(() => {
                     <td
                         key={idx}
                         data-tooltip={`${d.month} · ${ROW_FORMULA[key]}`}
+                        data-source={isTotal ? undefined : sourceJson({ table: 'revenue.revenue', column: key === 'valCr' ? 'Taxable Value' : key === 'qty' ? 'SalesQty' : 'MW', aggregation: `SUM(${key === 'valCr' ? 'Taxable Value' : key === 'qty' ? 'SalesQty' : 'MW'}) · ${d.month} FY${String(curFYStartYear).slice(-2)}-${String(curFYStartYear + 1).slice(-2)}`, segment: filters.segment?.length ? filters.segment.join(', ') : 'All', note: filters.salesHead?.length ? `Sales Head: ${filters.salesHead.join(', ')}` : undefined })}
                         className={`px-1 py-1 font-mono text-right relative transition-all duration-200 whitespace-nowrap cursor-help ${borderCls} ${isSelectedMonth || isPartofSelectedQ ? 'bg-canvas-deep/50' : ''} ${isTotal ? 'bg-canvas-soft border-l border-hairline-strong' : ''}`}
                     >
                         <span className={`${textCls} relative z-10 pointer-events-none`}>

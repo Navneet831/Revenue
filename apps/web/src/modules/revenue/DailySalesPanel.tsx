@@ -2,6 +2,7 @@ import React, { memo, useMemo, useState } from 'react';
 import { useStore } from '@revenue/store/useStore';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { CONFIG } from '@revenue/shared';
+import { sourceJson } from '../../theme/sourceMeta';
 
 const CURRENCY_DIVIDER = 10_000_000;
 
@@ -181,7 +182,9 @@ export const DailySalesPanel: React.FC = memo(() => {
                                                 : isSunday
                                                 ? 'text-ink-faint/60'
                                                 : 'text-ink-secondary font-bold'
-                                        }`}>
+                                        }`}
+                                            data-source={sourceJson({ table: 'revenue.revenue', column: metric === 'Amount' ? 'Taxable Value' : metric === 'MW' ? 'MW' : 'SalesQty', aggregation: `SUM() for ${d.date}`, dateRange: d.date, segment: filters.segment?.length ? filters.segment.join(', ') : 'All' })}
+                                        >
                                             {fmtCompact(d.val, d.qty, d.mw, metric, privacyMode)}
                                         </span>
                                     </div>

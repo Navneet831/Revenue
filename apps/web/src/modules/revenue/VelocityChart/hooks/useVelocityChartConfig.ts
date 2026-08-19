@@ -34,6 +34,20 @@ export function useVelocityChartConfig(mode: string, filters: any, privacyMode: 
                         if (realVal === undefined || realVal === null || realVal === 0) return null;
                         return `  ${ctx.dataset.label}: ${Format.chartTooltip(realVal, filters.metric, privacyMode)}`;
                     },
+                    beforeBody: () => [''],
+                    afterBody: (tooltipItems: any[]) => {
+                        if (!tooltipItems.length) return [];
+                        const col = filters.metric === 'Amount' ? 'Taxable Value' : filters.metric === 'MW' ? 'MW' : 'SalesQty';
+                        const seg = filters.segment?.length ? filters.segment.join(', ') : 'All';
+                        const date = tooltipItems[0]?.label || '';
+                        return [
+                            `─────────`,
+                            `📋 revenue.revenue.${col}`,
+                            `📊 SUM(${col}) by ${mode.toLowerCase()}`,
+                            `📅 ${date}`,
+                            `🏷️ ${seg}`,
+                        ];
+                    },
                     footer: (tooltipItems: any[]) => {
                         if (privacyMode || tooltipItems.length <= 1) return '';
                         let total = tooltipItems.reduce(

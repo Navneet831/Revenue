@@ -3,6 +3,7 @@ import { PieChart, Table2, Maximize2, Minimize2 } from 'lucide-react';
 import { useStore } from '@revenue/store/useStore';
 import { MetricFormatter, CONFIG, ColorEngine } from '@revenue/shared';
 import { createRightLabelsPlugin } from './plugins';
+import { sourceJson } from '../../../theme/sourceMeta';
 
 const ListChartCore = lazy(() => import('./ListChartCore'));
 
@@ -308,6 +309,7 @@ export const ListCard: React.FC<ListCardProps> = ({ id, title, icon, cardKey, fi
                                             <span
                                                 className="text-[11px] font-mono font-bold tracking-tight"
                                                 style={{ color: isSelected ? colorDef.solid : 'var(--color-ink)' }}
+                                                data-source={sourceJson({ table: 'revenue.revenue', column: filters.metric === 'Amount' ? 'Taxable Value' : filters.metric === 'MW' ? 'MW' : 'SalesQty', aggregation: `SUM() grouped by ${cardKey === 'saleshead' ? 'SalesHead' : cardKey === 'cust' ? 'Customer' : 'SKU'}`, dateRange: filters.endDate || 'latest', segment: filters.segment?.length ? filters.segment.join(', ') : 'All', note: `Row: ${r.n}` })}
                                             >
                                                 {privacyMode ? '••••••' : MetricFormatter.formatValue(r.displayV, filters.metric, privacyMode)}
                                             </span>

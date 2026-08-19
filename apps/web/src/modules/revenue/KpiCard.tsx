@@ -19,6 +19,7 @@ interface KpiCardProps {
     onSelectWeek?: (weekNum: number) => void;
     momentum?: { avg: number; proj: number };
     variance?: number;
+    dataSource?: string; // JSON string from sourceJson()
 }
 
 export const KpiCard: React.FC<KpiCardProps> = memo(({
@@ -36,7 +37,8 @@ export const KpiCard: React.FC<KpiCardProps> = memo(({
     selectedWeek,
     onSelectWeek,
     momentum,
-    variance
+    variance,
+    dataSource
 }) => {
     const { privacyMode, stats, filters, latestDate } = useStore();
 
@@ -424,6 +426,7 @@ export const KpiCard: React.FC<KpiCardProps> = memo(({
                             <span 
                                 className="text-[22px] font-bold font-mono text-ink leading-none pointer-events-auto cursor-help"
                                 data-tooltip={getLogicTooltip()}
+                                data-source={dataSource}
                             >
                                 {renderFormattedValue(value)}
                             </span>
@@ -441,6 +444,7 @@ export const KpiCard: React.FC<KpiCardProps> = memo(({
                         <span
                             className="text-2xl lg:text-[26px] font-bold font-mono text-ink leading-tight tracking-tighter truncate cursor-help tabular-nums flex items-baseline"
                             data-tooltip={getLogicTooltip()}
+                            data-source={dataSource}
                         >
                             {renderFormattedValue(value)}
                         </span>
