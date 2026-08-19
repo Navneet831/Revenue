@@ -346,7 +346,7 @@ export const DataSourceTable: React.FC = () => {
                 className = 'text-emerald-800 font-black';
             } else if (colId === 'invoiceNo') {
                 val = `${subtotals.count} / ${data.length} rows`;
-                className = 'text-slate-600 font-bold text-[9px]';
+                className = 'text-ink-secondary font-bold text-[9px]';
             } else if (colId === 'val') {
                 val = privacyMode ? '••••' : `₹${Math.round(subtotals.val).toLocaleString('en-IN')}`;
                 align = 'right';
@@ -354,34 +354,34 @@ export const DataSourceTable: React.FC = () => {
             } else if (colId === 'qty') {
                 val = privacyMode ? '••••' : Math.round(subtotals.qty).toLocaleString('en-IN');
                 align = 'right';
-                className = 'text-slate-700 font-mono font-bold';
+                className = 'text-ink-secondary font-mono font-bold';
             } else if (colId === 'mw') {
                 val = privacyMode ? '••••' : subtotals.mw.toFixed(3);
                 align = 'right';
-                className = 'text-slate-700 font-mono font-bold';
+                className = 'text-ink-secondary font-mono font-bold';
             } else if (colId === 'netValue') {
                 val = privacyMode ? '••••' : `₹${Math.round(subtotals.netValue).toLocaleString('en-IN')}`;
                 align = 'right';
-                className = 'text-slate-700 font-mono font-bold';
+                className = 'text-ink-secondary font-mono font-bold';
             } else if (colId === 'cgst') {
                 val = privacyMode ? '••••' : `₹${Math.round(subtotals.cgst).toLocaleString('en-IN')}`;
                 align = 'right';
-                className = 'text-slate-700 font-mono font-bold';
+                className = 'text-ink-secondary font-mono font-bold';
             } else if (colId === 'sgst') {
                 val = privacyMode ? '••••' : `₹${Math.round(subtotals.sgst).toLocaleString('en-IN')}`;
                 align = 'right';
-                className = 'text-slate-700 font-mono font-bold';
+                className = 'text-ink-secondary font-mono font-bold';
             } else if (colId === 'igst') {
                 val = privacyMode ? '••••' : `₹${Math.round(subtotals.igst).toLocaleString('en-IN')}`;
                 align = 'right';
-                className = 'text-slate-700 font-mono font-bold';
+                className = 'text-ink-secondary font-mono font-bold';
             }
             
             return (
                 <div
                     key={colId}
                     style={{ width, minWidth: width }}
-                    className={`h-full border-r border-slate-200/60 px-3 flex items-center shrink-0 box-border ${
+                    className={`h-full border-r border-hairline/60 px-3 flex items-center shrink-0 box-border ${
                         align === 'right' ? 'justify-end' : 'justify-start'
                     } ${className}`}
                 >
@@ -392,7 +392,7 @@ export const DataSourceTable: React.FC = () => {
     };
 
     return (
-        <div className="flex-1 flex flex-col bg-white overflow-hidden animate-in slide-in-from-bottom-4 duration-500">
+        <div className="flex-1 flex flex-col bg-card-bg overflow-hidden animate-in slide-in-from-bottom-4 duration-500">
             {/* Merged Header & Subtotal Summary Ribbon */}
             <div className="bg-slate-900 text-white px-6 py-3 flex flex-wrap items-center justify-between gap-4 shrink-0 shadow-md z-10 select-none">
                 {/* Left: Title & Count */}
@@ -505,3 +505,4 @@ Logic:
         </div>
     );
 };
+

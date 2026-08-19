@@ -67,7 +67,7 @@ export const FYShortcuts: React.FC = () => {
     };
 
     return (
-        <div className="flex items-center shrink-0 border-r border-slate-200 pr-3 gap-1 overflow-x-auto no-scrollbar max-w-[210px]">
+        <div className="flex items-center shrink-0 border-r border-hairline pr-3 gap-1 overflow-x-auto no-scrollbar max-w-[210px]">
             {allYears.map((year: number) => {
                 const startYear  = year - 1;
                 const isSelected = filters.startDate === `${startYear}-04-01`;
@@ -78,7 +78,7 @@ export const FYShortcuts: React.FC = () => {
                         className={`px-2 py-1 text-[10px] font-black uppercase tracking-widest rounded-full transition-all border shrink-0 whitespace-nowrap ${
                             isSelected
                                 ? 'text-white border-emerald-600 bg-emerald-500 shadow-sm'
-                                : 'text-slate-900 border-slate-200 bg-white hover:bg-slate-50 shadow-sm'
+                                : 'text-ink border-hairline bg-card-bg hover:bg-canvas-soft shadow-sm'
                         }`}
                     >
                         {fyLabel(year)}
@@ -88,3 +88,4 @@ export const FYShortcuts: React.FC = () => {
         </div>
     );
 };
+

@@ -91,7 +91,7 @@ export const DevView: React.FC = () => {
     return (
         <div className="flex-1 flex flex-col bg-canvas overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-300">
             {/* Header */}
-            <div className="px-6 py-4 border-b border-hairline flex items-center justify-between shrink-0 bg-white">
+            <div className="px-6 py-4 border-b border-hairline flex items-center justify-between shrink-0 bg-card-bg">
                 <div className="flex items-center gap-3">
                     <div className="p-2 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
                         <Terminal className="w-5 h-5 text-emerald-600" />
@@ -113,7 +113,7 @@ export const DevView: React.FC = () => {
                     <button
                         onClick={fetchConfig}
                         disabled={loading}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-hairline text-xs font-medium text-ink hover:bg-canvas transition-colors disabled:opacity-40 shadow-sm"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-card-bg border border-hairline text-xs font-medium text-ink hover:bg-canvas transition-colors disabled:opacity-40 shadow-sm"
                     >
                         <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
                         Refresh
@@ -247,7 +247,7 @@ export const DevView: React.FC = () => {
                     </DarkCard>
 
                     {/* ── Column Mapping ── */}
-                    <div className="bg-white rounded-xl border border-hairline shadow-sm overflow-hidden xl:col-span-2">
+                    <div className="bg-card-bg rounded-xl border border-hairline shadow-sm overflow-hidden xl:col-span-2">
                         <CardHeader title="Column Mapping (DB → App)" icon={<ArrowRight className="w-4 h-4 text-teal-600" />} />
                         <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                             {logic?.columnMapping
@@ -264,7 +264,7 @@ export const DevView: React.FC = () => {
                     </div>
 
                     {/* ── Algorithm Notes ── */}
-                    <div className="bg-white rounded-xl border border-hairline shadow-sm overflow-hidden xl:col-span-2">
+                    <div className="bg-card-bg rounded-xl border border-hairline shadow-sm overflow-hidden xl:col-span-2">
                         <CardHeader title="Algorithm Notes" icon={<Cpu className="w-4 h-4 text-amber-600" />} />
                         <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                             <AlgoBlock accent="border-blue-500" title="Date Handling"
@@ -279,7 +279,7 @@ export const DevView: React.FC = () => {
                     </div>
 
                     {/* ── SQL Query ── */}
-                    <div className="bg-white rounded-xl border border-hairline shadow-sm overflow-hidden xl:col-span-2">
+                    <div className="bg-card-bg rounded-xl border border-hairline shadow-sm overflow-hidden xl:col-span-2">
                         <CardHeader title="SQL Query (Data Fetch)" icon={<Code2 className="w-4 h-4 text-violet-600" />} />
                         <div className="p-4">
                             <pre className="text-xs font-mono text-emerald-700 bg-canvas rounded-lg p-4 overflow-x-auto whitespace-pre-wrap leading-relaxed border border-hairline">
@@ -289,7 +289,7 @@ export const DevView: React.FC = () => {
                     </div>
 
                     {/* ── Feature Flags ── */}
-                    <div className="bg-white rounded-xl border border-hairline shadow-sm overflow-hidden xl:col-span-2">
+                    <div className="bg-card-bg rounded-xl border border-hairline shadow-sm overflow-hidden xl:col-span-2">
                         <CardHeader title="Feature Flags" icon={<Settings className="w-4 h-4 text-amber-600" />} />
                         <div className="p-4 flex flex-wrap gap-2">
                             {Object.entries(features).map(([flag, enabled]) => (
@@ -335,7 +335,7 @@ const DarkCard: React.FC<{
     badge?: React.ReactNode;
     children: React.ReactNode;
 }> = ({ title, icon, badge, children }) => (
-    <div className="bg-white rounded-xl border border-hairline shadow-sm overflow-hidden">
+    <div className="bg-card-bg rounded-xl border border-hairline shadow-sm overflow-hidden">
         <CardHeader title={title} icon={icon}>{badge}</CardHeader>
         <div className="px-4 py-1 divide-y divide-hairline">{children}</div>
     </div>

@@ -3,7 +3,11 @@ import ReactDOM from 'react-dom/client';
 import * as Sentry from "@sentry/react";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { App } from './App';
+import { initChartTheme } from './theme/chartTheme';
 import './index.css';
+
+// Initialize Chart.js theme colors before any charts render
+initChartTheme();
 
 const queryClient = new QueryClient({
     defaultOptions: {

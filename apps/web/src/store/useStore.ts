@@ -30,6 +30,7 @@ export interface AppState {
     stats: AnalyticalOutput | null;
     insightsSeen: boolean;
     tooltipsEnabled: boolean;
+    sidebarCollapsed: boolean;
     activeApp: 'REVENUE' | 'INVENTORY' | 'LOGISTICS';
     activeMainView: 'DASHBOARD' | 'LEDGER' | 'AUDIT' | 'DEV' | 'GREWGPT';
     unviewedStories: boolean;
@@ -44,6 +45,8 @@ export interface AppState {
     setGlobalMinMax: (min: Date | null, max: Date | null) => void;
     setSidebarOpen: (open: boolean) => void;
     toggleSidebar: () => void;
+    setSidebarCollapsed: (collapsed: boolean) => void;
+    toggleSidebarCollapsed: () => void;
     setPrivacyMode: (mode: boolean) => void;
     togglePrivacyMode: () => void;
     setExpandedId: (id: string | null) => void;
@@ -127,6 +130,7 @@ export const useStore = create<AppState>((set) => ({
     stats: null,
     insightsSeen: false,
     tooltipsEnabled: false,
+    sidebarCollapsed: false,
     activeApp: 'REVENUE',
     activeMainView: 'DASHBOARD',
     unviewedStories: true,
@@ -160,6 +164,8 @@ export const useStore = create<AppState>((set) => ({
         }),
     setSidebarOpen: (sidebarOpen) => set({ sidebarOpen }),
     toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
+    setSidebarCollapsed: (sidebarCollapsed: boolean) => set({ sidebarCollapsed }),
+    toggleSidebarCollapsed: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
     setPrivacyMode: (privacyMode) => set({ privacyMode }),
     togglePrivacyMode: () => set((state) => ({ privacyMode: !state.privacyMode })),
     setExpandedId: (expandedId) => set({ expandedId }),

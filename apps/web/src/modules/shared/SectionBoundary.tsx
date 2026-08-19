@@ -40,7 +40,7 @@ export class SectionBoundary extends React.Component<SectionBoundaryProps, Secti
             return (
                 <div
                     data-testid="section-fallback"
-                    className={`flex flex-col items-center justify-center gap-2 bg-white border border-rose-200 rounded-xl p-6 min-h-[120px] ${this.props.className || ''}`}
+                    className={`flex flex-col items-center justify-center gap-2 bg-card-bg border border-rose-200 rounded-xl p-6 min-h-[120px] ${this.props.className || ''}`}
                 >
                     <div className="flex items-center gap-2 text-rose-500">
                         <AlertTriangle className="w-4 h-4" />

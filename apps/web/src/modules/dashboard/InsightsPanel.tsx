@@ -50,15 +50,15 @@ export const InsightsPanel: React.FC = () => {
 
             {/* Slide-over Drawer Panel */}
             <div
-                className={`fixed right-0 top-0 bottom-0 w-80 bg-white border-l border-slate-200 z-[99990] transform transition-transform duration-300 flex flex-col shadow-2xl ${
+                className={`fixed right-0 top-0 bottom-0 w-80 bg-card-bg border-l border-hairline z-[99990] transform transition-transform duration-300 flex flex-col shadow-2xl ${
                     ui.insightsOpen ? 'translate-x-0' : 'translate-x-full'
                 }`}
             >
                 {/* Panel Header */}
-                <div className="p-3 px-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center shrink-0">
+                <div className="p-3 px-4 border-b border-hairline bg-canvas-soft flex justify-between items-center shrink-0">
                     <div className="flex items-center gap-3">
                         <IntelligenceBoardIcon className="w-4 h-4 text-amber-500" />
-                        <span className="text-[11px] font-bold text-slate-900 uppercase tracking-tight font-sans">
+                        <span className="text-[11px] font-bold text-ink uppercase tracking-tight font-sans">
                             Intelligence Board
                         </span>
                     </div>
@@ -78,7 +78,7 @@ export const InsightsPanel: React.FC = () => {
 
                         <button
                             onClick={handleClose}
-                            className="p-1.5 hover:bg-slate-100 text-slate-400 hover:text-slate-900 rounded-md transition-colors bg-white border border-slate-200 cursor-pointer shadow-sm"
+                            className="p-1.5 hover:bg-canvas-soft text-slate-400 hover:text-ink rounded-md transition-colors bg-card-bg border border-hairline cursor-pointer shadow-sm"
                             data-tooltip="Close Board (Esc)"
                         >
                             <X className="w-3.5 h-3.5" />
@@ -87,7 +87,7 @@ export const InsightsPanel: React.FC = () => {
                 </div>
 
                 {/* Insights Scrollable content */}
-                <div className="flex-1 p-4 space-y-3 overflow-y-auto no-scrollbar bg-white">
+                <div className="flex-1 p-4 space-y-3 overflow-y-auto no-scrollbar bg-card-bg">
                     {stats.insights.length === 0 ? (
                         <div className="py-20 text-center text-slate-400 font-mono text-[10px] uppercase tracking-widest">
                             No analytical anomalies identified.
@@ -108,17 +108,17 @@ export const InsightsPanel: React.FC = () => {
                             return (
                                 <div
                                     key={idx}
-                                    className={`p-3 border-l-4 flex gap-3 items-start bg-white mb-3 rounded-xl border-t border-r border-b shadow-sm ${borderCls}`}
+                                    className={`p-3 border-l-4 flex gap-3 items-start bg-card-bg mb-3 rounded-xl border-t border-r border-b shadow-sm ${borderCls}`}
                                     tabIndex={0}
                                 >
                                     <div className="shrink-0">
                                         {icon}
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <span className="text-[9px] font-bold uppercase tracking-tighter block mb-1 text-slate-900">
+                                        <span className="text-[9px] font-bold uppercase tracking-tighter block mb-1 text-ink">
                                             {insight.l}
                                         </span>
-                                        <p className="text-[10px] font-medium leading-tight tracking-wide text-slate-600">
+                                        <p className="text-[10px] font-medium leading-tight tracking-wide text-ink-secondary">
                                             {insight.txt}
                                         </p>
                                     </div>
@@ -131,3 +131,4 @@ export const InsightsPanel: React.FC = () => {
         </>
     );
 };
+

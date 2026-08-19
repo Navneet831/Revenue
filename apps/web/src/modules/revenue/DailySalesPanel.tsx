@@ -162,7 +162,7 @@ export const DailySalesPanel: React.FC = memo(() => {
                                         onClick={handleDayClick}
                                         className={`flex items-center justify-between px-2 py-0.5 cursor-pointer transition-colors ${
                                             isSelected
-                                                ? 'bg-emerald-50 border-l-2 border-l-emerald-600 text-emerald-700 font-bold'
+                                                ? 'bg-emerald-50 dark:bg-emerald-900/20 border-l-2 border-l-emerald-600 dark:border-l-emerald-400 text-emerald-700 dark:text-emerald-300 font-bold'
                                                 : 'hover:bg-canvas-soft/30'
                                         }`}
                                     >

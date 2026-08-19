@@ -120,7 +120,7 @@ export const TransactionLedger: React.FC = () => {
     }), []);
 
     return (
-        <div className="flex-1 flex flex-col bg-white overflow-hidden animate-in fade-in duration-300">
+        <div className="flex-1 flex flex-col bg-card-bg overflow-hidden animate-in fade-in duration-300">
             {/* Toolbar */}
             <div className="h-12 shrink-0 bg-slate-900 text-white flex items-center justify-between px-6">
                 <div className="flex items-center gap-3">

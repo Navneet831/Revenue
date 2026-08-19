@@ -147,7 +147,7 @@ export const RevenueDashboard: React.FC = () => {
             </header>
 
             {isError && (
-                <div data-testid="data-health-banner" className="mx-3 mt-3 flex items-center justify-between gap-3 bg-rose-50 border border-rose-100 rounded-xl px-4 py-2">
+                <div data-testid="data-health-banner" className="mx-3 mt-3 flex items-center justify-between gap-3 bg-rose-50 dark:bg-rose-900/20 border border-rose-100 dark:border-rose-800/40 rounded-xl px-4 py-2">
                     <div className="flex items-center gap-2 min-w-0">
                         <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
                         <span className="text-[10px] font-bold text-rose-600 uppercase tracking-widest shrink-0">Data Feed Degraded</span>

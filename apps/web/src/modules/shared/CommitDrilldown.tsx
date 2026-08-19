@@ -78,7 +78,7 @@ export const CommitDrilldown: React.FC = () => {
             <div
                 ref={panelRef}
                 style={{ left: pos.x, top: pos.y }}
-                className="fixed z-[200] flex items-center bg-white/90 border border-slate-200 rounded-full shadow-lg backdrop-blur-md select-none"
+                className="fixed z-[200] flex items-center bg-card-bg/90 border border-hairline rounded-full shadow-lg backdrop-blur-md select-none"
             >
                 {/* Drag grip */}
                 <div
@@ -108,18 +108,18 @@ export const CommitDrilldown: React.FC = () => {
             className="fixed z-[1000] w-full max-w-md animate-in fade-in duration-200"
             style={{ left: pos.x, top: pos.y }}
         >
-            <div className="relative bg-white rounded-[28px] border border-slate-200 shadow-2xl overflow-hidden flex flex-col max-h-[70vh]">
+            <div className="relative bg-card-bg rounded-[28px] border border-hairline shadow-2xl overflow-hidden flex flex-col max-h-[70vh]">
                 {/* Header — drag handle */}
                 <div
                     onMouseDown={startDrag}
-                    className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/80 cursor-move select-none"
+                    className="p-5 border-b border-slate-100 flex items-center justify-between bg-canvas-soft/80 cursor-move select-none"
                 >
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-emerald-50 rounded-lg text-emerald-600">
                             <GitBranch className="w-5 h-5" />
                         </div>
                         <div>
-                            <h2 className="text-slate-900 font-bold text-base flex items-center gap-2">
+                            <h2 className="text-ink font-bold text-base flex items-center gap-2">
                                 Commit Drill-down
                                 <Move className="w-3 h-3 text-slate-300" />
                             </h2>
@@ -129,14 +129,14 @@ export const CommitDrilldown: React.FC = () => {
                     <button
                         onMouseDown={e => e.stopPropagation()}
                         onClick={() => setIsOpen(false)}
-                        className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-900 transition-colors border border-slate-100"
+                        className="p-2 hover:bg-canvas-soft rounded-full text-slate-400 hover:text-ink transition-colors border border-slate-100"
                     >
                         <X className="w-5 h-5" />
                     </button>
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-2 no-scrollbar bg-white">
+                <div className="flex-1 overflow-y-auto p-4 space-y-2 no-scrollbar bg-card-bg">
                     {error && (
                         <div className="p-4 bg-rose-50 border border-rose-100 rounded-xl text-rose-600 text-xs mb-4">
                             {error}
@@ -153,11 +153,11 @@ export const CommitDrilldown: React.FC = () => {
                                 className={`w-full text-left p-4 rounded-2xl border transition-all duration-200 flex items-center justify-between group ${
                                     isCurrent
                                         ? 'bg-emerald-50 border-emerald-200'
-                                        : 'bg-white border-slate-100 hover:border-slate-200 hover:bg-slate-50'
+                                        : 'bg-card-bg border-slate-100 hover:border-hairline hover:bg-canvas-soft'
                                 }`}
                             >
                                 <div className="flex items-center gap-4">
-                                    <span className={`text-[10px] font-black w-6 h-6 flex items-center justify-center rounded-lg ${isCurrent ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-400'}`}>
+                                    <span className={`text-[10px] font-black w-6 h-6 flex items-center justify-center rounded-lg ${isCurrent ? 'bg-emerald-500 text-white' : 'bg-canvas-soft text-slate-400'}`}>
                                         {i}
                                     </span>
                                     <div>
@@ -169,11 +169,11 @@ export const CommitDrilldown: React.FC = () => {
                                                 <span className="text-[8px] bg-emerald-100 text-emerald-600 px-1.5 py-0.5 rounded-full font-black uppercase tracking-tighter">Current State</span>
                                             )}
                                         </div>
-                                        <p className={`text-xs font-medium ${isCurrent ? 'text-slate-900' : 'text-slate-500'}`}>{c.msg}</p>
+                                        <p className={`text-xs font-medium ${isCurrent ? 'text-ink' : 'text-slate-500'}`}>{c.msg}</p>
                                     </div>
                                 </div>
                                 {!isCurrent && !loading && (
-                                    <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-slate-900 transition-colors" />
+                                    <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-ink transition-colors" />
                                 )}
                                 {loading && <Loader2 className="w-4 h-4 text-emerald-500 animate-spin" />}
                             </button>
@@ -182,11 +182,11 @@ export const CommitDrilldown: React.FC = () => {
                 </div>
 
                 {/* Footer Controls */}
-                <div className="p-5 border-t border-slate-100 bg-slate-50/80 flex items-center justify-between">
+                <div className="p-5 border-t border-slate-100 bg-canvas-soft/80 flex items-center justify-between">
                     <button
                         onClick={() => currentIndex < commits.length - 1 && handleCheckout(commits[currentIndex + 1].hash)}
                         disabled={loading || currentIndex === commits.length - 1}
-                        className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 disabled:opacity-30 transition-colors"
+                        className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-ink disabled:opacity-30 transition-colors"
                     >
                         <ChevronLeft className="w-4 h-4" />
                         Previous Commit
@@ -194,7 +194,7 @@ export const CommitDrilldown: React.FC = () => {
                     <button
                         onClick={() => currentIndex > 0 && handleCheckout(commits[currentIndex - 1].hash)}
                         disabled={loading || currentIndex <= 0}
-                        className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 disabled:opacity-30 transition-colors"
+                        className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-ink disabled:opacity-30 transition-colors"
                     >
                         Next Commit
                         <ChevronRight className="w-4 h-4" />
@@ -204,3 +204,4 @@ export const CommitDrilldown: React.FC = () => {
         </div>
     );
 };
+

@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { Layers, TableProperties, ShieldCheck, LogOut, Sparkles, Cpu, Moon, Sun, Monitor, MessageCircleQuestion } from 'lucide-react';
+import { Layers, TableProperties, ShieldCheck, LogOut, Sparkles, Cpu, Moon, Sun, Monitor, MessageCircleQuestion, Settings } from 'lucide-react';
 import { useStore } from '@revenue/store/useStore';
 import { useTheme } from '../../hooks/useTheme';
 import { supabase, useAuthStore } from '@grew/auth';
@@ -24,6 +24,8 @@ const GlobalSidebarContent: React.FC<GlobalSidebarProps> = ({ onOpenHelp, onOpen
         setActiveMainView,
         tooltipsEnabled,
         setTooltipsEnabled,
+        sidebarCollapsed,
+        toggleSidebarCollapsed,
     } = useStore();
 
     const { setUser, setAuthenticated } = useAuthStore();
@@ -89,7 +91,7 @@ const GlobalSidebarContent: React.FC<GlobalSidebarProps> = ({ onOpenHelp, onOpen
         <div className="flex h-full shrink-0 z-[100]">
             <aside
                 id="sidebar"
-                className="flex h-full w-14 flex-col bg-canvas dark:bg-dark-base border-r border-hairline dark:border-dark-border relative transition-all duration-300"
+                className={`flex h-full flex-col bg-canvas dark:bg-dark-base border-r border-hairline dark:border-dark-border relative transition-all duration-300 ${sidebarCollapsed ? 'w-11' : 'w-14'}`}
             >
                 {/* Logo Section with Story Ring */}
                 <div
@@ -97,12 +99,17 @@ const GlobalSidebarContent: React.FC<GlobalSidebarProps> = ({ onOpenHelp, onOpen
                     data-tooltip={features.story && unviewedStories && activeMainView === 'DASHBOARD' ? "View Executive Stories" : "Revenue Dashboard (Ctrl+B)"}
                     className="w-full flex items-center justify-center shrink-0 border-b border-hairline dark:border-dark-border bg-canvas-soft dark:bg-dark-card py-4 px-2 relative overflow-hidden group select-none cursor-pointer hover:bg-canvas-deep dark:hover:bg-slate-700 transition-colors h-14"
                 >
-                    <div className={`w-10 h-10 shrink-0 flex items-center justify-center transition-all duration-300 group-hover:scale-110 relative rounded-full ${features.story && unviewedStories && activeMainView === 'DASHBOARD' ? 'p-[2px] bg-gradient-to-tr from-emerald-400 via-teal-500 to-emerald-600 animate-pulse' : ''}`}>
+                    <div className={`shrink-0 flex items-center justify-center transition-all duration-300 group-hover:scale-110 relative rounded-full ${sidebarCollapsed ? 'w-8 h-8' : 'w-10 h-10'} ${features.story && unviewedStories && activeMainView === 'DASHBOARD' ? 'p-[2px] bg-gradient-to-tr from-emerald-400 via-teal-500 to-emerald-600 animate-pulse' : ''}`}>
                         <div className="w-full h-full bg-canvas rounded-full flex items-center justify-center overflow-hidden">
-                            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" className="w-7 h-7" style={{ shapeRendering: 'geometricPrecision' }}>
-                                <polygon points="4,17.5 88.5,17.5 47.5,95.5 42.5,47.5" fill="#17A38A" />
-                                <polygon points="0,85.5 8,100 0,100" fill="#17A38A" />
-                            </svg>
+                            {!sidebarCollapsed && (
+                                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" className="w-7 h-7" style={{ shapeRendering: 'geometricPrecision' }}>
+                                    <polygon points="4,17.5 88.5,17.5 47.5,95.5 42.5,47.5" fill="#17A38A" />
+                                    <polygon points="0,85.5 8,100 0,100" fill="#17A38A" />
+                                </svg>
+                            )}
+                            {sidebarCollapsed && (
+                                <span className="text-[10px] font-black text-emerald-600">G</span>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -226,6 +233,17 @@ const GlobalSidebarContent: React.FC<GlobalSidebarProps> = ({ onOpenHelp, onOpen
                         data-tooltip={tooltipsEnabled ? 'Disable Hover Tooltips' : 'Enable Hover Tooltips'}
                     >
                         <MessageCircleQuestion className="w-5 h-5" />
+                    </div>
+
+                    <div className="w-8 border-t border-hairline my-0.5" />
+
+                    {/* Sidebar Collapse Toggle */}
+                    <div
+                        onClick={toggleSidebarCollapsed}
+                        className="p-1.5 rounded-md cursor-pointer transition-colors text-ink-faint hover:text-ink hover:bg-canvas-soft"
+                        data-tooltip={sidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
+                    >
+                        <Settings className={`w-5 h-5 transition-transform ${sidebarCollapsed ? 'rotate-90' : ''}`} />
                     </div>
 
                     <div className="w-8 border-t border-hairline my-0.5" />

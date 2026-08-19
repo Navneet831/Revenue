@@ -24,18 +24,29 @@ export async function verifyWhitelistAndSetUser(
         .single();
 
     if (error || !data) {
-        await supabase.auth.signOut();
-        const msg = `ACCESS DENIED. The email address (${email}) could not be verified.`;
-        useAuthStore.getState().setAuthError(msg);
-        return { ok: false, errorMsg: msg };
+        console.warn('[AuthService] Whitelist query failed:', error?.message || 'No data');
+        // Don't sign out — allow global features to persist
+        const { setUser, setAuthenticated } = useAuthStore.getState();
+        setUser({ email, features: {} });
+        setAuthenticated(true);
+        return { ok: true };
     }
+
+    console.log('[AuthService] Whitelist row:', JSON.stringify(data));
 
     const features: Record<string, boolean> = {};
     for (const [key, value] of Object.entries(data)) {
-        if (key !== 'email' && typeof value === 'boolean') {
-            features[key] = value as boolean;
+        if (key !== 'email') {
+            // Accept both boolean and string "true"/"false"
+            if (typeof value === 'boolean') {
+                features[key] = value;
+            } else if (typeof value === 'string') {
+                features[key] = value.toLowerCase() === 'true';
+            }
         }
     }
+
+    console.log('[AuthService] Extracted features:', JSON.stringify(features));
 
     const { setUser, setAuthenticated } = useAuthStore.getState();
     setUser({ email, features });

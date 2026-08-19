@@ -21,7 +21,7 @@ export const AuditView: React.FC = () => {
         <div className="flex-1 flex flex-col bg-canvas overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-300">
 
             {/* Header */}
-            <div className="px-6 py-4 border-b border-hairline flex items-center justify-between shrink-0 bg-white">
+            <div className="px-6 py-4 border-b border-hairline flex items-center justify-between shrink-0 bg-card-bg">
                 <div className="flex items-center gap-3">
                     <div className="p-2 bg-amber-500/10 rounded-xl border border-amber-500/20">
                         <ShieldCheck className="w-5 h-5 text-amber-600" />
@@ -194,7 +194,7 @@ export const AuditView: React.FC = () => {
                     </DarkCard>
 
                     {/* ── 11. KEYBOARD SHORTCUTS ──────────────────────────────── */}
-                    <DarkCard span2 title="Keyboard Shortcuts" icon={<Keyboard className="w-4 h-4 text-slate-600" />}>
+                    <DarkCard span2 title="Keyboard Shortcuts" icon={<Keyboard className="w-4 h-4 text-ink-secondary" />}>
                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                             <ShortcutGroup title="Navigation & Views">
                                 <ShortcutRow keys={['F1']}        desc="System Help" />
@@ -237,7 +237,7 @@ const CardHeader: React.FC<{ title: string; icon: React.ReactNode }> = ({ title,
 );
 
 const DarkCard: React.FC<{ title: string; icon: React.ReactNode; span2?: boolean; children: React.ReactNode }> = ({ title, icon, span2, children }) => (
-    <div className={`bg-white rounded-xl border border-hairline shadow-sm overflow-hidden ${span2 ? 'xl:col-span-2' : ''}`}>
+    <div className={`bg-card-bg rounded-xl border border-hairline shadow-sm overflow-hidden ${span2 ? 'xl:col-span-2' : ''}`}>
         <CardHeader title={title} icon={icon} />
         <div className="p-4">{children}</div>
     </div>
@@ -312,3 +312,4 @@ export const FeatureFlag: React.FC<{ name: string; enabled: boolean }> = ({ name
         {name}
     </div>
 );
+

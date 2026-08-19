@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { refreshChartTheme } from '../theme/chartTheme';
 
 type Theme = 'light' | 'dark' | 'system';
 
@@ -38,6 +39,8 @@ export function useTheme() {
         if (meta) {
             meta.setAttribute('content', actualTheme === 'dark' ? '#0f172a' : '#e8e4df');
         }
+        // Refresh Chart.js global colors so charts adapt to theme
+        refreshChartTheme();
     }, [actualTheme]);
 
     // Listen for system preference changes when theme is 'system'

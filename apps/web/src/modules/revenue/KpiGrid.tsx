@@ -146,7 +146,7 @@ export const KpiGrid: React.FC = () => {
     // Gate on user's dashboard feature flag (from whitelist)
     if (user?.features && user.features.dashboard === false) {
         return (
-            <div className="flex w-full gap-3 pb-2 h-32 shrink-0 items-center justify-center bg-amber-50 rounded-xl border border-amber-100 shadow-sm">
+            <div className="flex w-full gap-3 pb-2 h-32 shrink-0 items-center justify-center bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-100 dark:border-amber-800/40 shadow-sm">
                 <ShieldOff className="w-5 h-5 text-amber-500 mr-2" />
                 <span className="text-[10px] font-mono text-amber-600 uppercase tracking-widest">Dashboard access not granted</span>
             </div>
@@ -164,7 +164,7 @@ export const KpiGrid: React.FC = () => {
 
     if (isError) {
         return (
-            <div className="flex w-full gap-3 pb-2 overflow-x-auto no-scrollbar h-32 shrink-0 items-center justify-center bg-rose-50 rounded-xl border border-rose-100 shadow-sm">
+            <div className="flex w-full gap-3 pb-2 overflow-x-auto no-scrollbar h-32 shrink-0 items-center justify-center bg-rose-50 dark:bg-rose-900/20 rounded-xl border border-rose-100 dark:border-rose-800/40 shadow-sm">
                 <AlertCircle className="w-5 h-5 text-rose-500 mr-2" />
                 <span className="text-[10px] font-mono text-rose-500 uppercase tracking-widest">KPI Engine Failure</span>
             </div>

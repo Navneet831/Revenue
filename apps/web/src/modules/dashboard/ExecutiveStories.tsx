@@ -75,7 +75,7 @@ export const ExecutiveStories: React.FC<{ isOpen: boolean; onClose: () => void }
 
     return (
         <div className="fixed inset-0 z-[1000] bg-black/40 backdrop-blur-md flex items-center justify-center animate-in fade-in duration-300">
-            <div className="relative w-full max-w-lg aspect-[9/16] bg-white rounded-[40px] shadow-2xl overflow-hidden border border-slate-200 flex flex-col">
+            <div className="relative w-full max-w-lg aspect-[9/16] bg-card-bg rounded-[40px] shadow-2xl overflow-hidden border border-hairline flex flex-col">
                 
                 {/* Top Bars (Progress) */}
                 <div className="absolute top-4 left-6 right-6 z-20 flex gap-1.5">
@@ -102,27 +102,27 @@ export const ExecutiveStories: React.FC<{ isOpen: boolean; onClose: () => void }
                             <p className="text-[9px] text-slate-400 font-mono">Insight {currentIndex + 1} of {stories.length}</p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
-                        <X className="w-5 h-5 text-slate-400 hover:text-slate-900" />
+                    <button onClick={onClose} className="p-2 hover:bg-canvas-soft rounded-full transition-colors">
+                        <X className="w-5 h-5 text-slate-400 hover:text-ink" />
                     </button>
                 </div>
 
                 {/* Content Area */}
                 <div className="flex-1 flex flex-col px-8 pt-12 relative">
                     <div className="flex-1">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-50 border border-slate-100 rounded-full mb-6 shadow-sm">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-canvas-soft border border-slate-100 rounded-full mb-6 shadow-sm">
                             {currentInsight.t === 'success' && <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />}
                             {currentInsight.t === 'risk' && <AlertCircle className="w-3.5 h-3.5 text-rose-500" />}
                             {currentInsight.t === 'strategic' && <Target className="w-3.5 h-3.5 text-blue-500" />}
                             <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">{currentInsight.l}</span>
                         </div>
 
-                        <h2 className="text-3xl font-black text-slate-900 leading-tight tracking-tighter mb-6">
+                        <h2 className="text-3xl font-black text-ink leading-tight tracking-tighter mb-6">
                             {currentInsight.txt}
                         </h2>
 
                         {/* Visual Breakdown (Mini Chart Placeholders) */}
-                        <div className="mt-8 p-6 bg-slate-50 border border-slate-100 rounded-3xl relative overflow-hidden group">
+                        <div className="mt-8 p-6 bg-canvas-soft border border-slate-100 rounded-3xl relative overflow-hidden group">
                             <div className="chart-noise-layer opacity-[0.02]" />
                             <div className="flex items-end gap-1.5 h-24 mb-4">
                                 {[40, 70, 45, 90, 65, 80, 55].map((h, i) => (
@@ -147,7 +147,7 @@ export const ExecutiveStories: React.FC<{ isOpen: boolean; onClose: () => void }
                             {currentInsight.cta?.label || 'Execute Strategy'}
                             <ArrowRight className="w-4 h-4" />
                         </button>
-                        <button className="w-full py-4 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-black rounded-2xl flex items-center justify-center gap-2 transition-all shadow-sm">
+                        <button className="w-full py-4 bg-card-bg border border-hairline hover:bg-canvas-soft text-ink-secondary font-black rounded-2xl flex items-center justify-center gap-2 transition-all shadow-sm">
                             Benchmark Performance
                         </button>
                     </div>
@@ -176,3 +176,4 @@ export const ExecutiveStories: React.FC<{ isOpen: boolean; onClose: () => void }
         </div>
     );
 };
+
