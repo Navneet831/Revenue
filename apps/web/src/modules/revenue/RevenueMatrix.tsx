@@ -36,6 +36,10 @@ export const RevenueMatrix: React.FC = memo(() => {
 
     if (!isReady || !stats || !stats.matrix) return null;
 
+    // FY start year — used by data-source tooltips
+    const now = new Date();
+    const curFYStartYear = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
+
     // Audit formulas surfaced on hover so every figure is traceable to its source.
     const ROW_FORMULA: Record<string, string> = {
         valCr: 'Σ "Taxable Value" ÷ 10,000,000  →  ₹ Cr',
