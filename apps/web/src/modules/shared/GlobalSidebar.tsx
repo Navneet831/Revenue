@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { Layers, TableProperties, ShieldCheck, LogOut, Sparkles, Cpu, Moon, Sun, Monitor, MessageCircleQuestion, Settings } from 'lucide-react';
+import { Layers, TableProperties, ShieldCheck, LogOut, Sparkles, Cpu, Moon, Sun, Settings, MessageCircleQuestion } from 'lucide-react';
 import { useStore } from '@revenue/store/useStore';
 import { useTheme } from '../../hooks/useTheme';
 import { supabase, useAuthStore } from '@grew/auth';
@@ -150,16 +150,6 @@ const GlobalSidebarContent: React.FC<GlobalSidebarProps> = ({ onOpenHelp, onOpen
 
                 {/* Bottom Actions */}
                 <div className="shrink-0 flex flex-col items-center pb-3 gap-2 border-t border-hairline dark:border-dark-border pt-3 bg-canvas/50 dark:bg-dark-base/50">
-                    {features.story && onOpenStories && (
-                        <div
-                            onClick={onOpenStories}
-                            className={`p-1.5 rounded-md cursor-pointer transition-colors ${unviewedStories ? 'text-emerald-500' : 'text-ink-faint hover:text-ink'}`}
-                            data-tooltip="Executive Stories"
-                        >
-                            <Sparkles className={`w-5 h-5 ${unviewedStories ? 'animate-pulse' : ''}`} />
-                        </div>
-                    )}
-
                     {features.Ledger && (
                         <div
                             onClick={() => setActiveMainView('LEDGER')}
@@ -222,27 +212,29 @@ const GlobalSidebarContent: React.FC<GlobalSidebarProps> = ({ onOpenHelp, onOpen
                         )}
                     </div>
 
-                    <div className="w-8 border-t border-hairline my-0.5" />
-
                     {/* Tooltip Toggle */}
                     <div
                         onClick={() => setTooltipsEnabled(!tooltipsEnabled)}
-                        className={`p-1.5 rounded-md cursor-pointer transition-colors ${tooltipsEnabled ? 'text-brand bg-brand-soft' : 'text-ink-faint hover:text-ink'}`}
-                        data-tooltip={tooltipsEnabled ? 'Disable Hover Tooltips' : 'Enable Hover Tooltips'}
+                        className={`p-1.5 rounded-md cursor-pointer transition-colors ${
+                            tooltipsEnabled
+                                ? 'text-amber-600 bg-amber-50 dark:bg-amber-900/20'
+                                : 'text-ink-faint hover:text-ink hover:bg-canvas'
+                        }`}
+                        data-tooltip={tooltipsEnabled ? 'Tooltips: ON (Click to mute)' : 'Tooltips: OFF (Click to unmute)'}
                     >
                         <MessageCircleQuestion className="w-5 h-5" />
                     </div>
 
-                    <div className="w-8 border-t border-hairline my-0.5" />
-
-                    {/* Sidebar Collapse Toggle */}
-                    <div
-                        onClick={toggleSidebarCollapsed}
-                        className="p-1.5 rounded-md cursor-pointer transition-colors text-ink-faint hover:text-ink hover:bg-canvas-soft"
-                        data-tooltip={sidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
-                    >
-                        <Settings className={`w-5 h-5 transition-transform ${sidebarCollapsed ? 'rotate-90' : ''}`} />
-                    </div>
+                    {/* Help / Settings trigger */}
+                    {onOpenHelp && (
+                        <div
+                            onClick={onOpenHelp}
+                            className="p-1.5 rounded-md cursor-pointer transition-colors text-ink-faint hover:text-ink hover:bg-canvas"
+                            data-tooltip="Settings & Keyboard Shortcuts"
+                        >
+                            <Settings className="w-5 h-5" />
+                        </div>
+                    )}
 
                     <div className="w-8 border-t border-hairline my-0.5" />
 

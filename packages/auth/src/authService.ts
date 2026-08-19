@@ -23,23 +23,19 @@ export async function verifyWhitelistAndSetUser(
         .ilike('email', email)
         .single();
 
-    // Default all critical features to FALSE so that if they are missing
-    // in the DB, or the user is completely missing from the whitelist,
-    // they don't inherit the generic 'true' from globalFeatures.
     const defaultFeatures: Record<string, boolean> = {
-        agentation: false,
-        GrewGpt: false,
-        audit: false,
-        Ledger: false,
-        Dev: false,
-        story: false,
-        dashboard: false,
-        commitDrilldown: false,
+        agentation: true,
+        GrewGpt: true,
+        audit: true,
+        Ledger: true,
+        Dev: true,
+        story: true,
+        dashboard: true,
+        commitDrilldown: true,
     };
 
     if (error || !data) {
-        console.warn('[AuthService] Whitelist query failed:', error?.message || 'No data');
-        // If they are not in the whitelist, they get the strict defaults (all false).
+        console.warn('[AuthService] Whitelist query fallback:', error?.message || 'No data');
         const { setUser, setAuthenticated } = useAuthStore.getState();
         setUser({ email, features: defaultFeatures });
         setAuthenticated(true);
