@@ -3,7 +3,7 @@ import { Layers, TableProperties, ShieldCheck, LogOut, Sparkles, Cpu, Moon, Sun,
 import { useStore } from '@revenue/store/useStore';
 import { useTheme } from '../../hooks/useTheme';
 import { supabase, useAuthStore } from '@grew/auth';
-import { SolarModuleIcon, InternalIcon, RMIcon, ScrapIcon } from '../../assets/CustomIcons';
+import { SolarModuleIcon, SolarCellIcon, InternalIcon, RMIcon, ScrapIcon } from '../../assets/CustomIcons';
 
 interface GlobalSidebarProps {
     onOpenHelp?: () => void;
@@ -37,6 +37,8 @@ const GlobalSidebarContent: React.FC<GlobalSidebarProps> = ({ onOpenHelp, onOpen
         const sLower = s.toLowerCase();
         return (
             sLower.includes('solar module') ||
+            sLower.includes('solar cell') ||
+            sLower.includes('cell') ||
             sLower.includes('raw material') ||
             sLower.includes('scrap') ||
             sLower === 'rm' ||
@@ -46,11 +48,16 @@ const GlobalSidebarContent: React.FC<GlobalSidebarProps> = ({ onOpenHelp, onOpen
     });
 
     const sortedSegments = [...filteredSegments].sort((a, b) => {
-        const isSolarA = a.toLowerCase().includes('solar module') && !a.toLowerCase().includes('internal');
-        const isSolarB = b.toLowerCase().includes('solar module') && !b.toLowerCase().includes('internal');
-        if (isSolarA) return -1;
-        if (isSolarB) return 1;
-        return a.localeCompare(b);
+        const order = (s: string) => {
+            const low = s.toLowerCase();
+            if (low.includes('solar module') && !low.includes('internal')) return 1;
+            if (low.includes('solar cell') || low.includes('cell')) return 2;
+            if (low.includes('internal')) return 3;
+            if (low.includes('raw material') || low.includes('rm') || low.includes('rm sales')) return 4;
+            if (low.includes('scrap')) return 5;
+            return 6;
+        };
+        return order(a) - order(b) || a.localeCompare(b);
     });
 
     const handleSegmentClick = (segmentName: string, e: React.MouseEvent | React.KeyboardEvent) => {
@@ -122,6 +129,7 @@ const GlobalSidebarContent: React.FC<GlobalSidebarProps> = ({ onOpenHelp, onOpen
                         const isSelected = filters.segment.includes(s);
                         const sLower = s.toLowerCase();
                         const isSolar = sLower.includes('solar module') && !sLower.includes('internal');
+                        const isCell = sLower.includes('solar cell') || sLower.includes('cell');
                         const isInternal = sLower.includes('internal');
                         const isRM = sLower.includes('raw material') || sLower === 'rm' || sLower.includes('rm sales');
                         const isScrap = sLower.includes('scrap');
@@ -132,6 +140,7 @@ const GlobalSidebarContent: React.FC<GlobalSidebarProps> = ({ onOpenHelp, onOpen
 
                         let IconComp = <Layers className="w-5 h-5" />;
                         if (isSolar) IconComp = <SolarModuleIcon className={isSelected ? "w-5 h-5 fill-current" : "w-5 h-5"} />;
+                        else if (isCell) IconComp = <SolarCellIcon className={isSelected ? "w-5 h-5 fill-current" : "w-5 h-5"} />;
                         else if (isInternal) IconComp = <InternalIcon className={isSelected ? "w-5 h-5 fill-current" : "w-5 h-5"} />;
                         else if (isRM) IconComp = <RMIcon className={isSelected ? "w-5 h-5 fill-current" : "w-5 h-5"} />;
                         else if (isScrap) IconComp = <ScrapIcon className={isSelected ? "w-5 h-5 fill-current" : "w-5 h-5"} />;

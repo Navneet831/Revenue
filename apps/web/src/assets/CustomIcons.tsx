@@ -41,6 +41,28 @@ export const SolarModuleIcon: React.FC<{ className?: string }> = ({ className })
     </svg>
 );
 
+export const SolarCellIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" className={className}>
+        <defs>
+            <linearGradient id="scGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="#2563eb" />
+                <stop offset="100%" stopColor="#1e3a8a" />
+            </linearGradient>
+        </defs>
+        {/* Chamfered Solar Wafer */}
+        <polygon points="12,6 88,6 94,12 94,88 88,94 12,94 6,88 6,12" fill="url(#scGrad)" stroke="#60a5fa" strokeWidth="2.5" />
+        {/* Main Busbars */}
+        <line x1="28" y1="6" x2="28" y2="94" stroke="#ffffff" strokeWidth="2.5" opacity="0.9" />
+        <line x1="50" y1="6" x2="50" y2="94" stroke="#ffffff" strokeWidth="2.5" opacity="0.9" />
+        <line x1="72" y1="6" x2="72" y2="94" stroke="#ffffff" strokeWidth="2.5" opacity="0.9" />
+        {/* Fine grid fingers */}
+        <line x1="6" y1="24" x2="94" y2="24" stroke="#ffffff" strokeWidth="1" opacity="0.4" />
+        <line x1="6" y1="42" x2="94" y2="42" stroke="#ffffff" strokeWidth="1" opacity="0.4" />
+        <line x1="6" y1="58" x2="94" y2="58" stroke="#ffffff" strokeWidth="1" opacity="0.4" />
+        <line x1="6" y1="76" x2="94" y2="76" stroke="#ffffff" strokeWidth="1" opacity="0.4" />
+    </svg>
+);
+
 export const InternalIcon: React.FC<{ className?: string }> = ({ className }) => (
     <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" className={className}>
         <g fill="#11B994" stroke="#11B994">

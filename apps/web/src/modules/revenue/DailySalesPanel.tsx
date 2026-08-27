@@ -168,7 +168,7 @@ export const DailySalesPanel: React.FC = memo(() => {
         <div
             ref={panelRef}
             className={`panel-metal shrink-0 flex flex-col rounded-2xl overflow-hidden ${customHeight ? '' : 'h-full self-stretch'}`}
-            style={{ width: '162px', height: customHeight ? `${customHeight}px` : undefined }}
+            style={{ width: '162px', height: customHeight ? `${customHeight}px` : undefined, minHeight: customHeight ? undefined : '696px' }}
         >
             {/* column headers */}
             <div className="card-strip-header flex items-center justify-between pr-2.5 pt-2.5 pb-2 shrink-0">

@@ -229,8 +229,9 @@ def main():
     port = env.get('PORT', '8000')
     host = env.get('HOST', '127.0.0.1')
 
-    # TLS: self-signed cert for 127.0.0.1 (generated on demand, never crashes).
-    cert_path, key_path = ensure_cert(data_root)
+    # TLS: opt-in via USE_HTTPS env var
+    use_https = env.get('USE_HTTPS', 'false').lower() in ('true', '1')
+    cert_path, key_path = (ensure_cert(data_root) if use_https else (None, None))
     scheme = 'https' if cert_path and key_path else 'http'
     url = f'{scheme}://127.0.0.1:{port}'
 

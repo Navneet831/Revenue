@@ -21,7 +21,7 @@ interface ListCardProps {
 }
 
 export const ListCard: React.FC<ListCardProps> = ({ id, title, icon, cardKey, filterKey, data, count, onToggleExpand, isExpanded }) => {
-    const { cardViews, setCardView, privacyMode, filters, updateFilters, stats } = useStore();
+    const { cardViews, setCardView, privacyMode, filters, updateFilters, stats, tooltipsEnabled } = useStore();
     const chartRef = useRef<any>(null);
     const view = cardViews[cardKey] || 'tabular';
     const isVisual = view === 'visual';
@@ -212,14 +212,20 @@ export const ListCard: React.FC<ListCardProps> = ({ id, title, icon, cardKey, fi
     })() : 0;
 
     let hhiBadgeClass = 'bg-canvas-soft text-ink-secondary border-hairline';
-    let hhiTooltip = 'Diversified concentration';
+    let hhiCategory = 'Diversified';
     if (hhi >= 2500) {
         hhiBadgeClass = 'bg-risk-bg text-risk border-hairline';
-        hhiTooltip = 'Highly concentrated (HHI >= 2500)';
+        hhiCategory = 'Highly Concentrated';
     } else if (hhi >= 1500) {
         hhiBadgeClass = 'bg-brand-soft text-brand border-brand/20';
-        hhiTooltip = 'Moderate concentration (1500 <= HHI < 2500)';
+        hhiCategory = 'Moderate';
     }
+
+    const hhiInterpretation = hhi >= 2500
+        ? `Highly Concentrated (HHI: ${hhi.toFixed(0)}) — High risk; revenue heavily dependent on top accounts.`
+        : hhi >= 1500
+        ? `Moderate Concentration (HHI: ${hhi.toFixed(0)}) — Balanced exposure across accounts.`
+        : `Diversified (HHI: ${hhi.toFixed(0)}) — Low risk; healthy revenue spread across accounts.`;
 
     return (
         <div id={id} className="card-metal flex flex-col group relative rounded-2xl min-h-0 min-w-0 overflow-hidden h-full">
@@ -235,8 +241,9 @@ export const ListCard: React.FC<ListCardProps> = ({ id, title, icon, cardKey, fi
                     </span>
                     {preparedData.length > 0 && (
                         <span 
-                            title={hhiTooltip}
-                            className={`ml-2 px-1.5 py-0.5 text-[9px] font-mono font-bold border rounded-md whitespace-nowrap transition-colors duration-200 ${hhiBadgeClass}`}
+                            title={!tooltipsEnabled ? hhiInterpretation : undefined}
+                            data-tooltip={tooltipsEnabled ? 'Σ (share)² * 10^4' : undefined}
+                            className={`ml-2 px-1.5 py-0.5 text-[9px] font-mono font-bold border rounded-md whitespace-nowrap transition-colors duration-200 cursor-help ${hhiBadgeClass}`}
                         >
                             HHI: {hhi.toFixed(0)}
                         </span>
