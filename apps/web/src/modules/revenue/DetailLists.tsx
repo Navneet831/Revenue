@@ -53,6 +53,7 @@ export const DetailLists: React.FC<DetailListsProps> = ({ onToggleExpand, expand
                     cardKey="saleshead"
                     filterKey="salesHead"
                     data={stats.sh || []}
+                    count={stats.sh?.length}
                     onToggleExpand={onToggleExpand}
                     isExpanded={expandedId === 'w-saleshead'}
                 />

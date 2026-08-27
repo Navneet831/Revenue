@@ -14,6 +14,7 @@ import { FeatureService } from './services/featureService';
 import { AppFooter } from './modules/shared/AppFooter';
 import { DataSourceTable } from './modules/shared/DataSourceTable';
 import { Login } from './modules/shared/Login';
+import { OnboardingTour } from './modules/shared/OnboardingTour';
 
 // Lazy load heavy components - named exports wrapped as default
 const AuditView = lazy(() => import('./modules/shared/AuditView').then(m => ({ default: m.AuditView })));
@@ -222,7 +223,7 @@ export const App: React.FC<{ embedded?: boolean; activeTab?: string }> = ({ embe
         <Wrapper>
                 <div className={embedded ? 'w-full h-full relative flex flex-col bg-canvas dark:bg-dark-base overflow-hidden' : 'w-screen h-screen relative flex flex-col bg-canvas dark:bg-dark-base overflow-hidden'}>
                 <div id="core-app" className="flex-1 flex w-full relative overflow-hidden font-sans antialiased text-[11px] font-medium tracking-wide text-ink">
-                    <div className="flex h-full w-full relative select-none overflow-hidden">
+                    <div className="flex h-full w-full relative select-text overflow-hidden">
                         <GlobalSidebar onOpenStories={() => updateUIState({ storiesOpen: true })} />
 
                         <main className="flex-1 flex flex-col min-w-0 bg-canvas dark:bg-dark-base relative z-10 overflow-y-auto">
@@ -270,6 +271,7 @@ export const App: React.FC<{ embedded?: boolean; activeTab?: string }> = ({ embe
                             <GrewGPTPanel />
                         </Suspense>
                     </GrewGPTErrorBoundary>
+                    <OnboardingTour />
                 </div>
 
                 <AppFooter />

@@ -70,7 +70,7 @@ export const RevenueDashboard: React.FC = () => {
         if (!filters.startDate) {
             filterUpdates.startDate = DataSanitizer.getFYStart(latestDateStr);
             filterUpdates.endDate = latestDateStr;
-            filterUpdates.matrixMonth = matrixMonth;
+            filterUpdates.matrixMonth = null;
             filterUpdates.velocityMode = 'Weekly';
         }
         if (filters.segment.length === 0 && solarSegment) {
@@ -118,7 +118,9 @@ export const RevenueDashboard: React.FC = () => {
         <div className="flex flex-col min-h-full">
             <header className="bg-canvas border-b border-hairline flex flex-col lg:flex-row justify-between items-start lg:items-center px-4 py-2 shrink-0 z-40 relative gap-3 min-w-0 w-full max-w-full">
                 <div className="flex items-center gap-3 overflow-x-auto flex-1 min-w-0 no-scrollbar pb-1 lg:pb-0 w-full">
-                    <FYShortcuts />
+                    <div data-tour="fy-shortcuts">
+                        <FYShortcuts />
+                    </div>
                     <div className="flex items-center gap-2 shrink-0">
                         <div className="card-metal flex items-center rounded-md overflow-hidden">
                             <input type="date" min={meta?.minDate || "2022-12-26"} max={meta?.maxDate || undefined} value={filters.startDate || ''} onChange={(e) => updateFilters({ startDate: e.target.value })} className="bg-transparent text-ink-mute text-[12px] p-1.5 outline-none font-mono" />
@@ -132,7 +134,7 @@ export const RevenueDashboard: React.FC = () => {
                     <Breadcrumbs />
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
-                    <div className="flex items-center bg-canvas-soft rounded-full p-[3px] border border-hairline">
+                    <div data-tour="metric-selector" className="flex items-center bg-canvas-soft rounded-full p-[3px] border border-hairline">
                         {(['Amount', 'MW', 'Qty'] as const).map(m => (
                             <button key={m} onClick={() => handleMetricChange(m)} className={`px-4 py-1 text-[12px] font-medium rounded-full transition-all uppercase ${filters.metric === m ? 'bg-card-bg text-ink border border-hairline shadow-sm' : 'text-ink-mute hover:text-ink'}`}>{m}</button>
                         ))}
@@ -146,6 +148,7 @@ export const RevenueDashboard: React.FC = () => {
                         <RotateCcw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
                     </button>
                     <button
+                        data-tour="intelligence-btn"
                         onClick={() => updateUIState({ insightsOpen: !ui.insightsOpen })}
                         className={`flex items-center justify-center transition-all ${!insightsSeen ? 'text-primary scale-110' : 'text-ink-faint hover:text-primary'}`}
                         data-tooltip="Intelligence Board"
@@ -169,7 +172,7 @@ export const RevenueDashboard: React.FC = () => {
                 </div>
             )}
 
-            <div className="px-3 pt-3 shrink-0">
+            <div data-tour="kpi-grid" className="px-3 pt-3 shrink-0">
                 <SectionBoundary name="KPI Governance">
                     <KpiGrid />
                 </SectionBoundary>

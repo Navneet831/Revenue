@@ -930,17 +930,16 @@ class AnalyticsService:
         def hhi_score(items: list) -> float:
             if not items:
                 return 0.0
-            abs_vals = [abs(i.get('v', 0.0)) for i in items]
-            total_abs = sum(abs_vals)
-            if total_abs <= 0:
+            total = sum(i.get('v', 0.0) for i in items)
+            if total <= 0:
                 return 0.0
-            return sum((v / total_abs * 100.0) ** 2 for v in abs_vals)
+            return sum(((i.get('v', 0.0) / total) * 100.0) ** 2 for i in items)
 
         sorted_cust = cust_list
-        sum_cust_abs = sum(abs(c['v']) for c in sorted_cust)
+        sum_cust = sum(c['v'] for c in sorted_cust)
         cust_hhi = hhi_score(sorted_cust)
         top5 = sorted_cust[:5]
-        top5_share = (sum(abs(c['v']) for c in top5) / sum_cust_abs * 100.0) if sum_cust_abs > 0 else 0.0
+        top5_share = (sum(c['v'] for c in top5) / sum_cust * 100.0) if sum_cust > 0 else 0.0
         conc_text = 'Diversified' if cust_hhi < 1500 else ('Moderate' if cust_hhi < 2500 else 'Highly Concentrated')
         conc_type = 'success' if cust_hhi < 1500 else ('strategic' if cust_hhi < 2500 else 'risk')
         insights.append({
@@ -950,10 +949,10 @@ class AnalyticsService:
         })
 
         sorted_wp = wp_list
-        sum_wp_abs = sum(abs(w['v']) for w in sorted_wp)
+        sum_wp = sum(w['v'] for w in sorted_wp)
         prod_hhi = hhi_score(sorted_wp)
         top3 = sorted_wp[:3]
-        top3_share = (sum(abs(w['v']) for w in top3) / sum_wp_abs * 100.0) if sum_wp_abs > 0 else 0.0
+        top3_share = (sum(w['v'] for w in top3) / sum_wp * 100.0) if sum_wp > 0 else 0.0
         insights.append({
             't': 'strategic',
             'l': 'PRODUCT CONCENTRATION',

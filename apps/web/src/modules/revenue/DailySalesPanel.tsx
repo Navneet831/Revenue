@@ -33,6 +33,83 @@ function fmtDate(dateStr: string): string {
 export const DailySalesPanel: React.FC = memo(() => {
     const { stats, filters, privacyMode, updateFilters } = useStore();
     const [expandedWeeks, setExpandedWeeks] = useState<Record<string, boolean>>({});
+    const panelRef = React.useRef<HTMLDivElement>(null);
+    const [customHeight, setCustomHeight] = useState<number | null>(() => {
+        try {
+            const saved = localStorage.getItem('grew_daily_sales_height');
+            return saved ? parseInt(saved, 10) : null;
+        } catch {
+            return null;
+        }
+    });
+
+    const isDraggingRef = React.useRef(false);
+    const startYRef = React.useRef(0);
+    const startHeightRef = React.useRef(0);
+
+    const onMouseDownResize = (e: React.MouseEvent) => {
+        e.preventDefault();
+        isDraggingRef.current = true;
+        startYRef.current = e.clientY;
+        startHeightRef.current = panelRef.current ? panelRef.current.offsetHeight : 400;
+
+        const onMouseMove = (moveEvt: MouseEvent) => {
+            if (!isDraggingRef.current) return;
+            const deltaY = moveEvt.clientY - startYRef.current;
+            const newH = Math.max(200, Math.min(1400, startHeightRef.current + deltaY));
+            setCustomHeight(newH);
+        };
+
+        const onMouseUp = () => {
+            isDraggingRef.current = false;
+            window.removeEventListener('mousemove', onMouseMove);
+            window.removeEventListener('mouseup', onMouseUp);
+            setCustomHeight((finalH) => {
+                if (finalH) {
+                    try { localStorage.setItem('grew_daily_sales_height', String(finalH)); } catch {}
+                }
+                return finalH;
+            });
+        };
+
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mouseup', onMouseUp);
+    };
+
+    const onTouchStartResize = (e: React.TouchEvent) => {
+        if (e.touches.length !== 1) return;
+        const touch = e.touches[0];
+        isDraggingRef.current = true;
+        startYRef.current = touch.clientY;
+        startHeightRef.current = panelRef.current ? panelRef.current.offsetHeight : 400;
+
+        const onTouchMove = (moveEvt: TouchEvent) => {
+            if (!isDraggingRef.current || moveEvt.touches.length !== 1) return;
+            const deltaY = moveEvt.touches[0].clientY - startYRef.current;
+            const newH = Math.max(200, Math.min(1400, startHeightRef.current + deltaY));
+            setCustomHeight(newH);
+        };
+
+        const onTouchEnd = () => {
+            isDraggingRef.current = false;
+            window.removeEventListener('touchmove', onTouchMove);
+            window.removeEventListener('touchend', onTouchEnd);
+            setCustomHeight((finalH) => {
+                if (finalH) {
+                    try { localStorage.setItem('grew_daily_sales_height', String(finalH)); } catch {}
+                }
+                return finalH;
+            });
+        };
+
+        window.addEventListener('touchmove', onTouchMove);
+        window.addEventListener('touchend', onTouchEnd);
+    };
+
+    const onResetHeight = () => {
+        setCustomHeight(null);
+        try { localStorage.removeItem('grew_daily_sales_height'); } catch {}
+    };
 
     const series = stats?.dailySeries;
 
@@ -89,11 +166,12 @@ export const DailySalesPanel: React.FC = memo(() => {
 
     return (
         <div
-            className="panel-metal shrink-0 flex flex-col rounded-2xl overflow-hidden h-full"
-            style={{ width: '162px' }}
+            ref={panelRef}
+            className={`panel-metal shrink-0 flex flex-col rounded-2xl overflow-hidden ${customHeight ? '' : 'h-full self-stretch'}`}
+            style={{ width: '162px', height: customHeight ? `${customHeight}px` : undefined }}
         >
             {/* column headers */}
-            <div className="card-strip-header flex items-center justify-between pr-2.5 pt-2 pb-1.5 shrink-0">
+            <div className="card-strip-header flex items-center justify-between pr-2.5 pt-2.5 pb-2 shrink-0">
                 <span className="text-[9px] font-bold text-ink-faint uppercase tracking-widest">
                     Daily Sales
                 </span>
@@ -109,7 +187,7 @@ export const DailySalesPanel: React.FC = memo(() => {
                             {/* Week Header */}
                             <div 
                                 onClick={() => toggleWeek(w.start)}
-                                className="flex items-center justify-between px-2 py-1 bg-canvas-soft/40 border-b border-hairline/60 cursor-pointer hover:bg-canvas-soft transition-colors group"
+                                className="flex items-center justify-between px-2 py-1.5 bg-canvas-soft/40 border-b border-hairline/60 cursor-pointer hover:bg-canvas-soft transition-colors group"
                             >
                                 <div className="flex items-center gap-1.5 min-w-0">
                                     <div className="shrink-0">
@@ -161,7 +239,7 @@ export const DailySalesPanel: React.FC = memo(() => {
                                     <div
                                         key={d.date}
                                         onClick={handleDayClick}
-                                        className={`flex items-center justify-between px-2 py-0.5 cursor-pointer transition-colors ${
+                                        className={`flex items-center justify-between px-2 py-1 cursor-pointer transition-colors ${
                                             isSelected
                                                 ? 'bg-emerald-50 dark:bg-emerald-900/20 border-l-2 border-l-emerald-600 dark:border-l-emerald-400 text-emerald-700 dark:text-emerald-300 font-bold'
                                                 : 'hover:bg-canvas-soft/30'
@@ -193,6 +271,17 @@ export const DailySalesPanel: React.FC = memo(() => {
                         </div>
                     );
                 })}
+            </div>
+
+            {/* Drag resize handle */}
+            <div
+                onMouseDown={onMouseDownResize}
+                onTouchStart={onTouchStartResize}
+                onDoubleClick={onResetHeight}
+                title="Drag to resize height (Double-click to reset)"
+                className="h-3 shrink-0 flex items-center justify-center cursor-ns-resize hover:bg-canvas-soft/80 transition-colors border-t border-hairline/40 group select-none py-1"
+            >
+                <div className="w-8 h-1 rounded-full bg-ink-faint/30 group-hover:bg-ink-secondary/70 transition-colors" />
             </div>
         </div>
     );

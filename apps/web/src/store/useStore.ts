@@ -34,6 +34,8 @@ export interface AppState {
     activeApp: 'REVENUE' | 'INVENTORY' | 'LOGISTICS';
     activeMainView: 'DASHBOARD' | 'LEDGER' | 'AUDIT' | 'DEV' | 'GREWGPT';
     unviewedStories: boolean;
+    tourOpen: boolean;
+    tourStep: number;
     // Keyed by whitelist column name (e.g. "agentation", "audit", "story").
     // enable_auth is the only platform-level flag; all others come from the whitelist row.
     // Auth state (isAuthenticated, isBootstrapping, user, authError) lives in @grew/auth useAuthStore.
@@ -67,6 +69,8 @@ export interface AppState {
     setInsightsSeen: (seen: boolean) => void;
     setTooltipsEnabled: (enabled: boolean) => void;
     setUnviewedStories: (unviewed: boolean) => void;
+    setTourOpen: (open: boolean) => void;
+    setTourStep: (step: number) => void;
     setActiveMainView: (view: 'DASHBOARD' | 'LEDGER' | 'AUDIT' | 'DEV' | 'GREWGPT') => void;
     setActiveApp: (app: 'REVENUE' | 'INVENTORY' | 'LOGISTICS') => void;
     setFeatures: (features: AppState['features']) => void;
@@ -225,6 +229,8 @@ export const useStore = create<AppState>((set) => ({
     setInsightsSeen: (insightsSeen) => set({ insightsSeen }),
     setTooltipsEnabled: (tooltipsEnabled) => set({ tooltipsEnabled }),
     setUnviewedStories: (unviewedStories) => set({ unviewedStories }),
+    setTourOpen: (tourOpen) => set({ tourOpen }),
+    setTourStep: (tourStep) => set({ tourStep }),
     setActiveMainView: (activeMainView) => set({ activeMainView }),
     setActiveApp: (activeApp) => set({ activeApp }),
     setFeatures: (features) => set({ features })

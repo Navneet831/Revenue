@@ -367,7 +367,11 @@ export class MetricFormatter {
             formatted = num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
 
-        if (type === 'Amount') return `₹ ${formatted} Cr`;
+        if (type === 'Amount') {
+            return num < 0
+                ? `-₹ ${Math.abs(num).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Cr`
+                : `₹ ${formatted} Cr`;
+        }
         return formatted;
     }
 
@@ -608,10 +612,9 @@ export class DataSanitizer {
 export class ConcentrationAnalyser {
     static calculateHHI(items: { v: number }[]): number {
         if (!items || items.length === 0) return 0;
-        const absValues = items.map((i) => Math.abs(i.v || 0));
-        const totalAbs = absValues.reduce((a, b) => a + b, 0);
-        if (totalAbs <= 0) return 0;
-        return absValues.reduce((sum, v) => sum + Math.pow((v / totalAbs) * 100, 2), 0);
+        const total = items.reduce((a, b) => a + (b.v || 0), 0);
+        if (total === 0) return 0;
+        return items.reduce((sum, item) => sum + Math.pow(((item.v || 0) / total) * 100, 2), 0);
     }
 
     static calculateGrowth(cur: number | null, prev: number | null): number | null {
@@ -788,7 +791,7 @@ export class RevenueComputeEngine {
         if (customStart) customStart.setHours(0, 0, 0, 0);
         const customStartTime = customStart ? customStart.getTime() : 0;
 
-        const isOnlySolar = f.segment.length === 1 && f.segment[0].toLowerCase().includes('solar');
+        const isOnlySolar = Array.isArray(f.segment) && f.segment.length === 1 && Boolean(f.segment[0]?.toLowerCase().includes('solar'));
         const global_full: Record<
             string,
             {
@@ -1179,10 +1182,10 @@ export class RevenueComputeEngine {
             txt: `Recent trailing velocity projects ${formatInsightVal(projWeek)} for the current period.`
         });
         const unfiltCust = custArr.sort((a, b) => b.v - a.v);
-        const sumCustAbs = unfiltCust.reduce((a, c) => a + Math.abs(c.v), 0);
+        const sumCust = unfiltCust.reduce((a, c) => a + (c.v || 0), 0);
         const hhi = ConcentrationAnalyser.calculateHHI(unfiltCust);
         const top5 = unfiltCust.slice(0, 5);
-        const top5Share = sumCustAbs > 0 ? (top5.reduce((a, c) => a + Math.abs(c.v), 0) / sumCustAbs) * 100 : 0;
+        const top5Share = sumCust > 0 ? (top5.reduce((a, c) => a + (c.v || 0), 0) / sumCust) * 100 : 0;
         const concText = hhi < 1500 ? 'Diversified' : hhi < 2500 ? 'Moderate' : 'Highly Concentrated';
         const concType = hhi < 1500 ? 'success' : hhi < 2500 ? 'strategic' : 'risk';
 
@@ -1193,10 +1196,10 @@ export class RevenueComputeEngine {
         });
 
         const unfiltWp = wpArr.sort((a, b) => b.v - a.v);
-        const sumWPAbs = unfiltWp.reduce((a, c) => a + Math.abs(c.v), 0);
+        const sumWP = unfiltWp.reduce((a, c) => a + (c.v || 0), 0);
         const prodHhi = ConcentrationAnalyser.calculateHHI(unfiltWp);
         const top3Prod = unfiltWp.slice(0, 3);
-        const top3ProdShare = sumWPAbs > 0 ? (top3Prod.reduce((a, c) => a + Math.abs(c.v), 0) / sumWPAbs) * 100 : 0;
+        const top3ProdShare = sumWP > 0 ? (top3Prod.reduce((a, c) => a + (c.v || 0), 0) / sumWP) * 100 : 0;
 
         insights.push({
             t: 'strategic',

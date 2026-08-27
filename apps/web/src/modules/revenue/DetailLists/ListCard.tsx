@@ -57,11 +57,12 @@ export const ListCard: React.FC<ListCardProps> = ({ id, title, icon, cardKey, fi
             const displayV = filters.metric === 'Amount' ? v / CONFIG.CURRENCY_DIVIDER : v;
             return { ...item, displayV };
         })
-        .filter((item: any) => item.displayV > 0)
         .sort((a: any, b: any) => b.displayV - a.displayV);
 
-    const total = preparedData.reduce((s: number, d: any) => s + d.displayV, 0);
-    preparedData.forEach((item: any) => { item.pct = total > 0 ? (item.displayV / total) * 100 : 0; });
+    const total = preparedData.reduce((s: number, d: any) => s + (d.displayV || 0), 0);
+    preparedData.forEach((item: any) => { 
+        item.pct = total > 0 ? (item.displayV / total) * 100 : 0; 
+    });
 
     const handleRowClick = (name: string, isCtrl: boolean) => {
         const cur = [...selectedKeys];
@@ -203,11 +204,11 @@ export const ListCard: React.FC<ListCardProps> = ({ id, title, icon, cardKey, fi
     const dynamicHeight = Math.max(300, topData.length * 28);
 
     // HHI Calculation
-    const hhi = preparedData.length > 0 ? (() => {
-        const absValues = preparedData.map((d: any) => Math.abs(d.displayV || 0));
-        const totalAbs = absValues.reduce((a: number, b: number) => a + b, 0);
-        if (totalAbs <= 0) return 0;
-        return absValues.reduce((sum: number, v: number) => sum + Math.pow((v / totalAbs) * 100, 2), 0);
+    const hhi = preparedData.length > 0 && total > 0 ? (() => {
+        return preparedData.reduce((sum: number, item: any) => {
+            const val = item.displayV || 0;
+            return sum + Math.pow((val / total) * 100, 2);
+        }, 0);
     })() : 0;
 
     let hhiBadgeClass = 'bg-canvas-soft text-ink-secondary border-hairline';
@@ -296,7 +297,7 @@ export const ListCard: React.FC<ListCardProps> = ({ id, title, icon, cardKey, fi
                                         key={r.n}
                                         onClick={(e) => handleRowClick(r.n, e.ctrlKey)}
                                         style={rowStyle}
-                                        className="cursor-pointer transition-all duration-200 hover:bg-canvas-soft flex items-center select-none"
+                                        className="cursor-pointer transition-all duration-200 hover:bg-canvas-soft flex items-center"
                                     >
                                         <div
                                             className={`flex-1 p-2 text-[10px] pl-3 tracking-wide truncate ${isSelected ? 'font-bold' : 'font-medium'}`}
@@ -319,7 +320,7 @@ export const ListCard: React.FC<ListCardProps> = ({ id, title, icon, cardKey, fi
                                             <div className="w-full h-1 bg-canvas-soft rounded-full overflow-hidden flex justify-end">
                                                 <div 
                                                     className="h-full rounded-full" 
-                                                    style={{ width: `${r.pct}%`, backgroundColor: colorDef.solid }} 
+                                                    style={{ width: `${Math.max(0, Math.min(100, r.pct))}%`, backgroundColor: colorDef.solid }} 
                                                 />
                                             </div>
                                         </div>

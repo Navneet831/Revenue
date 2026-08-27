@@ -12,6 +12,7 @@ import os
 import subprocess
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
@@ -138,7 +139,6 @@ async def authenticate(request: Request) -> dict:
     user = {"id": data.get("id"), "email": user_email, "features": {}}
 
     try:
-        import urllib.parse
         encoded_email = urllib.parse.quote(user_email)
         whitelist_req = urllib.request.Request(
             f"{url}/rest/v1/whitelist?select=*&email=eq.{encoded_email}",

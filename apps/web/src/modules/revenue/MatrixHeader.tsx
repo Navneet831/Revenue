@@ -29,7 +29,7 @@ export const MatrixHeader: React.FC = () => {
     };
 
     return (
-        <div className="flex w-full shrink-0 border-b-2 border-hairline bg-canvas-soft select-none z-40">
+        <div className="flex w-full shrink-0 border-b-2 border-hairline bg-canvas-soft z-40">
             <div className="shrink-0 flex items-center justify-center border-r border-hairline h-9" style={{ width: '80px' }}>
                 <button
                     onClick={(e) => { e.stopPropagation(); updateFilters({ pendingOnly: !filters.pendingOnly }); }}

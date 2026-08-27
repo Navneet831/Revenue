@@ -225,7 +225,7 @@ export const RevenueMatrix: React.FC = memo(() => {
 
     return (
         <div className="flex flex-col h-full w-full relative bg-card-bg">
-            <div className="flex-1 overflow-auto no-scrollbar relative z-20 select-none bg-card-bg" data-lenis-prevent="true">
+            <div className="flex-1 overflow-auto no-scrollbar relative z-20 select-text bg-card-bg" data-lenis-prevent="true">
                 <table className="w-full border-collapse min-w-full relative" style={{ tableLayout: 'fixed' }}>
                     {/* The month header lives in the shared, fixed <MatrixHeader/> above the
                         view switch. This colgroup keeps the data columns aligned to it. */}

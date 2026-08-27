@@ -45,6 +45,22 @@ _creds_fetched_at = 0.0
 _cred_hash = ''
 
 
+def _ensure_env_loaded():
+    if not os.getenv('PG_HOST'):
+        from pathlib import Path
+        root = Path(__file__).resolve().parent.parent
+        env_file = root / '.env'
+        if env_file.is_file():
+            for line in env_file.read_text(encoding='utf-8').splitlines():
+                line = line.strip()
+                if not line or line.startswith('#') or '=' not in line:
+                    continue
+                key, _, val = line.partition('=')
+                key, val = key.strip(), val.strip().strip('"').strip("'")
+                if key and key not in os.environ:
+                    os.environ[key] = val
+
+
 def fetch_db_config() -> Dict[str, Any]:
     """Which DB do we use — single source of truth (Node fetchDbConfig parity).
 
@@ -52,6 +68,7 @@ def fetch_db_config() -> Dict[str, Any]:
     ``db-credentials`` edge function.  Returns the PG config plus a ``source``
     field ('local_env' | 'edge_function').
     """
+    _ensure_env_loaded()
     env = lambda k: (os.getenv(k) or '').strip()
     if env('PG_HOST') and env('PG_USER') and env('PG_PASSWORD') and env('PG_DATABASE'):
         return {

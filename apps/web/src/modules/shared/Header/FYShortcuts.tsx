@@ -41,12 +41,11 @@ export const FYShortcuts: React.FC = () => {
         const isCurrentFY = year === currentFYYear;
 
         if (isCurrentFY && latestDate) {
-            // Current FY: jump to the latest month, switch to Weekly granularity
-            const matrixMonth = CONFIG.CALENDAR_MONTHS[latestDate.getMonth()];
+            // Current FY: full period up to latest date, Weekly granularity
             updateFilters({
                 startDate:       fyStart,
                 endDate:         finalEndDate,
-                matrixMonth:     matrixMonth,
+                matrixMonth:     null,
                 velocityMode:    'Weekly',
                 selectedQuarter: null,
                 selectedWeek:    null,

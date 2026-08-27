@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { Layers, TableProperties, ShieldCheck, LogOut, Sparkles, Cpu, Moon, Sun, Settings, MessageCircleQuestion } from 'lucide-react';
+import { Layers, TableProperties, ShieldCheck, LogOut, Sparkles, Cpu, Moon, Sun, Settings, MessageCircleQuestion, Compass } from 'lucide-react';
 import { useStore } from '@revenue/store/useStore';
 import { useTheme } from '../../hooks/useTheme';
 import { supabase, useAuthStore } from '@grew/auth';
@@ -26,6 +26,8 @@ const GlobalSidebarContent: React.FC<GlobalSidebarProps> = ({ onOpenHelp, onOpen
         setTooltipsEnabled,
         sidebarCollapsed,
         toggleSidebarCollapsed,
+        setTourOpen,
+        setTourStep,
     } = useStore();
 
     const { setUser, setAuthenticated } = useAuthStore();
@@ -210,6 +212,21 @@ const GlobalSidebarContent: React.FC<GlobalSidebarProps> = ({ onOpenHelp, onOpen
                         ) : (
                             <Moon className="w-5 h-5" />
                         )}
+                    </div>
+
+                    {/* Guided Tour Trigger */}
+                    <div
+                        onClick={() => {
+                            if (activeMainView !== 'DASHBOARD') {
+                                setActiveMainView('DASHBOARD');
+                            }
+                            setTourStep(0);
+                            setTourOpen(true);
+                        }}
+                        className="p-1.5 rounded-md cursor-pointer transition-colors text-ink-faint hover:text-emerald-500 hover:bg-emerald-50 dark:hover:text-emerald-400 dark:hover:bg-emerald-950/30"
+                        data-tooltip="Take Guided Product Tour"
+                    >
+                        <Compass className="w-5 h-5" />
                     </div>
 
                     {/* Tooltip Toggle */}

@@ -1,3 +1,4 @@
+import '../env.js';
 import pg from 'pg';
 import Logger from '../../../monitoring/logging/index.js';
 

@@ -81,8 +81,8 @@ body {
     color: theme('colors.ink');
     overflow: hidden;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    -webkit-user-select: none;
-    user-select: none;
+    -webkit-user-select: text;
+    user-select: text;
     selection-background-color: theme('colors.primary');
     selection-color: theme('colors.stone.900');
     -webkit-font-smoothing: antialiased;
