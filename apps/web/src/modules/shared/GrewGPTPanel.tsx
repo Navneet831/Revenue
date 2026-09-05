@@ -290,8 +290,8 @@ export const GrewGPTPanel: React.FC = () => {
             setConfigError(errMsg);
             setMessages(prev => {
                 const updated = [...prev];
-                const errorText = errMsg.includes('secret') || errMsg.includes('key')
-                    ? `⚠️ Configuration Error: ${errMsg}\n\nPlease verify:\n1. Supabase secret "AI" is set with your OpenRouter key\n2. The edge function has permission to access it`
+                const errorText = errMsg.includes('secret') || errMsg.includes('key') || errMsg.includes('OPENROUTER')
+                    ? `⚠️ Configuration Error: ${errMsg}\n\nPlease verify:\n1. Supabase secret "OPENROUTER_API_KEY" (or "AI") is set with your OpenRouter key\n2. The edge function has permission to access it`
                     : `❌ ${errMsg}\n\nTry refreshing the page or check your internet connection.`;
                 updated[updated.length - 1] = { role: 'assistant', text: errorText, error: true };
                 return updated;
