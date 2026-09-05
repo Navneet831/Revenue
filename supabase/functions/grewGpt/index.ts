@@ -73,17 +73,29 @@ const DEFAULT_QUERY_TEMPLATES: QueryTemplate[] = [
 
 // ── Date helpers ───────────────────────────────────────────────────────────────
 
-function getDateParams(): Record<string, string> {
-  const now  = new Date();
-  const today = now.toISOString().slice(0, 10);
-  const fyYear = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
-  const fyStart    = `${fyYear}-04-01`;
+function getDateParams(anchorDateStr?: string | null): Record<string, string> {
+  const now = anchorDateStr ? new Date(anchorDateStr + "T00:00:00Z") : new Date();
+  const today = anchorDateStr || now.toISOString().slice(0, 10);
+  const fyYear = now.getUTCMonth() >= 3 ? now.getUTCFullYear() : now.getUTCFullYear() - 1;
+  const fyStart = `${fyYear}-04-01`;
   const prevFyStart = `${fyYear - 1}-04-01`;
-  const mtdStart   = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
-  const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().slice(0, 10);
-  const lastMonthEnd   = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().slice(0, 10);
-  return { TODAY: today, FY_START: fyStart, PREV_FY_START: prevFyStart,
-           MTD_START: mtdStart, LAST_MONTH_START: lastMonthStart, LAST_MONTH_END: lastMonthEnd };
+  const mtdMonth = String(now.getUTCMonth() + 1).padStart(2, "0");
+  const mtdStart = `${now.getUTCFullYear()}-${mtdMonth}-01`;
+
+  const lastMonthDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
+  const lastMonthStart = `${lastMonthDate.getUTCFullYear()}-${String(lastMonthDate.getUTCMonth() + 1).padStart(2, "0")}-01`;
+  const lastMonthEndDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 0));
+  const lastMonthEnd = `${lastMonthEndDate.getUTCFullYear()}-${String(lastMonthEndDate.getUTCMonth() + 1).padStart(2, "0")}-${String(lastMonthEndDate.getUTCDate()).padStart(2, "0")}`;
+
+  return {
+    TODAY: today,
+    FY_START: fyStart,
+    PREV_FY_START: prevFyStart,
+    MTD_START: mtdStart,
+    LAST_MONTH_START: lastMonthStart,
+    LAST_MONTH_END: lastMonthEnd,
+    LATEST_DATA_DATE: today,
+  };
 }
 
 function fillParams(sql: string, params: Record<string, string>): string {
@@ -98,15 +110,21 @@ function fillParams(sql: string, params: Record<string, string>): string {
 function isSafeSelect(sql: string): boolean {
   const upper = sql.trim().toUpperCase().replace(/\s+/g, " ");
   if (!upper.startsWith("SELECT") && !upper.startsWith("WITH")) return false;
+  if (!upper.includes(" FROM ")) return false;
   return !/\b(INSERT|UPDATE|DELETE|DROP|TRUNCATE|ALTER|CREATE|GRANT|REVOKE|EXECUTE|COPY|CALL|MERGE)\b/.test(upper);
 }
 
 function extractSQL(raw: string): string {
   const fenced = raw.match(/```(?:sql)?\s*([\s\S]+?)```/i);
-  if (fenced) return fenced[1].trim();
+  if (fenced && isSafeSelect(fenced[1])) return fenced[1].trim();
 
-  const match = raw.match(/\b((?:SELECT|WITH)\s+[\s\S]+?)(?:;|\n\n(?=[A-Z])|$)/i);
-  if (match) return match[1].trim();
+  // Match genuine WITH query: WITH ... AS (...) SELECT ... FROM ...
+  const withMatch = raw.match(/\b(WITH\s+[a-zA-Z0-9_"\s,]+?\s+AS\s*\([\s\S]+?\)\s*SELECT\s+[\s\S]+?\s+FROM\s+[\s\S]+?)(?:;|\n\n(?=[A-Z])|$)/i);
+  if (withMatch && isSafeSelect(withMatch[1])) return withMatch[1].trim();
+
+  // Match genuine SELECT query: SELECT ... FROM ...
+  const selectMatch = raw.match(/\b(SELECT\s+[\s\S]+?\s+FROM\s+[\s\S]+?)(?:;|\n\n(?=[A-Z])|$)/i);
+  if (selectMatch && isSafeSelect(selectMatch[1])) return selectMatch[1].trim();
 
   return raw.trim();
 }
@@ -160,13 +178,14 @@ ${buildTemplateMenu(templates)}
 RULES — READ CAREFULLY:
 1. If the question matches a pre-approved template, output ONLY: USE_TEMPLATE:<template_name>
    Example: USE_TEMPLATE:total_revenue
-2. Otherwise output ONLY the executable PostgreSQL SELECT query — no markdown, no explanation, no backticks.
+2. Otherwise output ONLY the executable PostgreSQL SELECT query — no markdown, no explanation, no backticks, no thinking.
 3. ALWAYS query table "revenue.revenue".
 4. Revenue calculation: always calculate revenue in Crores (INR) as: ROUND(SUM(net_value)::numeric / 10000000, 2) AS revenue_cr
 5. Capacity calculation: ROUND(SUM(mw)::numeric, 2) AS total_mw
-6. Date filtering: for current fiscal year / YTD queries, use: invoice_date >= '${dateParams.FY_START}' AND invoice_date <= '${dateParams.TODAY}'. Always ensure invoice_date > DATE '2022-12-25'.
+6. Date filtering: the latest available invoice date in the database is ${dateParams.TODAY}. For current fiscal year / YTD queries, use: invoice_date >= '${dateParams.FY_START}' AND invoice_date <= '${dateParams.TODAY}'. Always ensure invoice_date > DATE '2022-12-25'.
 7. ONLY SELECT queries. Never generate DROP, INSERT, UPDATE, DELETE, ALTER, TRUNCATE, or CREATE.
-8. If the user asks about revenue, sales, customers, modules, segments, or financial figures, ALWAYS generate the query for revenue.revenue. Never output UNSUPPORTED for business revenue questions.`;
+8. If the user asks about revenue, sales, customers, modules, segments, or financial figures, ALWAYS generate the query for revenue.revenue.
+9. OUTPUT FORMAT REQUIREMENT: Output strictly ONLY the USE_TEMPLATE token or the raw SELECT query. Do not output any reasoning, chain of thought, or introductory remarks.`;
 }
 
 // ── Formatting ─────────────────────────────────────────────────────────────────
@@ -315,8 +334,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const currentQuestion: string = (messages as any[]).findLast?.((m: any) => m.role === "user")?.content
       ?? messages[messages.length - 1]?.content ?? "";
 
-    const dateParams    = getDateParams();
-    const sqlGenPrompt  = buildSqlGenPrompt(schemaColumns, semanticTerms, templates, dateParams);
+    let dateParams    = getDateParams();
 
     // ── NL2SQL pipeline ───────────────────────────────────────────────────────
     let dataBlock     = "";
@@ -337,6 +355,18 @@ Deno.serve(async (req: Request): Promise<Response> => {
           database: pgCreds.PG_DATABASE,
           ssl: false, max: 2, connect_timeout: 10, idle_timeout: 10,
         });
+
+        // ── Fetch the latest invoice date from the database to anchor all date periods ──
+        try {
+          const maxDateRes = await sql`SELECT TO_CHAR(MAX(invoice_date), 'YYYY-MM-DD') AS max_date FROM revenue.revenue`;
+          if (maxDateRes[0]?.max_date) {
+            dateParams = getDateParams(String(maxDateRes[0].max_date));
+          }
+        } catch (dateErr: any) {
+          console.warn("[grewGpt] Could not fetch MAX(invoice_date):", dateErr?.message);
+        }
+
+        const sqlGenPrompt = buildSqlGenPrompt(schemaColumns, semanticTerms, templates, dateParams);
 
         // Phase 1 — SQL generation (zero temp, short budget)
         const phase1Result = await callAI(aiKey, model, 0.0, 300, [
@@ -384,8 +414,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
           auditMs    = Date.now() - t0;
           auditRows  = rows.length;
 
-          const freshness = `*Data as of ${dateParams.TODAY} — live query returned ${rows.length} row${rows.length !== 1 ? "s" : ""} in ${auditMs}ms*`;
-          dataBlock = `\n\nLIVE DATABASE QUERY RESULTS:\n${rowsToMarkdown(rows)}\n\n${freshness}\n\nIMPORTANT INSTRUCTION: Use the LIVE DATABASE QUERY RESULTS above to directly answer the user's question. Present all quantitative figures in clean Markdown tables formatted in Indian Rupees Crores (₹ XX.XX Cr) and MW capacity as requested.`;
+          const freshness = `*Data as of ${dateParams.LATEST_DATA_DATE || dateParams.TODAY} (latest invoice in database) — live query returned ${rows.length} row${rows.length !== 1 ? "s" : ""} in ${auditMs}ms*`;
+          dataBlock = `\n\nLIVE DATABASE QUERY RESULTS:\n${rowsToMarkdown(rows)}\n\n${freshness}\n\nIMPORTANT INSTRUCTION: Use the LIVE DATABASE QUERY RESULTS above to directly answer the user's question. Present all quantitative figures in clean Markdown tables formatted in Indian Rupees Crores (₹ XX.XX Cr) and MW capacity as requested. The database records are current up to ${dateParams.TODAY} (the latest invoice date in the revenue table). Always report that the data is as of ${dateParams.TODAY}.`;
           console.log(`[grewGpt] ${auditTemplate ? "TPL:" + auditTemplate : "NL2SQL"} → ${rows.length} rows in ${auditMs}ms`);
         }
       } catch (dbErr: any) {
